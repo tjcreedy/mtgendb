@@ -2,7 +2,6 @@
 
 """Data ingestion into MySQL database.
 
-HI LUKE!
 
 Modifying and uploading a genbank-file and metadata in a csv-file into a MySQL database.
 """
