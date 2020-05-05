@@ -1,0 +1,101 @@
+contigname,specimen,morphospecies,species,subfamily,family,order,traptype,lifestage,locality,site,subregion,country,latitude,longitude,sequencelength,authors,library,datasubmitter,projectname,accession,notes,originalcontigname
+BIOD00197,1426729,Mord33,,,Mordellidae,Coleoptera,YPT,Adult,PNA,Santa Fe,,Panama,NA,NA,15568,D Yeo,HE2,,Biodiversity Initiative NHM,,753,SF_YPT_PNA_Adult_753_A11_1426729_Mordellidae
+BIOD01516,1275410,,,,Platypodidae,Coleoptera,FIT1,Adult,P7,Noragues,,French Guiana,NA,NA,5449,D Yeo,HE7,,Biodiversity Initiative NHM,,779,FG_FIT1_P7_Adult_779_F12_1275410_Platypodidae
+BIOD00087,1733413,MS2576,,,Unknown,Coleoptera,FIT2,Adult,PD,Poring,Sabah,Malaysia,NA,NA,3089,D Yeo,HE1,,Biodiversity Initiative NHM,,BIP27,BP_FIT2_PD_Adult_BIP27_G06_MS2576_Unknown
+BIOD01431,1723562,MS633,,,Cerambycidae,Coleoptera,BEATING,Adult,PC,Poring,Sabah,Malaysia,NA,NA,15499,D Yeo,HE7,,Biodiversity Initiative NHM,,BIP07,BP_BEATING_PC_Adult_BIP07_E09_1723562_Cerambycidae
+CCCP00081,,,,,,,canopy fogging,adult,,Cusuco National Park,,Honduras,15.5632244,-88.3046256,2303,Creedy T.J.,,Creedy T.J.,Cusuco Canopy Communities Project,,,P1_81
+BIOD00808,1723483,MS554,,,Aderidae,Coleoptera,BEATING,Adult,PA,Poring,Sabah,Malaysia,NA,NA,10044,D Yeo,HE4,,Biodiversity Initiative NHM,,BIP06,BP_BEATING_PA_Adult_BIP06_G02_1723483_Aderidae_(reversed)
+BIOD02033,1721528,Chrys151,,,Chrysomelidae,Coleoptera,MALAISE1,Adult,P1,Santa Fe,,Panama,NA,NA,16233,D Yeo,HE10,,Biodiversity Initiative NHM,,766,SF_MALAISE1_P1_Adult_766_D07_1721528_Chrysomelidae
+CCCP00360,,,,,,Coleoptera,canopy fogging,adult,,Cusuco National Park,,Honduras,15.5632244,-88.3046256,4465,Creedy T.J.,,Creedy T.J.,Cusuco Canopy Communities Project,,,P5-57_P_ctg226
+SPSO00119,SOIL_MMG Contig141,,,,Curculionidae,Coleoptera,SOIL,,Sierra de Grazalema,Cadiz,Spain,Spain,NA,NA,6984,C Andujar,,C Andujar,Beetles from Soil,MK692669,,Contig_141
+BIOD01983,1426866,Lyc14,,,Lycidae,Coleoptera,MALAISE1,Adult,P1,Santa Fe,,Panama,NA,NA,23533,D Yeo,HE9,,Biodiversity Initiative NHM,,754,SF_MALAISE1_P1_Adult_754_E04_1426866_Lycidae
+BIOD00411,1722947,MS18,,,Chrysomelidae,Coleoptera,MALAISE,Adult,PB,Poring,Sabah,Malaysia,NA,NA,15999,D Yeo,H3,,Biodiversity Initiative NHM,,BIP01,BP_MALAISE_PB_Adult_BIP01_B06_1722947_Chrysomelidae_(reversed)
+BIOD00436,1733028,MS2191,,,Unknown,Coleoptera,FIT1,Adult,PC,Poring,Sabah,Malaysia,NA,NA,15746,D Yeo,H3,,Biodiversity Initiative NHM,,BIP23,BP_FIT1_PC_Adult_BIP23_G05_MS2191_Unknown
+CCCP00234,,,,,,,canopy fogging,adult,,Cusuco National Park,,Honduras,15.5632244,-88.3046256,5253,Creedy T.J.,,Creedy T.J.,Cusuco Canopy Communities Project,,,P3_26
+BIOD02038,1723558,MS629,,,Dryophthoridae,Coleoptera,BEATING,Adult,PC,Poring,Sabah,Malaysia,NA,NA,16131,D Yeo,HE10,,Biodiversity Initiative NHM,,BIP07,BP_BEATING_PC_Adult_BIP07_E05_1723558_Dryophthoridae
+BIOD00847,1723745,MS816,,Ceratocanthinae,Hybosoridae,Coleoptera,BEATING,Adult,PD,Poring,Sabah,Malaysia,NA,NA,3348,D Yeo,HE4,,Biodiversity Initiative NHM,,BIP09,BP_BEATING_PD_Adult_BIP09_D12_1723745_Hybosoridae_Ceratocanthinae
+BIOD01087,1722958,MS29,,,Tenebrionidae,Coleoptera,MALAISE,Adult,PB,Poring,Sabah,Malaysia,NA,NA,31716,D Yeo,HE6,,Biodiversity Initiative NHM,,BIP01,BP_MALAISE_PB_Adult_BIP01_C05_1722958_Tenebrionidae
+CCCP00362,,,,,,Coleoptera,canopy fogging,adult,,Cusuco National Park,,Honduras,15.5632244,-88.3046256,15602,Creedy T.J.,,Creedy T.J.,Cusuco Canopy Communities Project,,,P6-02_P_ctg2
+BIOD00640,1723650,MS721,,,Silvanidae,Coleoptera,BEATING,Adult,PC,Poring,Sabah,Malaysia,NA,NA,16875,D Yeo,HE4,,Biodiversity Initiative NHM,,BIP08,BP_BEATING_PC_Adult_BIP08_E01_1723650_Silvanidae
+BIOD01122,1722961,MS32,,,Chrysomelidae,Coleoptera,MALAISE,Adult,PB,Poring,Sabah,Malaysia,NA,NA,16808,D Yeo,HE6,,Biodiversity Initiative NHM,,BIP01,BP_MALAISE_PB_Adult_BIP01_C08_1722961_Chrysomelidae_(reversed)
+BIOD01621,1723584,MS655,,,Histeridae,Coleoptera,BEATING,Adult,PC,Poring,Sabah,Malaysia,NA,NA,16194,D Yeo,HE8,,Biodiversity Initiative NHM,,BIP07,BP_BEATING_PC_Adult_BIP07_G07_1723584_Histeridae
+BIOD01788,1275525,,,,Staphylinidae,Coleoptera,FIT1,Adult,P7,Noragues,,French Guiana,NA,NA,3007,D Yeo,HE8,,Biodiversity Initiative NHM,,780,FG_FIT1_P7_Adult_780_H07_1275525_Staphylinidae
+BIOD02127,1723712,MS783,,,Nitidulidae,Coleoptera,BEATING,Adult,PC,Poring,Sabah,Malaysia,NA,NA,10106,D Yeo,HE10,,Biodiversity Initiative NHM,,BIP09,BP_BEATING_PC_Adult_BIP09_B03_1723712_Nitidulidae
+BIOD01812,1425726,,,,Staphylinidae,Coleoptera,LL,Adult,P7,Noragues,,French Guiana,NA,NA,4415,D Yeo,HE9,,Biodiversity Initiative NHM,,732,FG_LL_P7_Adult_732_C07_1425726_Staphylinidae
+CCCP00152,,,,,,,canopy fogging,adult,,Cusuco National Park,,Honduras,15.5632244,-88.3046256,15069,Creedy T.J.,,Creedy T.J.,Cusuco Canopy Communities Project,,,P2_52
+BIOD01740,1721743,Ero9,,,Erotylidae,Coleoptera,MALAISE2,Adult,P1,Cerro Hoya,,Panama,NA,NA,6004,D Yeo,HE8,,Biodiversity Initiative NHM,,768,CH_MALAISE2_P1_Adult_768_F06_1721743_Erotylidae
+BIOD00733,1721173,Lyc6,,,Lycidae,Coleoptera,MALAISE1,Adult,P1,Cerro Hoya,,Panama,NA,NA,15653,D Yeo,HE4,,Biodiversity Initiative NHM,,762,CH_MALAISE1_P1_Adult_762_F12_1721173_Lycidae
+BIOD00951,1732010,MS1171,,,Chrysomelidae,Coleoptera,WINKLER,Adult,PD,Poring,Sabah,Malaysia,NA,NA,16047,D Yeo,HE5,,Biodiversity Initiative NHM,,BIP13,BP_WINKLER_PD_Adult_BIP13_B07_MS1171_Chrysomelidae_(reversed)
+BIOD00363,1274784,,,,Staphylinidae,Coleoptera,FIT1,Adult,P5,Noragues,,French Guiana,NA,NA,17240,D Yeo,H3,,Biodiversity Initiative NHM,,770,FG_FIT1_P5_Adult_770_A03_1274784_Staphylinidae_(reversed)
+BIOD01762,1723348,MS419,,,Dryopidae,Coleoptera,BEATING,Adult,PA,Poring,Sabah,Malaysia,NA,NA,4198,D Yeo,HE8,,Biodiversity Initiative NHM,,BIP05,BP_BEATING_PA_Adult_BIP05_C11_1723348_Dryopidae
+BIOD01826,1426416,Elat5,,,Elateridae,Coleoptera,FIT2,Adult,P1,Santa Fe,,Panama,NA,NA,5518,D Yeo,HE9,,Biodiversity Initiative NHM,,749,SF_FIT2_P1_Adult_749_G11_1426416_Elateridae
+BIOD00778,1426395,Curc88,,,Curculionidae,Coleoptera,FIT1,Adult,P6,Santa Fe,,Panama,NA,NA,15088,D Yeo,HE4,,Biodiversity Initiative NHM,,749,SF_FIT1_P6_Adult_749_F02_1426395_Curculionidae
+BIOD00050,1427174,Curc36,,,Curculionidae,Coleoptera,FIT2,Adult,P7,Cerro Hoya,,Panama,NA,NA,4929,D Yeo,HE1,,Biodiversity Initiative NHM,,757,CH_FIT2_P7_Adult_757_F12_1427174_Curculionidae_(reversed)
+BIOD01735,1723551,MS622,,,Tenebrionidae,Coleoptera,BEATING,Adult,PC,Poring,Sabah,Malaysia,NA,NA,6606,D Yeo,HE8,,Biodiversity Initiative NHM,,BIP07,BP_BEATING_PC_Adult_BIP07_D10_1723551_Tenebrionidae_(reversed)
+BIOD00437,1427229,Phen3,,,Phengodidae,Coleoptera,FIT1,Adult,P1,Cerro Hoya,,Panama,NA,NA,15742,D Yeo,H3,,Biodiversity Initiative NHM,,758,CH_FIT1_P1_Adult_758_C07_1427229_Phengodidae
+BIOD01314,1426731,Mord34,,,Mordellidae,Coleoptera,YPT,Adult,PNA,Santa Fe,,Panama,NA,NA,27747,D Yeo,HE7,,Biodiversity Initiative NHM,,753,SF_YPT_PNA_Adult_753_B01_1426731_Mordellidae
+BIOD01173,1733417,MS2580,,,Unknown,Coleoptera,FIT2,Adult,PD,Poring,Sabah,Malaysia,NA,NA,15773,D Yeo,HE6,,Biodiversity Initiative NHM,,BIP27,BP_FIT2_PD_Adult_BIP27_G10_MS2580_Unknown
+CCCP00008,,col079,,Chryptorhynchinae,Curculionidae,Coleoptera,canopy fogging,adult,,Cusuco National Park,,Honduras,15.513676,-88.241706,15773,Creedy T.J.,,Creedy T.J.,Cusuco Canopy Communities Project,,,P1_08
+SPSO00060,BMNH 1042467,,,,Curculionidae,Coleoptera,DEEP,Larva,,Sierra de Grazalema,Cadiz,Spain,NA,NA,15579,C Andujar,,C Andujar,Beetles from Soil,MK692610,,Contig_68_1042467_larva
+BIOD02163,1426980,Staph127,,,Staphylinidae,Coleoptera,MALAISE1,Adult,P1,Santa Fe,,Panama,NA,NA,5487,D Yeo,HE10,,Biodiversity Initiative NHM,,755,SF_MALAISE1_P1_Adult_755_F10_1426980_Staphylinidae
+BIOD00269,1425819,,,,Staphylinidae,Coleoptera,LL,Adult,P2,Noragues,,French Guiana,NA,NA,7168,D Yeo,HE2,,Biodiversity Initiative NHM,,733,FG_LL_P2_Adult_733_H06_1425819_Staphylinidae_(reversed)
+BIOD01004,1427202,Curc225,,,Curculionidae,Coleoptera,LL1,Adult,P6,Santa Fe,,Panama,NA,NA,15471,D Yeo,HE5,,Biodiversity Initiative NHM,,758,SF_LL1_P6_Adult_758_A04_1427202_Curculionidae
+BIOD01539,1275510,,,,Staphylinidae,Coleoptera,FIT1,Adult,P7,Noragues,,French Guiana,NA,NA,3915,D Yeo,HE7,,Biodiversity Initiative NHM,,780,FG_FIT1_P7_Adult_780_G04_1275510_Staphylinidae_(reversed)
+SPSO00036,BMNH 1041911,,Coiffaitiella,,Curculionidae,Coleoptera,DEEP,Adult,,Sierra de Grazalema,Cadiz,Spain,NA,NA,15404,C Andujar,,C Andujar,Beetles from Soil,MK692586,,Contig_42_1041911_Adult_Coiffaitiella
+QINL110,,ML42,,Lamiinae,Cerambycidae,Coleoptera,,Adult,,,Qinling,China,NA,NA,20987,Nie et al,lib1,,Qinling Chrysomelidae,,,lib1_Contig_19
+BIOD00369,1426136,Scar8,,,Scarabaeidae,Coleoptera,FIT1,Adult,P1,Santa Fe,,Panama,NA,NA,17073,D Yeo,H3,,Biodiversity Initiative NHM,,746,SF_FIT1_P1_Adult_746_H07_1426136_Scarabaeidae
+BIOD01484,1425691,,,,Carabidae,Coleoptera,LL,Adult,P8,Noragues,,French Guiana,NA,NA,9676,D Yeo,HE7,,Biodiversity Initiative NHM,,732,FG_LL_P8_Adult_732_H02_1425691_Carabidae
+SPSO00058,BMNH 1044095,,Rhyssemus,Paussinae,Scarabaeidae,Coleoptera,LL,Adult,,Sierra Madrona,Ciudad Real,Spain,NA,NA,16539,C Andujar,,C Andujar,Beetles from Soil,MK692608,,Contig_65_1044095_adult
+SPSO00003,BMNH 1042258,,Oochrotus unicolor,,Tenebrionidae,Coleoptera,DEEP,Adult,,Sierra Madrona,Ciudad Real,Spain,NA,NA,16235,C Andujar,,C Andujar,Beetles from Soil,MK692553,,Contig_4_1042258_Adult_Oochrotus
+BIOD00662,1426272,Scar11,,,Scarabaeidae,Coleoptera,FIT2,Adult,P1,Santa Fe,,Panama,NA,NA,16367,D Yeo,HE4,,Biodiversity Initiative NHM,,748,SF_FIT2_P1_Adult_748_C12_1426272_Scarabaeidae_(reversed)
+SPSO00032,BMNH 1042572,,,,Staphylinidae,Coleoptera,DEEP,Larva,,Sierra de Cabra,Cordoba,Spain,NA,NA,18534,C Andujar,,C Andujar,Beetles from Soil,MK692582,,Contig_38_1042572_Larva
+BIOD01754,1427082,Hist17,,,Histeridae,Coleoptera,FIT2,Adult,P1,Cerro Hoya,,Panama,NA,NA,4827,D Yeo,HE8,,Biodiversity Initiative NHM,,756,CH_FIT2_P1_Adult_756_G04_1427082_Histeridae_(reversed)
+BIOD01224,1425837,,,,Staphylinidae,Coleoptera,LL,Adult,P6,Noragues,,French Guiana,NA,NA,14941,D Yeo,HE6,,Biodiversity Initiative NHM,,733,FG_LL_P6_Adult_733_B09_1425837_Staphylinidae
+BIOD01797,1275251,,,,Staphylinidae,Coleoptera,FIT,Adult,P8,Noragues,,French Guiana,NA,NA,3132,D Yeo,HE9,,Biodiversity Initiative NHM,,783,FG_FIT_P8_Adult_783_A05_1275251_Staphylinidae
+CCCP00269,,col175,,,Curculionidae,Coleoptera,canopy fogging,adult,,Cusuco National Park,,Honduras,15.487425,-88.234609,2674,Creedy T.J.,,Creedy T.J.,Cusuco Canopy Communities Project,,,P3_62
+CCCP00006,,col141,,Bruchinae,Chrysomelidae,Coleoptera,canopy fogging,adult,,Cusuco National Park,,Honduras,15.495066,-88.213672,16706,Creedy T.J.,,Creedy T.J.,Cusuco Canopy Communities Project,,,P1_06
+CCCP00245,,,,,,,canopy fogging,adult,,Cusuco National Park,,Honduras,15.5632244,-88.3046256,17298,Creedy T.J.,,Creedy T.J.,Cusuco Canopy Communities Project,,,P3_38
+BIOD01110,1723025,MS96,,,Anthribidae,Coleoptera,MALAISE,Adult,PB,Poring,Sabah,Malaysia,NA,NA,17763,D Yeo,HE6,,Biodiversity Initiative NHM,,BIP01,BP_MALAISE_PB_Adult_BIP01_H12_1723025_Anthribidae
+CERN00008,N32,,Spiniphilus spinicornis ,Philinae,Cerambycidae,Coleoptera,,,Tengchong ,Laifengshan,Yunnan,China,NA,NA,16301,R. Nie et al,,,CerambycidaePhylogeny,,,N32
+BIOD01798,1721589,UNK139,,,Unknown,Coleoptera,MALAISE1,Adult,P1,Santa Fe,,Panama,NA,NA,3139,D Yeo,HE9,,Biodiversity Initiative NHM,,767,SF_MALAISE1_P1_Adult_767_A08_1721589_Unknown
+BIOD00057,1721640,Elat18,,,Elateridae,Coleoptera,SLAM1,Adult,P1,Cerro Hoya,,Panama,NA,NA,4752,D Yeo,HE1,,Biodiversity Initiative NHM,,767,CH_SLAM1_P1_Adult_767_E11_1721640_Elateridae
+BIOD01584,1733575,MS2738,,,Unknown,Coleoptera,FIT1,Adult,PB,Poring,Sabah,Malaysia,NA,NA,17777,D Yeo,HE8,,Biodiversity Initiative NHM,,BIP29,BP_FIT1_PB_Adult_BIP29_D12_MS2738_Unknown_(reversed)
+BIOD00666,1723633,MS704,,,Phalacridae,Coleoptera,BEATING,Adult,PC,Poring,Sabah,Malaysia,NA,NA,16329,D Yeo,HE4,,Biodiversity Initiative NHM,,BIP08,BP_BEATING_PC_Adult_BIP08_C08_1723633_Phalacridae_(reversed)
+BIOD01588,1426914,Curc201,,,Curculionidae,Coleoptera,MALAISE2,Adult,P1,Santa Fe,,Panama,NA,NA,17509,D Yeo,HE8,,Biodiversity Initiative NHM,,755,SF_MALAISE2_P1_Adult_755_A04_1426914_Curculionidae
+BIOD00890,1426725,Chrys74,,,Chrysomelidae,Coleoptera,YPT,Adult,PNA,Santa Fe,,Panama,NA,NA,17312,D Yeo,HE5,,Biodiversity Initiative NHM,,753,SF_YPT_PNA_Adult_753_A07_1426725_Chrysomelidae_(reversed)
+QINL127,,MG112,,Galerucinae,Chrysomelidae,Coleoptera,,Adult,,,Qinling,China,NA,NA,33465,Nie et al,lib6,,Qinling Chrysomelidae,,,lib6_Contig57
+CCCP00283,,,,,,,canopy fogging,adult,,Cusuco National Park,,Honduras,15.5632244,-88.3046256,2140,Creedy T.J.,,Creedy T.J.,Cusuco Canopy Communities Project,,,P3_76
+BIOD02030,1732861,MS2023,,,Unknown,Coleoptera,FIT1,Adult,PA,Poring,Sabah,Malaysia,NA,NA,16285,D Yeo,HE10,,Biodiversity Initiative NHM,,BIP22,BP_FIT1_PA_Adult_BIP22_A06_MS2023_Unknown
+BIOD00724,1733422,MS2585,,,Unknown,Coleoptera,FIT2,Adult,PD,Poring,Sabah,Malaysia,NA,NA,15733,D Yeo,HE4,,Biodiversity Initiative NHM,,BIP27,BP_FIT2_PD_Adult_BIP27_H03_MS2585_Unknown_(reversed)
+BIOD00150,1723087,MS158,,,Dryophthoridae,Coleoptera,BEATING,Adult,PB,Poring,Sabah,Malaysia,NA,NA,16371,D Yeo,HE2,,Biodiversity Initiative NHM,,BIP02,BP_BEATING_PB_Adult_BIP02_F02_1723087_Dryophthoridae
+BIOD01136,1723090,MS161,,,Brentidae,Coleoptera,BEATING,Adult,PB,Poring,Sabah,Malaysia,NA,NA,16258,D Yeo,HE6,,Biodiversity Initiative NHM,,BIP02,BP_BEATING_PB_Adult_BIP02_F05_1723090_Brentidae_(reversed)
+BIOD01106,1426972,Mel2,,,Melandryidae,Coleoptera,SLAM2,Adult,P1,Santa Fe,,Panama,NA,NA,19716,D Yeo,HE6,,Biodiversity Initiative NHM,,755,SF_SLAM2_P1_Adult_755_F02_1426972_Melandryidae
+BIOD01529,1721537,Ero11,,,Erotylidae,Coleoptera,MALAISE2,Adult,P1,Santa Fe,,Panama,NA,NA,4763,D Yeo,HE7,,Biodiversity Initiative NHM,,766,SF_MALAISE2_P1_Adult_766_E04_1721537_Erotylidae_(reversed)
+BIOD01814,1731951,MS1112,,,Leiodidae,Coleoptera,WINKLER,Adult,PC,Poring,Sabah,Malaysia,NA,NA,4734,D Yeo,HE9,,Biodiversity Initiative NHM,,BIP12,BP_WINKLER_PC_Adult_BIP12_E08_MS1112_Leiodidae
+BIOD00313,1426393,Elat3,,,Elateridae,Coleoptera,FIT1,Adult,P6,Santa Fe,,Panama,NA,NA,3254,D Yeo,HE2,,Biodiversity Initiative NHM,,749,SF_FIT1_P6_Adult_749_E12_1426393_Elateridae
+BIOD00416,1721593,Curc312,,,Curculionidae,Coleoptera,MALAISE1,Adult,P1,Santa Fe,,Panama,NA,NA,15941,D Yeo,H3,,Biodiversity Initiative NHM,,767,SF_MALAISE1_P1_Adult_767_A12_1721593_Curculionidae
+BIOD00621,1731994,MS1155,,,Staphylinidae,Coleoptera,WINKLER,Adult,PD,Poring,Sabah,Malaysia,NA,NA,17445,D Yeo,HE4,,Biodiversity Initiative NHM,,BIP13,BP_WINKLER_PD_Adult_BIP13_A03_MS1155_Staphylinidae_(reversed)
+BIOD01370,1733263,MS2426,,,Unknown,Coleoptera,FIT1,Adult,PC,Poring,Sabah,Malaysia,NA,NA,16317,D Yeo,HE7,,Biodiversity Initiative NHM,,BIP26,BP_FIT1_PC_Adult_BIP26_B12_MS2426_Unknown_(reversed)
+BIOD00870,1426796,Chrys102,,,Chrysomelidae,Coleoptera,MALAISE1,Adult,P1,Santa Fe,,Panama,NA,NA,19403,D Yeo,HE5,,Biodiversity Initiative NHM,,753,SF_MALAISE1_P1_Adult_753_G06_1426796_Chrysomelidae_(reversed)
+BIOD01196,1723040,MS111,,,Endomychidae,Coleoptera,MALAISE,Adult,PC,Poring,Sabah,Malaysia,NA,NA,15369,D Yeo,HE6,,Biodiversity Initiative NHM,,BIP02,BP_MALAISE_PC_Adult_BIP02_B03_1723040_Endomychidae
+BIOD00241,1723419,MS490,,,Staphylinidae,Coleoptera,BEATING,Adult,PA,Poring,Sabah,Malaysia,NA,NA,13275,D Yeo,HE2,,Biodiversity Initiative NHM,,BIP06,BP_BEATING_PA_Adult_BIP06_A10_1723419_Staphylinidae
+BIOD00779,1732212,MS1373,,,Staphylinidae,Coleoptera,PITFALL,Adult,PD,Poring,Sabah,Malaysia,NA,NA,14870,D Yeo,HE4,,Biodiversity Initiative NHM,,BIP15,BP_PITFALL_PD_Adult_BIP15_C05_MS1373_Staphylinidae
+BIOD00151,1732874,MS2036,,,Unknown,Coleoptera,FIT1,Adult,PA,Poring,Sabah,Malaysia,NA,NA,16353,D Yeo,HE2,,Biodiversity Initiative NHM,,BIP22,BP_FIT1_PA_Adult_BIP22_B07_MS2036_Unknown
+BIOD01056,1426375,Curc84,,,Curculionidae,Coleoptera,FIT1,Adult,P5,Santa Fe,,Panama,NA,NA,5901,D Yeo,HE5,,Biodiversity Initiative NHM,,749,SF_FIT1_P5_Adult_749_D06_1426375_Curculionidae
+BIOD01234,1723107,MS178,,,Lampyridae,Coleoptera,BEATING,Adult,PB,Poring,Sabah,Malaysia,NA,NA,13992,D Yeo,HE6,,Biodiversity Initiative NHM,,BIP02,BP_BEATING_PB_Adult_BIP02_G10_1723107_Lampyridae_(reversed)
+QINL077,,MG73,,Galerucinae,Chrysomelidae,Coleoptera,,Adult,,,Qinling,China,NA,NA,16491,Nie et al,lib7,,Qinling Chrysomelidae,,,lib7_Contig_38
+BIOD00217,1721122,Curc121,,Scolytinae,Curculionidae,Coleoptera,LL,Adult,P5,Cerro Hoya,,Panama,NA,NA,15149,D Yeo,HE2,,Biodiversity Initiative NHM,,762,CH_LL_P5_Adult_762_B09_1721122_Curculionidae_Scolytinae
+BIOD01503,1721701,Mord26,,,Mordellidae,Coleoptera,MALAISE2,Adult,P1,Cerro Hoya,,Panama,NA,NA,5862,D Yeo,HE7,,Biodiversity Initiative NHM,,768,CH_MALAISE2_P1_Adult_768_B12_1721701_Mordellidae_(reversed)
+BIOD00784,1425963,,,,Unknown,Coleoptera,LL,Larva,P8,Noragues,,French Guiana,NA,NA,14004,D Yeo,HE4,,Biodiversity Initiative NHM,,735,FG_LL_P8_Larva_735_B01_1425963_Unknown_(reversed)
+BIOD00819,1274156,,,,Anthribidae,Coleoptera,FIT1,Adult,P3,Noragues,,French Guiana,NA,NA,7073,D Yeo,HE4,,Biodiversity Initiative NHM,,775,FG_FIT1_P3_Adult_775_F06_1274156_Anthribidae_(reversed)
+BIOD01663,1721314,Mord63,,,Mordellidae,Coleoptera,SLAM2,Adult,P1,Santa Fe,,Panama,NA,NA,15610,D Yeo,HE8,,Biodiversity Initiative NHM,,764,SF_SLAM2_P1_Adult_764_B09_1721314_Mordellidae
+BIOD01607,1425768,,,,Curculionidae,Coleoptera,LL,Adult,P5,Noragues,,French Guiana,NA,NA,16551,D Yeo,HE8,,Biodiversity Initiative NHM,,732,FG_LL_P5_Adult_732_E12_1425768_Curculionidae
+BIOD02186,1427161,Scaph2,,,Scaphidiidae,Coleoptera,FIT2,Adult,P7,Cerro Hoya,,Panama,NA,NA,3874,D Yeo,HE10,,Biodiversity Initiative NHM,,757,CH_FIT2_P7_Adult_757_E11_1427161_Scaphidiidae
+BIOD00600,1274060,,,,Staphylinidae,Coleoptera,FIT1,Adult,P3,Noragues,,French Guiana,NA,NA,19166,D Yeo,HE4,,Biodiversity Initiative NHM,,774,FG_FIT1_P3_Adult_774_G08_1274060_Staphylinidae_(reversed)
+BIOD01937,1723546,MS617,,,Chrysomelidae,Coleoptera,BEATING,Adult,PC,Poring,Sabah,Malaysia,NA,NA,16054,D Yeo,HE9,,Biodiversity Initiative NHM,,BIP07,BP_BEATING_PC_Adult_BIP07_D05_1723546_Chrysomelidae
+CCCP00212,,,,,,,canopy fogging,adult,,Cusuco National Park,,Honduras,15.5632244,-88.3046256,15781,Creedy T.J.,,Creedy T.J.,Cusuco Canopy Communities Project,,,P3_05
+CCCP00049,,col127,,Diaperinae,Tenebrionidae,Coleoptera,canopy fogging,adult,,Cusuco National Park,,Honduras,15.487425,-88.234609,16120,Creedy T.J.,,Creedy T.J.,Cusuco Canopy Communities Project,,,P1_49
+BIOD02014,1732692,MS1853,,,Unknown,Coleoptera,FIT2,Adult,PB,Poring,Sabah,Malaysia,NA,NA,16734,D Yeo,HE10,,Biodiversity Initiative NHM,,BIP20,BP_FIT2_PB_Adult_BIP20_C05_MS1853_Unknown
+BIOD00413,1723727,MS798,,Uloma,Tenebrionidae,Coleoptera,BEATING,Adult,PD,Poring,Sabah,Malaysia,NA,NA,15966,D Yeo,H3,,Biodiversity Initiative NHM,,BIP09,BP_BEATING_PD_Adult_BIP09_C06_1723727_Tenebrionidae_Uloma_(reversed)
+BIOD00013,1426424,Staph74,,,Staphylinidae,Coleoptera,FIT2,Adult,P1,Santa Fe,,Panama,NA,NA,7074,D Yeo,HE1,,Biodiversity Initiative NHM,,749,SF_FIT2_P1_Adult_749_H07_1426424_Staphylinidae
+BIOD00234,1733321,MS2484,,,Unknown,Coleoptera,FIT1,Adult,PC,Poring,Sabah,Malaysia,NA,NA,14076,D Yeo,HE2,,Biodiversity Initiative NHM,,BIP26,BP_FIT1_PC_Adult_BIP26_G10_MS2484_Unknown
