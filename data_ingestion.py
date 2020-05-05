@@ -7,12 +7,13 @@ Modifying and uploading a genbank-file and metadata in a csv-file into a MySQL d
 
 import argparse
 import pandas as pd
+import sys
 
-##Import the module:
-import gb_csv_module as gcm
+# Import the module:
+import EDITED_gb_csv_module as gcm
 
 
-##Define arguments to be parsed
+# Define arguments to be parsed
 parser = argparse.ArgumentParser(description="Adding a genbank- and a csv-file to the database.")
 
 parser.add_argument('-gb', '--genbankfile', dest = 'input_genbank', required = True, help = "Name of genbank-file to ingest into the database.")
@@ -28,68 +29,82 @@ parser.add_argument('-k', '--key', dest = 'key', default = 'LOCUS', choices = ['
 args=parser.parse_args()
 
 
-##Create dict from genbank-file and dataframe from csv-file
+# args = parser.parse_args(["-gb", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/Testing/New/test_genbank_NEW.gb", "-csv", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/Testing/New/test_metadata_NEW_copy.csv"])
 
-gb_dict = gcm.gb_into_dictionary(args.input_genbank, args.key)
-csv_df = pd.read_csv(args.input_csv, quotechar = '"')
+"""
 
 
-##Execute the module functions
+
+"""
+
+# Create dict from genbank-file and dataframe from csv-file
+
+gb_dict = gcm.gb_into_dictionary(args.input_genbank, args.key)  #gb_dict = gcm.gb_into_dictionary(args.input_genbank, key="LOCUS")
+#print("L: gb_into_dictionary() done")
+
+csv_df = pd.read_csv(args.input_csv, quotechar = '"')               # PD.READ_CSV: Reads a comma-separated values (csv) file into DataFrame.
+#print("L: read_csv() done")                                                                  # QUOTECHAR = "" - The character used to denote the start and end of a quoted item. Quoted items can include the delimiter and it will be ignored.
+
+# Execute the module functions
 
 #Check if the header in the csv is correct
 gcm.correct_header(csv_df)
+#print("L: correct_header() done")
 
 #Check if the genbank and metadata file have matching entries
-gcm.matching_inputids(csv_df, gb_dict)
+new_csv_df, new_gb_dict = gcm.matching_inputids(csv_df, gb_dict)
+#print("L: matching_inputids() done (Well done Luke, ur a g)")
+"""
+Outputs new_csv_df and new_gb_dict
+Need to somehow find a way to make subsequent funtions take these new files as their inputs.
+"""
 
-#Check if the metadata file has unique entry ids only
-gcm.unique_csv_ids(csv_df)
-
-
-##Change the names of the IDs
+#Change the names of the IDs
 
 #Create dictionary with old input ids (key) and new database ids (value)
-dict_new_ids = gcm.new_ids(gb_dict, args.prefix, args.number, args.padding)
+dict_new_ids = gcm.new_ids(new_gb_dict, args.prefix, args.number, args.padding)    # was dict_new_ids = gcm.new_ids(gb_dict, args.prefix, args.number, args.padding)
+#print("L: new_ids() done")
 
 #Check if new ids are not already present in the database
 gcm.check_new_ids(dict_new_ids)
 
 #In dataframe insert column with new database ids
-df_new_ids = gcm.change_names_csv(csv_df, dict_new_ids)
-
+df_new_ids = gcm.change_names_csv(new_csv_df, dict_new_ids)
+#print("L: change_names_csv() done")
 
 ##Search for ncbi lineage with tax id, save custom lineages if not found on ncbi
-
-lineages = gcm.ncbi_lineage(df_new_ids, args.users_email, args.searchterm)
-
+lineages = gcm.get_ncbi_lineage(df_new_ids, args.users_email, args.searchterm)
+#print("L: ncbi_lineage() done")
 
 ##User decides if he wants to reject entries with custom lineage information or not (-r True/False flag)
 
-dict_accepted = gcm.rejecting_entries_new_gb(lineages, gb_dict, df_new_ids, args.reject_custom_lineage)
+dict_accepted = gcm.rejecting_entries_new_gb(lineages, new_gb_dict, df_new_ids, args.reject_custom_lineage)
+#print("L: rejecting_entries_new_gb() done")
 df_accepted = gcm.rejecting_entries_new_csv(lineages, df_new_ids, args.reject_custom_lineage)
-
+#print("L: rejecting_entries_new_csv() done")
 
 #Create a new dictionary with the added taxonomy information
 new_dict = gcm.insert_taxid(lineages, dict_accepted)
-
+#print("L: insert_taxid() done")
 #Replace old input ID with new database ID in genbank file
 gcm.change_ids_genbank(new_dict, dict_new_ids, args.key)
-
+#print("L: change_ids_genbank() done")
 #Change the features for CDS
 gcm.alter_features(new_dict)
-
+#print("L: alter_features() done")
 
 #Add columns with lineages and tax id to dataframe
 df_with_lineages = gcm.add_lineage_df(df_accepted, lineages)
-
+#print("L: df_with_lineages set to add_lineage_df(df_accepted, lineages)")
 
 ##Push the genbank data into the database
 
 gcm.load_gb_dict_into_db(new_dict)
-
+print("L: load_gb_dict_into_db() done")
 
 ##Push the metadata into the database
 
 gcm.load_df_into_db(df_with_lineages)
+print("L: load_df_into_db() done")
 
 

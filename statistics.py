@@ -12,6 +12,7 @@ import numpy as np
 
 def gb_length(genbank_dict):
     """Get the sequence lengths for each entry.
+    Returns a dict containing key value pairs - ID: seqlength
     """
 
     lengths = {}
@@ -22,32 +23,38 @@ def gb_length(genbank_dict):
         length = len(record.seq)
         lengths[name] = length
 
-    return(lengths)
+    return lengths
 
 
 def gb_topology(genbank_dict):
     """Get the topology (linear vs circular) for each entry.
+    Returns a dict containing key value pairs - ID: topology
     """
-
+    #genbank_dict=gb_dict
     topologies = {}
 
-    for gb_record in genbank_dict:
-        record = genbank_dict[gb_record]
-        topology = record.annotations["topology"]
-        topologies[record.name] = topology
+    for gb_name, gb_record in genbank_dict.items():
+        #gb_name, gb_record = list(genbank_dict.items())[0]
+        # print("NAME: " + str(gb_name) + "\nREC.NAME: " + str(gb_record.name))
+        if 'data_file_division' not in gb_record.annotations.keys():
+            sys.exit(str(gb_name) + " does not have a topology annotation, wtf?")
+        else:
+            topology = gb_record.annotations["data_file_division"]
+            topologies[gb_record.name] = topology
 
-    return(topologies)
+    return topologies
+
 
 
 def gb_features(genbank_dict):
     """Get the features count (gene, cds, trna, rrna) for each entry.
+    Returns a dict containing key value pairs - ID: [gene_count, cds_count, trna_count, rrna_count]
     """
 
     features = {}
 
-    for gb_record in genbank_dict:
+    for gb_record, record in genbank_dict.items():
 
-        record = genbank_dict[gb_record]
         gene_count = 0
         cds_count = 0
         trna_count = 0
@@ -56,17 +63,17 @@ def gb_features(genbank_dict):
         for (index, feature) in enumerate(record.features):
 
                 if feature.type == "gene":
-                    gene_count = gene_count + 1
+                    gene_count += 1
                 if feature.type == "CDS":
-                    cds_count = cds_count + 1
+                    cds_count += 1
                 if feature.type == "tRNA":
-                    trna_count = trna_count + 1
+                    trna_count += trna_count
                 if feature.type == "rRNA":
-                    rrna_count = rrna_count + 1
+                    rrna_count += rrna_count
 
         features[record.name] = [gene_count, cds_count, trna_count, rrna_count]
 
-    return(features)
+    return features
 
 
 ##Write sequence length, topology and feature count to a dataframe
@@ -75,22 +82,26 @@ def dict_to_df(lengths, topologies, features):
     """Combine sequence lengths, topologies and feature counts of entries into a pandas dataframe.
     """
 
+    # turns length dict into a dataframe with the keys (IDs) as the index and one column named 'length'
     df_l = pd.DataFrame.from_dict(lengths, orient = 'index')
     df_l.columns = ["length"]
 
-    df_t = pd.DataFrame.from_dict(topologies, orient = 'index')
+    # turns topology dict into a dataframe with the keys (IDs) as the index and one column named 'topology'
+    df_t = pd.DataFrame.from_dict(topologies, orient = 'index')      # turns topology dict into a dataframe with the keys (IDs) as the index and one column named 'topology'
     df_t.columns = ["topology"]
 
+    # turns features dict into a dataframe with the keys (IDs) as the index and 4 columns named "gene", "cds", "trna", "rrna"
     df_f = pd.DataFrame.from_dict(features, orient = 'index')
     df_f.columns = ["gene", "cds", "trna", "rrna"]
 
+    # merge all 3 dfs on the index and make 'name' index the first column.
     df = pd.merge(pd.merge(df_l, df_t, left_index = True, right_index = True), df_f, left_index = True, right_index = True)
     df.reset_index(level = 0 , inplace = True)
     df.rename(columns = {"index" : "name"}, inplace = True)
 
-    df.to_csv('features.csv', index = False, header = True)
+    df.to_csv('features.csv', index = False, header = True)    # 'header = True' unneccesary
 
-    return(df)
+    return df
 
 
 ##Completeness of sequences: Calculate percentages for the genbank featuers, seq length and topology
@@ -103,26 +114,26 @@ def calculations(df_features):
 
     #Sequence length
     l_s = df_features.length
-    l_a = l_s.values
-    count = (l_a >= 14000).sum()
-    smaller = (l_a < 14000).sum()
-    larger = (l_a > 17000).sum()
-    total = (count-larger) + smaller + larger
-    count_p = round((count / total) * 100, 2)
-    smaller_p = round((smaller / total) * 100, 2)
-    larger_p = round((larger / total) * 100, 2)
+    l_a = l_s.values                               # creates array of sequence lengths
+    count = (l_a >= 14000).sum()                   # no. of sequences lengths over 14,000
+    smaller = (l_a < 14000).sum()                  # no.of sequence lengths under 14,000
+    larger = (l_a > 17000).sum()                   # no. of sequence lengths over 17,000
+    total = count + smaller                        # ??? DON'T THE -LARGER AND +LARGER CANCEL OUT? Should just be count + smaller to get total...
+    count_p = round((count / total) * 100, 2)      # count_p = the percentage of total sequence lengths that are over 14,000 (to 2 d.p.)
+    smaller_p = round((smaller / total) * 100, 2)  # smaller_p = the percentage of total sequence lengths that are under 14,000 (to 2 d.p.)
+    larger_p = round((larger / total) * 100, 2)    # larger_p = the percentage of total sequence lengths that are over 17,000 (to 2 d.p.)
     f.write("Summary\n\nTotal number of sequences: " + str(total) + "\n")
     f.write("Sequence length 14,000 - 17,000 bp:\t" + str(count-larger) + "\t(" + str(count_p) + "%)\n")
     f.write("Sequence length smaller than 14,000 bp:\t" + str(smaller) + "\t(" + str(smaller_p) + "%)\n")
     f.write("Sequence length larger than 17,000 bp:\t" + str(larger) + "\t(" + str(larger_p) + "%)\n\n")
 
     #Topology (linear vxs circular)
-    t_s = df_features.topology
-    t_a = t_s.values
-    linear = (t_s == "linear").sum()
-    linear_p = round((linear / total) * 100, 2)
-    circular = (t_s == "circular").sum()
-    circular_p = round((circular / total) * 100, 2)
+    t_a = df_features.topology
+    t_s = t_a.values                                 # creates array of sequence topologies
+    linear = (t_s == "linear").sum()                 # linear = no. of linear topologies
+    linear_p = round((linear / total) * 100, 2)      # linear_p = percentage of total topologies that are linear
+    circular = (t_s == "circular").sum()             # circular = no. of circular topologies
+    circular_p = round((circular / total) * 100, 2)  # circular_p = percentage of total topologies that are circular
     f.write("Topology:\nEntries with linear genomes:\t" + str(linear) + "\t(" + str(linear_p) + "%)\n")
     f.write("Entries with circular genomes:\t" + str(circular) + "\t(" + str(circular_p) + "%)\n\n")
 
@@ -223,11 +234,12 @@ def calculations_ftr(df_features):
 
 ##For each gene (CDS) in the genbank entries analyze sequence length, extract lengths and output as dataframe
 
-def gene_length(genbank_dict):
+def contig_length(genbank_dict):
     """Create dictionary with a dictionary for each entry containing the sequence length of each CDS & look at variation.
     
     Output as pandas dataframe.
     """
+    # genbank_dict = gb_dict
 
     gene_lengths = {}
 
@@ -252,9 +264,9 @@ def gene_length(genbank_dict):
     df = pd.DataFrame.from_dict(gene_lengths, orient = 'index')
     df.reset_index(level = 0, inplace = True)
     df.rename(columns = {"index" : "entry"}, inplace = True)
-    df.to_csv('gene_lengths.csv', index = False, header = True)
+    df.to_csv('contig_lengths.csv', index = False, header = True)
 
-    return(df)
+    return df
 
 
 def length_variation(gene_lengths):
@@ -377,7 +389,7 @@ def analyze_order(order):
 
     f = open("summary.txt", "a")
     f.write("\n\nGene order\n\n")
-    f.write("Different gene order is given for: " + str(list(different_order.keys())))
+    f.write("Different gene order is given for: " + ', '.join(list(different_order.keys())) + '.')
     f.close()
 
     return(different_order)
@@ -388,12 +400,12 @@ def analyze_order(order):
 def family_distribution(metadata_df):
     """Extract families from metadata table.
     """
-
+    #metadata_df=csv_df
     families = metadata_df.family
     strip = families.str.strip()
     family_count = strip.value_counts()
 
-    family_count.to_csv('family_count.csv', index = True)
+    family_count.to_csv('family_count.csv', index_label='Family', header=['Count'])
 
     return()
 
@@ -401,10 +413,10 @@ def family_distribution(metadata_df):
 def country_distribution(metadata_df):
     """Extract countries from metadata table.
     """
-
+    # metadata_df = csv_df
     countries = metadata_df.country
     country_count = countries.value_counts(dropna = False)
-    country_count.to_csv('country_count.csv', index = True)
+    country_count.to_csv('country_count.csv', index_label='Country', header=['Count'])
 
     return()
 
@@ -418,8 +430,8 @@ def gene_sequence(genbank_dict):
     f = open("gene_sequences.fasta", 'w')
     fc = open("gene_sequences.complete_only.fasta", 'w')
 
-    for gb_record in genbank_dict:
-        record = genbank_dict[gb_record]
+    for gb_record, record in genbank_dict.items():
+
         name = record.name
 
         for (index, feature) in enumerate(record.features):
@@ -430,7 +442,7 @@ def gene_sequence(genbank_dict):
                     gene_name = feature.qualifiers["gene"]
                     cds_seq = feature.location.extract(record).seq
                     loc = feature.location
-                    if not ">" in str(loc) and not "<" in str(loc):
+                    if not ">" in str(loc) and not "<" in str(loc):              # if not (">" in str(loc) or "<" in str(loc)):
                         fc.write(">" + str(name) + "_" + str(gene_name) + "\n")
                         fc.write(str(cds_seq) + "\n")
 
@@ -441,3 +453,13 @@ def gene_sequence(genbank_dict):
     f.close()
 
     return()
+
+
+
+"""
+BUGS
+
+BUG1: gb_topology() - 'data_file_division' and 'topology' mixup - Line 39
+      Also affects Line 137-138 in summary.txt
+BUG2: 
+ """
