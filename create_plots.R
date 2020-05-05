@@ -1,14 +1,15 @@
 #!/usr/bin/Rscript
 
 library("ggplot2")
+library("readr")
 
 
 ##Gene lengths as violin plot
 
-len = read.csv("gene_lengths.csv", header = TRUE)
+len = read.csv("contig_lengths.csv", header = TRUE)
 len_df = as.data.frame(len)
 df = stack(len_df)
-pdf("gene_lengths.pdf")
+pdf("contig_lengths_violin.pdf")
 
 ggplot(df, aes(x = ind, y = values, fill = ind))+
   geom_violin(scale = "width") +
@@ -36,7 +37,7 @@ dev.off()
 ##Sequence lenght as histogram and features as bar plots
 
 ftr = read.csv("features.csv", header = TRUE)
-pdf("gene_lengths.pdf")
+pdf("contig_lengths_hist.pdf")
 
 ggplot(ftr, aes(ftr$length))+
   geom_histogram(binwidth = 130, col = "black", fill = "white") +
@@ -90,9 +91,9 @@ dev.off()
 
 ##Family level distribution as bar plot
 
-family = read.csv("family_count.csv", header = FALSE)
+family = read.csv("family_count.csv", header = TRUE)
 pdf("family_count.pdf")
-ggplot(family, aes(x = reorder(V1, V2), y = V2))+
+ggplot(family, aes(x = Family, y = Count))+
   geom_bar(stat = "identity", color = "#00bfc4", fill = "#00bfc4") +
   labs(x = "Family", y = "Count") +
   theme_minimal() +
@@ -102,13 +103,16 @@ dev.off()
 
 ##Country distribution as bar plot
 
-country = read.csv("country_count.csv", header = FALSE)
+country = read.csv("country_count.csv", header=TRUE)       
 pdf("country_count.pdf")
 
-ggplot(country, aes(x = reorder(V1, V2), y = V2))+
+ggplot(country, aes(x = Country, y = Count))+
   geom_bar(stat = "identity", color = "#00bfc4", fill = "#00bfc4") +
   labs(x = "Country", y = "Count") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 60, hjust = 1))
 
 dev.off()
+
+# BUGS
+# BUG1: trna and rrna plots for zero columns generated fucked histograms.
