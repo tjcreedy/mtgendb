@@ -3,8 +3,8 @@
 """Summary and statistics for genbank-files.
 """
 
-import EDITED_gb_csv_module as gcm
-import EDITED_statistics as st
+import gb_csv_module as gcm
+import statistics as st
 import pandas as pd
 import subprocess
 import argparse

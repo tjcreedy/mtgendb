@@ -11,7 +11,7 @@ import pandas as pd
 import sys
 
 # Import the module:
-import EDITED_gb_csv_module as gcm
+import gb_csv_module as gcm
 
 
 # Define arguments to be parsed
@@ -30,13 +30,9 @@ parser.add_argument('-k', '--key', dest = 'key', default = 'LOCUS', choices = ['
 args=parser.parse_args()
 
 
-# args = parser.parse_args(["-gb", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/Testing/New/test_genbank_NEW.gb", "-csv", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/Testing/New/test_metadata_NEW_copy.csv"])
+# args = parser.parse_args(["-gb", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/test_genbank.gb", "-csv", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/test_metadata.csv"])
+# FULL: args = parser.parse_args(["-gb", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/test_genbank.gb", "-csv", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/test_metadata.csv", "-r", "False", "-s", "Coleoptera", "-e", "luke.swaby@nhm.ac.uk", "-p", "TEST", "-n", "1", "-z", "3", "-k", "LOCUS"])
 
-"""
-
-
-
-"""
 
 # Create dict from genbank-file and dataframe from csv-file
 
@@ -63,18 +59,18 @@ Need to somehow find a way to make subsequent funtions take these new files as t
 #Change the names of the IDs
 
 #Create dictionary with old input ids (key) and new database ids (value)
-dict_new_ids = gcm.new_ids(new_gb_dict, args.prefix, args.number, args.padding)    # was dict_new_ids = gcm.new_ids(gb_dict, args.prefix, args.number, args.padding)
+dict_new_ids = gcm.new_ids(new_gb_dict, args.prefix, args.number, args.padding)    #dict_new_ids = gcm.new_ids(new_gb_dict, 'TEST', 1, 3)
 #print("L: new_ids() done")
 
 #Check if new ids are not already present in the database
-gcm.check_new_ids(dict_new_ids)
+# gcm.check_new_ids(dict_new_ids)
 
 #In dataframe insert column with new database ids
 df_new_ids = gcm.change_names_csv(new_csv_df, dict_new_ids)
 #print("L: change_names_csv() done")
 
 ##Search for ncbi lineage with tax id, save custom lineages if not found on ncbi
-lineages = gcm.get_ncbi_lineage(df_new_ids, args.users_email, args.searchterm)
+lineages = gcm.get_ncbi_lineage(df_new_ids, args.users_email, args.searchterm)   # lineages = gcm.get_ncbi_lineage(df_new_ids, 'luke.swaby@nhm.ac.uk', 'Coleoptera')
 #print("L: ncbi_lineage() done")
 
 ##User decides if he wants to reject entries with custom lineage information or not (-r True/False flag)

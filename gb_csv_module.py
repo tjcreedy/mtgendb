@@ -84,7 +84,7 @@ def correct_header(csv_dataframe):
         print("Incorrect header in CSV file.\n")
         sys.exit("Current header is: " + str(csv_header) + "\n\nIt must be as follows: ['name', 'specimen', 'morphospecies', 'species', 'subfamily', 'family', 'order', 'taxid', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']")
 
-    return()                                                                               # Does this not need an 'else' before it? Would that change anything?
+    return()
 
 
 def matching_inputids(csv_dataframe, gb_dictionary):
@@ -107,7 +107,7 @@ def matching_inputids(csv_dataframe, gb_dictionary):
 
     if len(shared) != len(unique):
         # If the IDS in the CSV and GenBank files are not identical...
-        x = input("Your CSV and GenBank files contain different entries.\nWould you rather ignore these and proceed with shared entries only ('P') or cancel the operation ('C')?\n").capitalize()
+        x = input("Your CSV and GenBank files contain different entries.\nWould you like to ignore these and proceed with shared entries only ('P') or cancel the operation ('C')?\n").capitalize()
 
         while not (x == 'C' or x == 'P'):
             x = input("Type 'P' to ignore discrepant entries and proceed, or type 'C' to cancel the operation.\n").capitalize()
@@ -331,9 +331,22 @@ def return_ncbi_taxid(searchterm, email_address):
 
     id_list = record["IdList"]            # id_list = list of ids (e.g. ’28011774’) obtained from the search.
 
+    no_hits = []
+    mult_hits = []
+
     if len(id_list) == 0:                                                                            # if the search found nothing...
-        print(" - No hits found for search term '" + str(searchterm) + "' in NCBI taxonomy.")
-        tax_id = ""                                                                                  # set tax_id to nothing
+        # Give user option to use unsuccessful searchterm as custom lineage info or cancel the operation.
+        x = input(" - No hits found for search term '" + str(searchterm) + "' in NCBI taxonomy.\n - Would you like to record this as custom lineage information and proceed ('P') or cancel the operation ('C')?\n > ").capitalize()
+
+        while not (x=='P' or x=='C'):
+            x = input("   Type 'P' to record '" + str(searchterm) + "' as custom lineage information or 'C' to cancel the operation.\n > ").capitalize()
+
+        if x=='C':
+            sys.exit("Operation cancelled.")
+
+        else:
+            tax_id = ""
+            print(" - '" + str(searchterm) + "' saved to custom lineage information.\n...")
 
     elif len(id_list) > 1:                                                                           # elif the search found more than one result...
         print(" - Multiple hits found for search term '" + str(searchterm) + "' in NCBI taxonomy.")
@@ -380,7 +393,7 @@ def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
     """
 
     taxonomy_csv = taxonomy_metadata(csv_dataframe) #Get all tax info from csv as dict
-    taxids_csv = taxid_metadata(csv_dataframe) #Get all tax ids from csv as dict
+    taxids_csv = taxid_metadata(csv_dataframe)      #Get all tax ids from csv as dict
 
     print("\nSearching NCBI for taxonomy...")
     combined_lineage = {}
@@ -388,17 +401,16 @@ def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
     lineage_custom = {}
     taxids = {}
 
-    for entry in taxids_csv:                                       # for each key (id) in the dictionary of taxids...
-        given_taxid = taxids_csv[entry]                                # set given_taxid = the value for that key (the taxid info) in taxids_csv
+    for entry, given_taxid in taxids_csv.items():                                       # for each key (id) in the dictionary of taxids...                               # set given_taxid = the value for that key (the taxid info) in taxids_csv
 
-        if given_taxid != "":                                          # if given_taxid is not empty (i.e. if it contains anything)...
+        if given_taxid != "":                                          # if taxid is provided in metadata csv...
             #Search given tax id on ncbi & add ncbi_lineage
-            ncbi_l = return_ncbi_lineage(given_taxid, email_address)   # ncbi_1 = lineage for given_taxid = "taxonomy; taxon"   # [need to understand this function better]
-            lineage_ncbi[entry] = ncbi_l                               # Add key-value pair to empty lineage_ncbi dict:    (entry; lineage )    i.e. (id: "taxonomy; taxon")
-            lineage_custom[entry] = ""                                 # Add key-value pair to empty lineage_custom dict:  (entry; "")          i.e. (id: "")
-            taxids[entry] = given_taxid                                # Add key-value pair to empty taxids dict:          (entry; given_taxid) i.e. (id: given_taxid)   ## HOW IS THIS ANY DIFFERENT FROM TAXIDS_CSV, AT THIS POINT?
+            ncbi_l = return_ncbi_lineage(given_taxid, email_address)       # ncbi_1 = lineage for given_taxid = "taxonomy; taxon"   # [need to understand this function better]
+            lineage_ncbi[entry] = ncbi_l                                   # Add key-value pair to empty lineage_ncbi dict:    (entry; lineage )    i.e. (id: "taxonomy; taxon")
+            lineage_custom[entry] = ""                                     # Add key-value pair to empty lineage_custom dict:  (entry; "")          i.e. (id: "")
+            taxids[entry] = given_taxid                                    # Add key-value pair to empty taxids dict:          (entry; given_taxid) i.e. (id: given_taxid)   ## HOW IS THIS ANY DIFFERENT FROM TAXIDS_CSV, AT THIS POINT?
 
-        else:                                                          # if given_taxid is empty... i.e. No taxid in metadata table...
+        else:                                                          # if no taxid in metadata csv...
 
             taxonomy = taxonomy_csv[entry]                                 # taxonomy = list of tax levels from taxonomy_csv dict (or an empty list [])
 
@@ -414,9 +426,9 @@ def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
                     tax_levels = [term_to_search]                                                    # Set tax_levels = User input
                     tax_id = return_ncbi_taxid(term_to_search, email_address)                        # Put user input and email through "return_ncbi_taxid" function to obtain tax_id number. ##If nothing is found the tax id is ""
 
-            else:                                                          # if tax info *is* provided in the csv...
+            else:                                                          # if taxonomy info *is* provided in list in the taxonomy_csv dict...
                 #Tax info is searched on ncbi
-                tax_levels = taxonomy_csv[entry]                           # Set tax_levels = taxonomy info for 'entry' (id) in taxonomy_csv dict. (list). i.e. [species, subfamily, ..., order]  # IS THIS NOT EXACTLY THE SAME AS 'TAXONOMY' VARIABLE?
+                tax_levels = taxonomy                                      # Set tax_levels = taxonomy info for 'entry' (id) in taxonomy_csv dict. (list). i.e. [species, subfamily, ..., order]  # IS THIS NOT EXACTLY THE SAME AS 'TAXONOMY' VARIABLE?
                 tax_id = ""                                                # Set tax_id = empty  #IS THIS LINE RELEVANT? SEE COMMENT ON LINE 418
 
             custom = ""
