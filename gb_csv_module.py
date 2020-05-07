@@ -107,10 +107,10 @@ def matching_inputids(csv_dataframe, gb_dictionary):
 
     if len(shared) != len(unique):
         # If the IDS in the CSV and GenBank files are not identical...
-        x = input("Your CSV and GenBank files contain different entries.\nWould you like to ignore these and proceed with shared entries only ('P') or cancel the operation ('C')?\n").capitalize()
+        x = input("Your CSV and GenBank files contain different entries.\nWould you like to ignore these and proceed with shared entries only ('P') or cancel the operation ('C')?\n>>").capitalize()
 
         while not (x == 'C' or x == 'P'):
-            x = input("Type 'P' to ignore discrepant entries and proceed, or type 'C' to cancel the operation.\n").capitalize()
+            x = input("Type 'P' to ignore discrepant entries and proceed, or type 'C' to cancel the operation.\n>>").capitalize()
 
         if x == 'C':
             sys.exit("Operation cancelled.")
@@ -331,18 +331,15 @@ def return_ncbi_taxid(searchterm, email_address):
 
     id_list = record["IdList"]            # id_list = list of ids (e.g. ’28011774’) obtained from the search.
 
-    no_hits = []
-    mult_hits = []
-
     if len(id_list) == 0:                                                                            # if the search found nothing...
         # Give user option to use unsuccessful searchterm as custom lineage info or cancel the operation.
-        x = input(" - No hits found for search term '" + str(searchterm) + "' in NCBI taxonomy.\n - Would you like to record this as custom lineage information and proceed ('P') or cancel the operation ('C')?\n > ").capitalize()
+        x = input(" - No hits found for search term '" + str(searchterm) + "' in NCBI taxonomy.\n   Would you like to record this as custom lineage information and proceed ('P') or cancel the operation ('C')?\n >> ").capitalize()
 
         while not (x=='P' or x=='C'):
-            x = input("   Type 'P' to record '" + str(searchterm) + "' as custom lineage information or 'C' to cancel the operation.\n > ").capitalize()
+            x = input("   Type 'P' to record '" + str(searchterm) + "' as custom lineage information or 'C' to cancel the operation.\n >> ").capitalize()
 
         if x=='C':
-            sys.exit("Operation cancelled.")
+            sys.exit("\nOperation cancelled.")
 
         else:
             tax_id = ""
@@ -431,31 +428,26 @@ def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
                 tax_levels = taxonomy                                      # Set tax_levels = taxonomy info for 'entry' (id) in taxonomy_csv dict. (list). i.e. [species, subfamily, ..., order]  # IS THIS NOT EXACTLY THE SAME AS 'TAXONOMY' VARIABLE?
                 tax_id = ""                                                # Set tax_id = empty  #IS THIS LINE RELEVANT? SEE COMMENT ON LINE 418
 
-            custom = ""
-            c_lineage = ""
+            c_lineage = []  # ADDED
             n = 0
 
-            while tax_id == "" and n < len(tax_levels):                  # while tax_id = "" and len(tax_levels) > 0... OR, IN OTHER WORDS, WHILE TAXONOMY IS NOT EMPTY (AS THIS IS THE ONLY CASE WHERE TAX_ID == "") AND n < len[SPECIES, SUBFAMILY, FAMILY, ORDER]... (max len = 4, so max n = 3)
-
-                c_lineage += custom                                      # add custom to c_lineage (final value for c_lineage will be "species; subfamily; ...; n" (str), where n=the last entry in tax_levels)
-                tax_name = tax_levels[n]                                 # tax_name = (n+1)th element of tax_levels list (or 'taxonomy'?)
-                tax_id = return_ncbi_taxid(tax_name, email_address)      # tax_id = id obtained from NCBI search for tax_name. ## AS THIS IS A WHILE LOOP, SURELY TAX_ID NEEDS TO BE USED WITHIN IT, OTHERWISE IT IS OVERWRITTEN EACH ITERATION ENDING WITH SEARCH FOR 'ORDER' (OR WHATEVER LAST ELEMENT OF TAX_LEVELS IS). ? ALSO, WHAT IS THE POINT OF THE tax_id = "" IN LINE 408 IF A NEW VALUE WILL BE SET IN THIS LOOP?
-                n += 1                                                   # add 1 to n
-                custom = tax_name + "; "                                 # custom = (n+1)th element of tax_levels list + ";". i.e. custom = "tax_name;"
-
+            while tax_id == "" and n < len(tax_levels):
+                tax_name = tax_levels[n]
+                tax_id = return_ncbi_taxid(tax_name, email_address)
+                n += 1
+                c_lineage.append(tax_name)
 
             lineage_ncbi[entry] = ""
             taxids[entry] = tax_id
 
-            if tax_id == "":                                                   # if tax_id is empty...
-                print("For entry '" + str(entry) + "' no tax id was found.")
-                seperator = ";"
-                lineage_custom[entry] = seperator.join(tax_levels)      # the value for the 'entry' key in lineage_custom dict = "tax_levels[0]; tax_levels[1]; ..."
+            if tax_id == "":                                                   # if tax_id is still empty...
+                print(" - For entry '" + str(entry) + "' no tax id was found.")
+                lineage_custom[entry] = "; ".join(tax_levels)      # the value for the 'entry' key in lineage_custom dict = "tax_levels[0]; tax_levels[1]; ..."
 
             else:                                                             # if tax_id is not empty...
                 ncbi_l = return_ncbi_lineage(tax_id, email_address)           # ncbi_1 = id obtained from NCBI search for tax_id.
                 lineage_ncbi[entry] = ncbi_l                                  # value for the 'entry' key in lineage_ncbi dict = id obtained from NCBI search.
-                lineage_custom[entry] = c_lineage                             # value for the 'entry' key in lineage_custom dict = c_lineage  #? ISN'T THIS EMPTY?
+                lineage_custom[entry] = "; ".join(c_lineage[0:-1])                             # value for the 'entry' key in lineage_custom dict = c_lineage  #? ISN'T THIS EMPTY?
 
         combined_lineage[entry] = [taxids[entry], lineage_ncbi[entry], lineage_custom[entry]]   # Add to combined_lineage dict key value pair: (entry: [[taxid info],
 #      # Need to go through function noting what has been added to each dictionary in each case.
@@ -674,8 +666,7 @@ def load_gb_dict_into_db(genbank_data):
     print("\nLoading genbank entries into the database...")
 
     server = BioSeqDatabase.open_database(driver = db_driver, user = db_user, passwd = db_passwd, host = db_host, db = db_name)   # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
-    db = server.new_database(namespace, description='Testing MMG')  # !! Should this be run once or every time the script is?
-    #db =  server[namespace]                    # db = server["mmg"]       .new_database(namespace, description='Testing MMG')
+    db =  server[namespace]                    # db = server["mmg"]       .new_database(namespace, description='Testing MMG')
     count = db.load(genbank_data.values())      # load dict values into database
     server.commit()                             # Commit to memory/save
 
