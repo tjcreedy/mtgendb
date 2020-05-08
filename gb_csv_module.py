@@ -320,7 +320,7 @@ def taxid_metadata(csv_dataframe):
     return csv_taxids
 
 
-def return_ncbi_taxid(searchterm, email_address):
+def return_ncbi_taxid(entry, searchterm, email_address):
     """For each entry get tax_id from NCBI taxonomy based on taxonomic information.
     """
 
@@ -343,7 +343,7 @@ def return_ncbi_taxid(searchterm, email_address):
 
         else:
             tax_id = ""
-            print(" - '" + str(searchterm) + "' saved to custom lineage information.\n...")
+            print(" - '" + str(searchterm) + "' saved to custom lineage information for '" + str(entry) + "'.\n...")
 
     elif len(id_list) > 1:                                                                           # elif the search found more than one result...
         print(" - Multiple hits found for search term '" + str(searchterm) + "' in NCBI taxonomy.")
@@ -392,7 +392,7 @@ def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
     taxonomy_csv = taxonomy_metadata(csv_dataframe) #Get all tax info from csv as dict
     taxids_csv = taxid_metadata(csv_dataframe)      #Get all tax ids from csv as dict
 
-    print("\nSearching NCBI for taxonomy...")
+    print("\nSearching NCBI for taxonomy...\n")
     combined_lineage = {}
     lineage_ncbi = {}
     lineage_custom = {}
@@ -414,14 +414,14 @@ def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
             if taxonomy == []:                                             # if no tax info is provided in the csv... (then reject or use user input!)
 
                 if isinstance(searchterm, str):                                # if the provided searchterm is a string...
-                    tax_id = return_ncbi_taxid(searchterm, email_address)      # tax_id = id number returned from 'return_ncbi_taxid' function given searchterm.
+                    tax_id = return_ncbi_taxid(entry, searchterm, email_address)      # tax_id = id number returned from 'return_ncbi_taxid' function given searchterm.
                     tax_levels = [searchterm]                                  # Set tax_levels = [specified searchterm]
 
                 else:                                                          # if the provided searchterm is not a string...
                     print("For entry '" + str(entry) + "' no information about the taxonomy is given in the csv-file.")
                     term_to_search = input("What term should be searched in NCBI taxonomy?\n")       # User input
                     tax_levels = [term_to_search]                                                    # Set tax_levels = User input
-                    tax_id = return_ncbi_taxid(term_to_search, email_address)                        # Put user input and email through "return_ncbi_taxid" function to obtain tax_id number. ##If nothing is found the tax id is ""
+                    tax_id = return_ncbi_taxid(entry, term_to_search, email_address)                        # Put user input and email through "return_ncbi_taxid" function to obtain tax_id number. ##If nothing is found the tax id is ""
 
             else:                                                          # if taxonomy info *is* provided in list in the taxonomy_csv dict...
                 #Tax info is searched on ncbi
@@ -432,8 +432,9 @@ def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
             n = 0
 
             while tax_id == "" and n < len(tax_levels):
+
                 tax_name = tax_levels[n]
-                tax_id = return_ncbi_taxid(tax_name, email_address)
+                tax_id = return_ncbi_taxid(entry, tax_name, email_address)
                 n += 1
                 c_lineage.append(tax_name)
 
