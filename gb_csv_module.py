@@ -119,14 +119,14 @@ def matching_inputids(csv_dataframe, gb_dictionary):
             # return new gb_dict with discrepant entries deleted
             for gb_record in gb_dictionary:
                 if gb_record in discrepant_ids:
-                    print(" - Skipping entry '" + str(gb_record) + "' as it appears in the GenBank file but not the CSV file.")
+                    print(f" - Skipping entry '{gb_record}' as it appears in the GenBank file but not the CSV file.")
 
             new_gb_dict = {key: gb_dictionary[key] for key in gb_dictionary if key not in discrepant_ids}
 
             # return new csv_dataframe with discrepant entries deleted
             for contigname in ids_csv:
                 if contigname in discrepant_ids:
-                    print(" - Skipping entry '" + str(contigname) + "' as it appears in the CSV file but not the GenBank file.")
+                    print(f" - Skipping entry '{contigname}' as it appears in the CSV file but not the GenBank file.")
 
             df_missing_ids = [b for b in discrepant_ids if b not in gb_dictionary]
             new_csv_df.set_index('name', inplace=True)
@@ -156,8 +156,7 @@ def new_ids(genbank_dict,prefix,startvalue,padding):
         sys.exit("A 0-padding by " + str(padding) + " digits is not sufficient for the ingestion of " + str(len(genbank_dict)) + " new entries.")
 
     if len(str(startvalue)) > int(padding):
-        sys.exit("The starting number " + str(startvalue) + " exceeds the digits for 0-padding (" + str(
-            padding) + " digits).")
+        sys.exit("The starting number " + str(startvalue) + " exceeds the digits for 0-padding (" + str(padding) + " digits).")
 
     for gb_record in genbank_dict:
         record = genbank_dict[gb_record]
@@ -333,20 +332,20 @@ def return_ncbi_taxid(entry, searchterm, email_address):
 
     if len(id_list) == 0:                                                                            # if the search found nothing...
         # Give user option to use unsuccessful searchterm as custom lineage info or cancel the operation.
-        x = input(" - No hits found for search term '" + str(searchterm) + "' in NCBI taxonomy.\n   Would you like to record this as custom lineage information and proceed ('P') or cancel the operation ('C')?\n >> ").capitalize()
+        x = input(f" - No hits found for search term '{searchterm}' in NCBI taxonomy.\n   Would you like to record this as custom lineage information and proceed ('P') or cancel the operation ('C')?\n >> ").capitalize()
 
         while not (x=='P' or x=='C'):
-            x = input("   Type 'P' to record '" + str(searchterm) + "' as custom lineage information or 'C' to cancel the operation.\n >> ").capitalize()
+            x = input(f"   Type 'P' to record '{searchterm}' as custom lineage information or 'C' to cancel the operation.\n >> ").capitalize()
 
         if x=='C':
             sys.exit("\nOperation cancelled.")
 
         else:
             tax_id = ""
-            print(" - '" + str(searchterm) + "' saved to custom lineage information for '" + str(entry) + "'.\n...")
+            print(f" - '{searchterm}' saved to custom lineage information for '{entry}'.\n...")
 
     elif len(id_list) > 1:                                                                           # elif the search found more than one result...
-        print(" - Multiple hits found for search term '" + str(searchterm) + "' in NCBI taxonomy.")
+        print(f" - Multiple hits found for search term '{searchterm}' in NCBI taxonomy.")
         tax_id = ""                                                                                  # set tax_id to nothing
 
     elif len(id_list) == 1:                                                                          # elif the search found just one result...
@@ -368,10 +367,10 @@ def return_ncbi_lineage(searchterm, email_address):
     handle.close()
 
     if len(record) == 0:                                                                     # if the record is empty...
-        print("No hits found for tax id '" + str(searchterm) + "'in NCBI taxonomy.")
+        print(f"No hits found for tax id '{searchterm}' in NCBI taxonomy.")
 
     elif len(record) > 1:
-        print("Multiple hits found for tax id '" + str(searchterm) + "' in NCBI taxonomy.")
+        print(f"Multiple hits found for tax id '{searchterm}' in NCBI taxonomy.")
 
     elif len(record) == 1:                                                                   # if the search found 1 hit...
         taxonomy = record[0]["Lineage"]                                                      # let taxonomy = value for key "Lineage" in first element (dict/list?) of the record for that hit. #?? Is record a dictionary/list of nested dictionaries?
@@ -418,7 +417,7 @@ def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
                     tax_levels = [searchterm]                                  # Set tax_levels = [specified searchterm]
 
                 else:                                                          # if the provided searchterm is not a string...
-                    print("For entry '" + str(entry) + "' no information about the taxonomy is given in the csv-file.")
+                    print(f"For entry '{entry}' no information about the taxonomy is given in the csv-file.")
                     term_to_search = input("What term should be searched in NCBI taxonomy?\n")       # User input
                     tax_levels = [term_to_search]                                                    # Set tax_levels = User input
                     tax_id = return_ncbi_taxid(entry, term_to_search, email_address)                        # Put user input and email through "return_ncbi_taxid" function to obtain tax_id number. ##If nothing is found the tax id is ""
@@ -442,7 +441,7 @@ def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
             taxids[entry] = tax_id
 
             if tax_id == "":                                                   # if tax_id is still empty...
-                print(" - For entry '" + str(entry) + "' no tax id was found.")
+                print(f" - For entry '{entry}' no tax id was found.")
                 lineage_custom[entry] = "; ".join(tax_levels)      # the value for the 'entry' key in lineage_custom dict = "tax_levels[0]; tax_levels[1]; ..."
 
             else:                                                             # if tax_id is not empty...
