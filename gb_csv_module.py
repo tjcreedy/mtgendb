@@ -107,10 +107,10 @@ def matching_inputids(csv_dataframe, gb_dictionary):
 
     if len(shared) != len(unique):
         # If the IDS in the CSV and GenBank files are not identical...
-        x = input("Your CSV and GenBank files contain different entries.\nWould you like to ignore these and proceed with shared entries only ('P') or cancel the operation ('C')?\n>>").capitalize()
+        x = input("Your CSV and GenBank files contain different entries.\nWould you like to ignore these and proceed with shared entries only ('P') or cancel the operation ('C')?\n?>").capitalize()
 
         while not (x == 'C' or x == 'P'):
-            x = input("Type 'P' to ignore discrepant entries and proceed, or type 'C' to cancel the operation.\n>>").capitalize()
+            x = input("Type 'P' to ignore discrepant entries and proceed, or type 'C' to cancel the operation.\n?>").capitalize()
 
         if x == 'C':
             sys.exit("Operation cancelled.")
@@ -136,7 +136,7 @@ def matching_inputids(csv_dataframe, gb_dictionary):
     return new_csv_df, new_gb_dict
 
 
-def new_ids(genbank_dict,prefix,startvalue,padding):
+def new_ids(genbank_dict, prefix, startvalue, padding):
     """Check if the new ids are looking fine given the input (prefix, startvalue, padding) by the user.
     """
 
@@ -158,8 +158,7 @@ def new_ids(genbank_dict,prefix,startvalue,padding):
     if len(str(startvalue)) > int(padding):
         sys.exit("The starting number " + str(startvalue) + " exceeds the digits for 0-padding (" + str(padding) + " digits).")
 
-    for gb_record in genbank_dict:
-        record = genbank_dict[gb_record]
+    for gb_record, record in genbank_dict.items():
         record_name = record.name
         pad = "{0:0" + str(padding) + "d}"
         padded = pad.format(int(startvalue))
@@ -167,7 +166,7 @@ def new_ids(genbank_dict,prefix,startvalue,padding):
         dict_new_ids[record_name] = new_name
         startvalue = int(startvalue) + 1
 
-    return (dict_new_ids)
+    return dict_new_ids
 
 """
 The condition in 4th if block has been changed as the previous condition - len(str(len(genbank_dict.keys()))) <= int(padding) - breaks down in 
@@ -205,8 +204,7 @@ def change_ids_genbank(genbank_dict, dict_new_ids, key):
     """Change the ids in the genbank file to the new database ids (LLLLNNNNN).
     """
 
-    for gb_record in genbank_dict:                                                                    # L: for each key in genbank_dict, let 'record' equal the value for that key.
-        record = genbank_dict[gb_record]
+    for gb_record, record in genbank_dict.items():                                                                    # L: for each key in genbank_dict, let 'record' equal the value for that key.
 
         #Change the name (record.name) (to key) of each entry to new database id (to value)
         record.name = dict_new_ids[record.name]                                                                     # record_name = record.name = dict_new_ids[record_name] = new_name
@@ -332,17 +330,17 @@ def return_ncbi_taxid(entry, searchterm, email_address):
 
     if len(id_list) == 0:                                                                            # if the search found nothing...
         # Give user option to use unsuccessful searchterm as custom lineage info or cancel the operation.
-        x = input(f" - No hits found for search term '{searchterm}' in NCBI taxonomy.\n   Would you like to record this as custom lineage information and proceed ('P') or cancel the operation ('C')?\n >> ").capitalize()
+        x = input(f" - No hits found for search term '{searchterm}' in NCBI taxonomy.\n   Would you like to record this as custom lineage information and proceed ('P') or cancel the operation ('C')?\n ?> ").capitalize()
 
-        while not (x=='P' or x=='C'):
-            x = input(f"   Type 'P' to record '{searchterm}' as custom lineage information or 'C' to cancel the operation.\n >> ").capitalize()
+        while not (x == 'P' or x == 'C'):
+            x = input(f"   Type 'P' to record '{searchterm}' as custom lineage information or 'C' to cancel the operation.\n ?> ").capitalize()
 
-        if x=='C':
+        if x == 'C':
             sys.exit("\nOperation cancelled.")
 
         else:
             tax_id = ""
-            print(f" - '{searchterm}' saved to custom lineage information for '{entry}'.\n...")
+            print(f" - '{searchterm}' saved to custom lineage information for {entry}.\n...")
 
     elif len(id_list) > 1:                                                                           # elif the search found more than one result...
         print(f" - Multiple hits found for search term '{searchterm}' in NCBI taxonomy.")
@@ -574,7 +572,7 @@ def loadnamevariants():
 
 def alter_features(genbank_dict):
     # Edit the features in the genbank entries.
-    
+
     unidentifiable_features = set()
     different_names = loadnamevariants()
     default_qualifier_names = {"ND1": ["ND1", "ND1 CDS", "NADH dehydrogenase subunit 1"],
