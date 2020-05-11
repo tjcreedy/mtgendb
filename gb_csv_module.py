@@ -107,10 +107,10 @@ def matching_inputids(csv_dataframe, gb_dictionary):
 
     if len(shared) != len(unique):
         # If the IDS in the CSV and GenBank files are not identical...
-        x = input("Your CSV and GenBank files contain different entries.\nWould you like to ignore these and proceed with shared entries only ('P') or cancel the operation ('C')?\n?>").capitalize()
+        x = input("Your CSV and GenBank files contain different entries.\nWould you like to ignore these and proceed with shared entries only ('P') or cancel the operation ('C')?\n?>>").capitalize()
 
         while not (x == 'C' or x == 'P'):
-            x = input("Type 'P' to ignore discrepant entries and proceed, or type 'C' to cancel the operation.\n?>").capitalize()
+            x = input("Type 'P' to ignore discrepant entries and proceed, or type 'C' to cancel the operation.\n?>>").capitalize()
 
         if x == 'C':
             sys.exit("Operation cancelled.")
@@ -282,7 +282,7 @@ def taxonomy_from_gb(genbank_dict):
 
             if feature.type == "source":        # .type - the specified type of the feature (ie. CDS, exon, repeat...)
 
-                if "db_xref" in feature.qualifiers:       # qualifiers - A dictionary of qualifiers on the feature (holds metadata about a feature if it is present in the entry). These are analogous to the qualifiers from a GenBank feature table. The keys of the dictionary are qualifier names, the values are the qualifier values.
+                if "db_xref" in feature.qualifiers:       # THIS SHOULD INSTEADC BE 'DBXREFS'???      qualifiers - A dictionary of qualifiers on the feature (holds metadata about a feature if it is present in the entry). These are analogous to the qualifiers from a GenBank feature table. The keys of the dictionary are qualifier names, the values are the qualifier values.
                     xref = feature.qualifiers["db_xref"]  # if key 'db_xref' is in dictionary 'feature.qualifiers', 'xref' = its value.
 
                     if len(xref) > 1:                                                            # if length of 'xref' > 1...
@@ -330,17 +330,17 @@ def return_ncbi_taxid(entry, searchterm, email_address):
 
     if len(id_list) == 0:                                                                            # if the search found nothing...
         # Give user option to use unsuccessful searchterm as custom lineage info or cancel the operation.
-        x = input(f" - No hits found for search term '{searchterm}' in NCBI taxonomy.\n   Would you like to record this as custom lineage information and proceed ('P') or cancel the operation ('C')?\n ?> ").capitalize()
+        x = input(f" - No hits found for search term '{searchterm}' in NCBI taxonomy.\n   Would you like to record this as custom lineage information for entry '{entry}' and proceed ('P') or cancel the operation ('C')?\n?>>").capitalize()
 
         while not (x == 'P' or x == 'C'):
-            x = input(f"   Type 'P' to record '{searchterm}' as custom lineage information or 'C' to cancel the operation.\n ?> ").capitalize()
+            x = input(f"   Type 'P' to record '{searchterm}' as custom lineage information or 'C' to cancel the operation.\n?>>").capitalize()
 
         if x == 'C':
             sys.exit("\nOperation cancelled.")
 
         else:
             tax_id = ""
-            print(f" - '{searchterm}' saved to custom lineage information for {entry}.\n...")
+            print(f" - '{searchterm}' saved to custom lineage information for '{entry}'.\n...")
 
     elif len(id_list) > 1:                                                                           # elif the search found more than one result...
         print(f" - Multiple hits found for search term '{searchterm}' in NCBI taxonomy.")
@@ -389,9 +389,9 @@ def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
     taxonomy_csv = taxonomy_metadata(csv_dataframe) #Get all tax info from csv as dict
     taxids_csv = taxid_metadata(csv_dataframe)      #Get all tax ids from csv as dict
 
-    print("\nSearching NCBI for taxonomy...\n")
+    print("\nSearching NCBI for taxonomy...")
     combined_lineage = {}
-    lineage_ncbi = {}
+    #lineage_ncbi = {}
     lineage_custom = {}
     taxids = {}
 
@@ -399,8 +399,8 @@ def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
 
         if given_taxid != "":                                          # if taxid is provided in metadata csv...
             #Search given tax id on ncbi & add ncbi_lineage
-            ncbi_l = return_ncbi_lineage(given_taxid, email_address)       # ncbi_1 = lineage for given_taxid = "taxonomy; taxon"   # [need to understand this function better]
-            lineage_ncbi[entry] = ncbi_l                                   # Add key-value pair to empty lineage_ncbi dict:    (entry; lineage )    i.e. (id: "taxonomy; taxon")
+            #ncbi_l = return_ncbi_lineage(given_taxid, email_address)       # ncbi_1 = lineage for given_taxid = "taxonomy; taxon"   # [need to understand this function better]
+            #lineage_ncbi[entry] = ncbi_l                                   # Add key-value pair to empty lineage_ncbi dict:    (entry; lineage )    i.e. (id: "taxonomy; taxon")
             lineage_custom[entry] = ""                                     # Add key-value pair to empty lineage_custom dict:  (entry; "")          i.e. (id: "")
             taxids[entry] = given_taxid                                    # Add key-value pair to empty taxids dict:          (entry; given_taxid) i.e. (id: given_taxid)   ## HOW IS THIS ANY DIFFERENT FROM TAXIDS_CSV, AT THIS POINT?
 
@@ -435,7 +435,7 @@ def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
                 n += 1
                 c_lineage.append(tax_name)
 
-            lineage_ncbi[entry] = ""
+            #lineage_ncbi[entry] = ""
             taxids[entry] = tax_id
 
             if tax_id == "":                                                   # if tax_id is still empty...
@@ -443,11 +443,11 @@ def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
                 lineage_custom[entry] = "; ".join(tax_levels)      # the value for the 'entry' key in lineage_custom dict = "tax_levels[0]; tax_levels[1]; ..."
 
             else:                                                             # if tax_id is not empty...
-                ncbi_l = return_ncbi_lineage(tax_id, email_address)           # ncbi_1 = id obtained from NCBI search for tax_id.
-                lineage_ncbi[entry] = ncbi_l                                  # value for the 'entry' key in lineage_ncbi dict = id obtained from NCBI search.
+                #ncbi_l = return_ncbi_lineage(tax_id, email_address)           # ncbi_1 = id obtained from NCBI search for tax_id.
+                #lineage_ncbi[entry] = ncbi_l                                  # value for the 'entry' key in lineage_ncbi dict = id obtained from NCBI search.
                 lineage_custom[entry] = "; ".join(c_lineage[0:-1])                             # value for the 'entry' key in lineage_custom dict = c_lineage  #? ISN'T THIS EMPTY?
 
-        combined_lineage[entry] = [taxids[entry], lineage_ncbi[entry], lineage_custom[entry]]   # Add to combined_lineage dict key value pair: (entry: [[taxid info],
+        combined_lineage[entry] = [taxids[entry], lineage_custom[entry]]   # Add to combined_lineage dict key value pair: (entry: [[taxid info],
 #      # Need to go through function noting what has been added to each dictionary in each case.
     return combined_lineage
 
@@ -464,7 +464,7 @@ def rejecting_entries_new_gb(ncbi_lineage, genbank_dict, csv_dataframe, rejectio
     for record, gb_id in gb_taxonomy.items():                      # for each key/value pair in gb_taxonomy dict...
         ncbi_info = ncbi_lineage[record]                           # ncbi_info = list value for 'record' key in ncbi_lineage dict
 
-        if ncbi_info[2] != "":                                     # if the third element of ncbi_info list is not empty...
+        if ncbi_info[1] != "":                                     # if the third element of ncbi_info list is not empty...
             #The entry has some custom lineage specification
             if rejection == "True":                                # then if user-specified rejection="True"...
                 #The user wants to reject the entry
@@ -481,15 +481,17 @@ def rejecting_entries_new_csv(ncbi_lineage, csv_df, rejection):
 
     Return df with accepted entries only.
     """
-    print("\nSearching for entries with custom lineage specifications...")
+    # ncbi_lineage, csv_df, rejection = [lineages, df_new_ids, args.reject_custom_lineage]
+
+    print("\nPrinting entries with custom lineage specifications to CSV file...")
 
     new_entries = []                                                    # new_entries = empty list
     csv_df.set_index("name", inplace=True)                              # Set the "name" column as the csv_df index. Modify the DataFrame in place (do not create a new object).
-    csv_df.rename(columns = {"order" : "taxon"}, inplace=True)          # Rename the "order" column to "taxon". Modify the DataFrame in place
+    # csv_df.rename(columns = {"order" : "taxon"}, inplace=True)          # Rename the "order" column to "taxon". Modify the DataFrame in place
 
     for record, ncbi_info in ncbi_lineage.items():                      # for each key/value pair in ncbi_lineage...
 
-        if ncbi_info[2] != "":                                             # if the third element of the value is NOT empty...
+        if ncbi_info[1] != "":                                             # if the third element of the value is NOT empty... i.e. if there is custom lineage info...
             #The entry has some custom lineage specifications
             print(" - The entry '" + str(record) + "' has custom lineage information provided.")
 
@@ -503,7 +505,7 @@ def rejecting_entries_new_csv(ncbi_lineage, csv_df, rejection):
 
     #Create dataframe with all the following columns:
     new_dataframe = pd.DataFrame(new_entries, columns = ['name', 'db_id', 'specimen', 'morphospecies', 'species', 'subfamily', 'family', 'order', 'taxid', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes'])
-    del new_dataframe['db_id']                                       # Why create the "db_id" column in the first place?
+    del new_dataframe['db_id']
     new_dataframe.to_csv('rejected_metadata.csv', index = False)     # Write new_dataframe to a comma-separated values (csv) file.
 
 
@@ -637,13 +639,22 @@ def alter_features(genbank_dict):
 def add_lineage_df(csv_dataframe, combined_lineage):
     """Add columns with tax_id, custom_ and ncbi_lineage to metadata dataframe.
     """
+    # csv_dataframe, combined_lineage = [df_accepted, lineages]
 
     df_add = pd.DataFrame.from_dict(combined_lineage, orient = 'index')           # write combined_lineage dict into dataframe called 'df_add' with keys as the index
-    df_add.columns = ["taxid", "ncbi_lineage", "custom_lineage"]                  # change column headers to "taxid", "ncbi_lineage", and "custom_lineage"
-    del csv_dataframe["taxid"]                                                    # delete "taxid" column/row from input csv_dataframe
+    df_add.columns = ["taxon_id", "custom_lineage"]                  # change column headers to "taxid", "ncbi_lineage", and "custom_lineage"
+
+    csv_dataframe.drop(['species', 'subfamily', 'family', 'order', 'taxid'], axis=1, inplace=True)                                                    # delete "taxid" column/row from input csv_dataframe
+
     df = pd.merge(df_add, csv_dataframe, left_index = True, right_index = True)   # merge 'df_add' with 'csv_dataframe', using the index from df_add (keys of combined_lineage dict) and csv_dataframe as the join key(s), calling the resulting dataframe 'df'.
     df.reset_index(level = 0, inplace = True)                                     # Remove the level 0 from the index, modifying the dataframe in place.
     df.rename(columns = {"index" : "name"}, inplace = True)                       # Rename "index" column to "name", modifying the dataframe in place.
+
+    df = df[['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod',
+         'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library',
+         'datasubmitter', 'projectname', 'accession', 'uin', 'notes']]
+
+    # df.to_csv('testing_csv_output.csv', index=False)
 
     return df
 
