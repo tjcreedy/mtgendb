@@ -61,7 +61,7 @@ dict_new_ids = gcm.new_ids(new_gb_dict, args.prefix, args.number, args.padding) 
 #print("L: new_ids() done")
 
 #Check if new ids are not already present in the database
-# gcm.check_new_ids(dict_new_ids)
+gcm.check_new_ids(dict_new_ids)
 
 #In dataframe insert column with new database ids
 df_new_ids = gcm.change_names_csv(new_csv_df, dict_new_ids)

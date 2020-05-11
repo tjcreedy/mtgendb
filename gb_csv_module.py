@@ -107,10 +107,10 @@ def matching_inputids(csv_dataframe, gb_dictionary):
 
     if len(shared) != len(unique):
         # If the IDS in the CSV and GenBank files are not identical...
-        x = input("Your CSV and GenBank files contain different entries.\nWould you like to ignore these and proceed with shared entries only ('P') or cancel the operation ('C')?\n?>>").capitalize()
+        x = input("Your CSV and GenBank files contain different entries.\nWould you like to ignore these and proceed with shared entries only ('P') or cancel the operation ('C')?\n ?>").capitalize()
 
         while not (x == 'C' or x == 'P'):
-            x = input("Type 'P' to ignore discrepant entries and proceed, or type 'C' to cancel the operation.\n?>>").capitalize()
+            x = input("Type 'P' to ignore discrepant entries and proceed, or type 'C' to cancel the operation.\n ?>").capitalize()
 
         if x == 'C':
             sys.exit("Operation cancelled.")
@@ -330,10 +330,10 @@ def return_ncbi_taxid(entry, searchterm, email_address):
 
     if len(id_list) == 0:                                                                            # if the search found nothing...
         # Give user option to use unsuccessful searchterm as custom lineage info or cancel the operation.
-        x = input(f" - No hits found for search term '{searchterm}' in NCBI taxonomy.\n   Would you like to record this as custom lineage information for entry '{entry}' and proceed ('P') or cancel the operation ('C')?\n?>>").capitalize()
+        x = input(f" - No hits found for search term '{searchterm}' in NCBI taxonomy.\n   Would you like to record this as custom lineage information for entry '{entry}' and proceed ('P') or cancel the operation ('C')?\n ?>").capitalize()
 
         while not (x == 'P' or x == 'C'):
-            x = input(f"   Type 'P' to record '{searchterm}' as custom lineage information or 'C' to cancel the operation.\n?>>").capitalize()
+            x = input(f"   Type 'P' to record '{searchterm}' as custom lineage information or 'C' to cancel the operation.\n ?>").capitalize()
 
         if x == 'C':
             sys.exit("\nOperation cancelled.")
