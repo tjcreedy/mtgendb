@@ -283,15 +283,14 @@ def taxonomy_from_gb(genbank_dict):
             if feature.type == "source":        # .type - the specified type of the feature (ie. CDS, exon, repeat...)
 
                 if "db_xref" in feature.qualifiers:       # THIS SHOULD INSTEADC BE 'DBXREFS'???      qualifiers - A dictionary of qualifiers on the feature (holds metadata about a feature if it is present in the entry). These are analogous to the qualifiers from a GenBank feature table. The keys of the dictionary are qualifier names, the values are the qualifier values.
-                    xref = feature.qualifiers["db_xref"]  # if key 'db_xref' is in dictionary 'feature.qualifiers', 'xref' = its value.
+                    xref = feature.qualifiers["db_xref"]  # if key 'db_xref' is in dictionary 'feature.qualifiers', 'xref' = its value. xref is a list of strings: ["taxon:nnnnnnn", "taxon2:mmmmmmm"...]
 
                     if len(xref) > 1:                                                            # if length of 'xref' > 1...
                         print("There are several ids in the db_xref 'source' information.")
                     else:
-                        tax_id = xref[0].split(":")[1]   # xref is a list.    # How are you splitting it by anything if length<=1?
-                    # tax_id= the second element of the list created when you split xref by ':'.
+                        tax_id = xref[0].split(":")[1]   # xref is a list of 1 string: ["taxon:nnnnnnn"], so tax_id= "nnnnnn"
 
-        gb_taxa[record.name] = tax_id                 # gb_taxa = {record.name: tax_id, ...} where tax_id = the second element of the list created when you split xref (the value of key 'db_xref' in dictionary 'feature.qualifiers') by ':'.
+        gb_taxa[record.name] = tax_id          # gb_taxa = {record.name: tax_id, ...}
 
     return gb_taxa
 
@@ -452,65 +451,60 @@ def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
     return combined_lineage
 
 
-def rejecting_entries_new_gb(ncbi_lineage, genbank_dict, csv_dataframe, rejection):
-    """Print rejected entries to genbank file.
+def rejecting_entries_new_csv_gb(ncbi_lineage, genbank_dict, csv_df, rejection):
+    """Print rejected entries to CSV and GenBank files.
 
-    Return genbank dict with accepted entries only.
-    """
-
-    rejected_gb = open("rejected_entries.gb", 'w')                 # So there has to be a file with this name in the current working directory? Or just creates one?
-    gb_taxonomy = taxonomy_from_gb(genbank_dict)                   # gb_taxonomy = {record.name: tax_id, ...} where tax_id = the second element of the list created when you split xref (the value of key 'db_xref' in dictionary 'feature.qualifiers') by ':'.
-
-    for record, gb_id in gb_taxonomy.items():                      # for each key/value pair in gb_taxonomy dict...
-        ncbi_info = ncbi_lineage[record]                           # ncbi_info = list value for 'record' key in ncbi_lineage dict
-
-        if ncbi_info[1] != "":                                     # if the third element of ncbi_info list is not empty...
-            #The entry has some custom lineage specification
-            if rejection == "True":                                # then if user-specified rejection="True"...
-                #The user wants to reject the entry
-                SeqIO.write(genbank_dict[record], rejected_gb, "genbank")     # write a GenBank file of the rejected records
-                del genbank_dict[record]                                      # delete the rejected record from genbank_dict
-
-    rejected_gb.close()                                                       # close rejected_gb
-
-    return genbank_dict                                                       # return truncated genbank_dict
-
-
-def rejecting_entries_new_csv(ncbi_lineage, csv_df, rejection):
-    """Print rejected entries to csv file.
-
-    Return df with accepted entries only.
+    Return df and gb_dict with accepted entries only.
     """
     # ncbi_lineage, csv_df, rejection = [lineages, df_new_ids, args.reject_custom_lineage]
 
-    print("\nPrinting entries with custom lineage specifications to CSV file...")
-
-    new_entries = []                                                    # new_entries = empty list
-    csv_df.set_index("name", inplace=True)                              # Set the "name" column as the csv_df index. Modify the DataFrame in place (do not create a new object).
+    rejected = []
+    new_entries = []
+    csv_df.set_index("name", inplace=True)
     # csv_df.rename(columns = {"order" : "taxon"}, inplace=True)          # Rename the "order" column to "taxon". Modify the DataFrame in place
 
-    for record, ncbi_info in ncbi_lineage.items():                      # for each key/value pair in ncbi_lineage...
+    for record, ncbi_info in ncbi_lineage.items():  # for each key/value pair in ncbi_lineage...
 
-        if ncbi_info[1] != "":                                             # if the third element of the value is NOT empty... i.e. if there is custom lineage info...
-            #The entry has some custom lineage specifications
-            print(" - The entry '" + str(record) + "' has custom lineage information provided.")
+        if ncbi_info[1] != "":
+            # If the entry has some custom lineage specifications...
 
-            if rejection == "True":                                           # then if user specifies rejection=True...
-                print("To keep entries with custom lineage information, run rejected entries again with flag '-r False'.")
-                entry = (csv_df.loc[record]).values.tolist()                     # Set entry = list of the entries of the "key" row of csv_df
-                entry.insert(0, record)                                          # insert key as first element of entry list
-                new_entries.append(entry)                                        # add entry list to new_entries list
+            if rejection == "True":  # then if user specifies rejection=True...
+                rejected.append(record)
+                entry = (csv_df.loc[record]).values.tolist()  # Set entry = list of the entries of the "key" row of csv_df
+                entry.insert(0, record)  # insert key as first element of entry list
+                new_entries.append(entry)  # add entry list to new_entries list
 
-                csv_df.drop([record], inplace = True)                            # Drop record (key) column/row (?) from csv_df.
+                csv_df.drop([record], inplace=True)  # Drop record (key) column/row (?) from csv_df.
 
-    #Create dataframe with all the following columns:
-    new_dataframe = pd.DataFrame(new_entries, columns = ['name', 'db_id', 'specimen', 'morphospecies', 'species', 'subfamily', 'family', 'order', 'taxid', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes'])
-    del new_dataframe['db_id']
-    new_dataframe.to_csv('rejected_metadata.csv', index = False)     # Write new_dataframe to a comma-separated values (csv) file.
+    if len(rejected):
+        # Create new DataFrame of rejected entries and drop them from returned DataFrame
+        print("\nPrinting rejected entries to CSV file...")
 
+        new_dataframe = pd.DataFrame(new_entries, columns=['name', 'db_id', 'specimen', 'morphospecies', 'species', 'subfamily', 'family', 'order', 'taxid', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes'])
+        del new_dataframe['db_id']
+        new_dataframe.to_csv('rejected_metadata.csv', index=False)  # Write new_dataframe to a comma-separated values (csv) file.
 
-    return csv_df
+        for x in rejected:
+            print(f" - Entry '{str(x)}' added to CSV file.")
 
+        # Create GenBank file of rejected entries and drop them from returned genbank_dict
+        print("\nPrinting rejected entries to GenBank file...")
+
+        for x in rejected:
+            rejected_gb = open("rejected_entries.gb", 'w')
+            SeqIO.write(genbank_dict[x], rejected_gb, "genbank")
+            rejected_gb.close()
+
+            print(f" - Entry '{str(x)}' added to GenBank file.")
+
+            del genbank_dict[x]
+
+        print("\nTo keep entries with custom lineage information, run rejected entries again with flag '-r False'.")
+
+    else:
+        print("No entries rejected. To reject entries with custom lineage information, re-run script with flag '-r True'.")
+
+    return genbank_dict, csv_df
 
 def insert_taxid(ncbi_lineage, genbank_dict):
     """Insert tax id into gb data (returned from "ncbi_taxid").
@@ -519,14 +513,14 @@ def insert_taxid(ncbi_lineage, genbank_dict):
     gb_taxonomy = taxonomy_from_gb(genbank_dict)             # gb_taxonomy = {record_1.name: tax_id, ...}
 
     for record, tax_id in gb_taxonomy.items():
-        genbank_record = genbank_dict[record]                # let genbank_record = the value for the "record" key in user-supplied genbank_dict.
-        ncbi_info = ncbi_lineage[record]                     # let ncbi_info = the value for the "record" key in user-supplied ncbi_lineage dict. (the ncbi lineage info for record.)
-        ncbi_id = ncbi_info[0]                               # let ncbi_id = the first element of ncbi_info.
+        genbank_record = genbank_dict[record]                # let genbank_record = the gb info for record.
+        ncbi_info = ncbi_lineage[record]                     # let ncbi_info = ncbi lineage info for that record. (the ncbi lineage info for record.)
+        ncbi_id = ncbi_info[0]                               # let ncbi_id = the first element of ncbi_info (the taxid).
         # -> If there is a taxid in gb - replace it, otherwise create new field for taxid from ncbi or delete if no tax_id given
 
-        if tax_id == "":                                                       # if tax_id not given in gb_taxonomy...
-            #No, gb id given -> NCBI taxid will be inserted if there is one
-            if ncbi_id != "":	                                                   # then if ncbi_id (first_element_in_ncbi_linage_info) is NOT empty...
+        if tax_id == "":
+            #If no tax_id given in gb file -> NCBI taxid will be inserted if there is one
+            if ncbi_id != "":	           # then if tax_id is given in ncbi_lineage dict...
                 field_given = 0                                                        # Set field_given = 0
 
                 for (index, feature) in enumerate(genbank_record.features):            # for all the features of the record...

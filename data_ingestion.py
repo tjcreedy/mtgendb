@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description="Adding a genbank- and a csv-file t
 parser.add_argument('-gb', '--genbankfile', dest = 'input_genbank', required = True, help = "Name of genbank-file to ingest into the database.")
 parser.add_argument('-csv', '--csvfile', dest = 'input_csv', required = True, help = "Name of genbank-file to ingest into the databse.")
 parser.add_argument('-r', '--reject', dest = 'reject_custom_lineage', default = 'True', choices = ['True', 'False'], help = "Set to 'false' if entries with custom lineage information should not be rejected.")
-parser.add_argument('-s', '--searchterm', dest = 'searchterm', help = "Provide a searchterm for the search for tax ids on NCBI.")
+parser.add_argument('-s', '--searchterm', dest = 'searchterm', help = "Provide a taxonomic searchterm to search for tax ids on NCBI for any entries without taxonomic data (e.g. Coleoptera).")
 parser.add_argument('-e', '--email', dest = 'users_email', required = True, help = "Enter your email address in order to access NCBI.")
 parser.add_argument('-p', '--prefix', dest = 'prefix', required = True, help = "The prefix for the database id names.")
 parser.add_argument('-n', '--number', dest = 'number', required = True, help = "The start number for the database id names")
@@ -61,7 +61,7 @@ dict_new_ids = gcm.new_ids(new_gb_dict, args.prefix, args.number, args.padding) 
 #print("L: new_ids() done")
 
 #Check if new ids are not already present in the database
-gcm.check_new_ids(dict_new_ids)
+#gcm.check_new_ids(dict_new_ids)
 
 #In dataframe insert column with new database ids
 df_new_ids = gcm.change_names_csv(new_csv_df, dict_new_ids)
@@ -73,10 +73,8 @@ lineages = gcm.get_ncbi_lineage(df_new_ids, args.users_email, args.searchterm)  
 
 ##User decides if he wants to reject entries with custom lineage information or not (-r True/False flag)
 
-dict_accepted = gcm.rejecting_entries_new_gb(lineages, new_gb_dict, df_new_ids, args.reject_custom_lineage)
+dict_accepted, df_accepted = gcm.rejecting_entries_new_csv_gb(lineages, new_gb_dict, df_new_ids, args.reject_custom_lineage)
 #print("L: rejecting_entries_new_gb() done")
-df_accepted = gcm.rejecting_entries_new_csv(lineages, df_new_ids, args.reject_custom_lineage)
-#print("L: rejecting_entries_new_csv() done")
 
 #Create a new dictionary with the added taxonomy information
 new_dict = gcm.insert_taxid(lineages, dict_accepted)
