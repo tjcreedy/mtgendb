@@ -73,7 +73,7 @@ lineages = gcm.get_ncbi_lineage(df_new_ids, args.users_email, args.searchterm)  
 
 ##User decides if he wants to reject entries with custom lineage information or not (-r True/False flag)
 
-dict_accepted, df_accepted = gcm.rejecting_entries_new_csv_gb(lineages, new_gb_dict, df_new_ids, args.reject_custom_lineage)
+dict_accepted, df_accepted = gcm.rejecting_entries(lineages, new_gb_dict, df_new_ids, args.reject_custom_lineage)
 #print("L: rejecting_entries_new_gb() done")
 
 #Create a new dictionary with the added taxonomy information

@@ -451,7 +451,7 @@ def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
     return combined_lineage
 
 
-def rejecting_entries_new_csv_gb(ncbi_lineage, genbank_dict, csv_df, rejection):
+def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
     """Print rejected entries to CSV and GenBank files.
 
     Return df and gb_dict with accepted entries only.
@@ -465,16 +465,14 @@ def rejecting_entries_new_csv_gb(ncbi_lineage, genbank_dict, csv_df, rejection):
 
     for record, ncbi_info in ncbi_lineage.items():  # for each key/value pair in ncbi_lineage...
 
-        if ncbi_info[1] != "":
-            # If the entry has some custom lineage specifications...
+        if ncbi_info[1] != "" and rejection == "True":
+            # If the entry has some custom lineage specifications and user wants to reject it...
+            rejected.append(record)
+            entry = (csv_df.loc[record]).values.tolist()  # Set entry = list of the entries of the "key" row of csv_df
+            entry.insert(0, record)  # insert key as first element of entry list
+            new_entries.append(entry)  # add entry list to new_entries list
 
-            if rejection == "True":  # then if user specifies rejection=True...
-                rejected.append(record)
-                entry = (csv_df.loc[record]).values.tolist()  # Set entry = list of the entries of the "key" row of csv_df
-                entry.insert(0, record)  # insert key as first element of entry list
-                new_entries.append(entry)  # add entry list to new_entries list
-
-                csv_df.drop([record], inplace=True)  # Drop record (key) column/row (?) from csv_df.
+            csv_df.drop([record], inplace=True)  # Drop record (key) column/row (?) from csv_df.
 
     if len(rejected):
         # Create new DataFrame of rejected entries and drop them from returned DataFrame
@@ -509,6 +507,7 @@ def rejecting_entries_new_csv_gb(ncbi_lineage, genbank_dict, csv_df, rejection):
 def insert_taxid(ncbi_lineage, genbank_dict):
     """Insert tax id into gb data (returned from "ncbi_taxid").
     """
+    # ncbi_lineage, genbank_dict = [lineages, dict_accepted]
 
     gb_taxonomy = taxonomy_from_gb(genbank_dict)             # gb_taxonomy = {record_1.name: tax_id, ...}
 
@@ -519,32 +518,35 @@ def insert_taxid(ncbi_lineage, genbank_dict):
         # -> If there is a taxid in gb - replace it, otherwise create new field for taxid from ncbi or delete if no tax_id given
 
         if tax_id == "":
-            #If no tax_id given in gb file -> NCBI taxid will be inserted if there is one
+            #If no tax_id is given in gb file but is in ncbi_lineage, NCBI taxid will be inserted
             if ncbi_id != "":	           # then if tax_id is given in ncbi_lineage dict...
-                field_given = 0                                                        # Set field_given = 0
+                field_given = 0
 
                 for (index, feature) in enumerate(genbank_record.features):            # for all the features of the record...
 
                     if feature.type == "source":                                           # if the feature type = "source"...
+                        #if there is already a source field, add db_xref to qualifiers
                         feature.qualifiers['db_xref'] = ['taxon:' + ncbi_id]                   # Set the 'db_xref' qualifier of this feature to 'taxon: first_element_in_ncbi_linage_info'
                         field_given = 1                                                        # Set field_given = 1
                                                                                                # OTHERWISE DO NOTHING???
-                if field_given == 0:                                                   # if field_given = 0... (i.e. the feature type is NOT "source"?)... COULDN'T THIS JUST BE AN 'ELSE' FOLLOWING THE PREVIOUS 'IF'?
-                    len_record = len(genbank_record.seq)                                   # then let len_record = length of record's sequence length
+                if field_given == 0:
+                    #if there is no "source" field, add one and add db_xref to qualifiers
+                    len_record = len(genbank_record.seq)                                   # then let len_record = record's sequence length
                     feature_location = FeatureLocation(0, len_record)                      # let feature_location = the region of sequence from 0-END OF SEQ?
                     new_feature = SeqFeature(feature_location, type = 'source')            # let new_feature = make seq
                     new_feature.qualifiers['db_xref'] = ['taxon:' + ncbi_id]               #???? WHOLE BLOCK STRANGE
                     genbank_record.features.append(new_feature)
-                #if there is already a source field or not... add source or only db_xref
 
         else:                                                                  # if tax_id is in gb_taxonomy...
-            #There is a taxid in the genbank file
+            #if there is a taxid in the genbank file
             for (index, feature) in enumerate(genbank_record.features):            # for the features of genbank_record...
 
                 if feature.type == "source":                                           # if the feature type is 'source'...
                     if ncbi_id != "":                                                      # then if ncbi_id is not empty...
-                        feature.qualifiers["db_xref"] = ['taxon:' + ncbi_id]               # Set the 'db_xref' qualifier of this feature to 'taxon: first_element_in_ncbi_linage_info'
+                        #replace the gb taxid with the ncbi taxid if there is one
+                        feature.qualifiers["db_xref"] = ['taxon:' + ncbi_id]               # repla the 'db_xref' qualifier of this feature to 'taxon: first_element_in_ncbi_linage_info'
                     else:                                                              # if the feature type is not 'source'...
+                        #otherwise delete the db_xref qualifier
                         del feature.qualifiers["db_xref"]                                  # delete the 'db_xref qualifier
 
     return genbank_dict
