@@ -208,7 +208,6 @@ def change_ids_genbank(genbank_dict, dict_new_ids, key):
 
         #Change the name (record.name) (to key) of each entry to new database id (to value)
         record.name = dict_new_ids[record.name]                                                                     # record_name = record.name = dict_new_ids[record_name] = new_name
-        # L: changes the names of records in genbank_dict to their values in dict_new_ids. i.e. (genbank_dict){'1': 'Cunc_NC_001_Danum'} --> (dict_new_ids){'Cunc_NC_001_Danum' : 'NC_001'}. New genbank_dict after this line: {'1': 'NC_001'}
 
         #Change the accession (record.id) to the new database id including version number (.0)
         new_accession = record.name + ".0"
@@ -230,7 +229,7 @@ def change_names_csv(csv_dataframe, dict_new_ids):
     """
 
     dict_df = pd.DataFrame(list(dict_new_ids.items()), columns = ["name", "db_id"])  # list(dict_new_ids.items()) creates a list of tuples of the dict pairs - (key, value)
-    #creates a 2-column dataframe with the "name" column featuring all the keys of dict_new_ids (the old ids) and the "db_id" column featuring their values (the new ids).
+    #creates a 2-column dataframe with the "name" column featuring all the the old ids and the "db_id" column featuring the new ids.
 
     #Merge csv_dataframe and dict_df -> append new database ids as a column
     new_csv_df = pd.merge(dict_df, csv_dataframe, on = 'name')                       # this merges both dataframes on the 'name' (old id) column, which in effect simply adds the "db_id" (new id) column in dict_df onto the csv_dataframe
@@ -456,7 +455,7 @@ def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
 
     Return df and gb_dict with accepted entries only.
     """
-    # ncbi_lineage, csv_df, rejection = [lineages, df_new_ids, args.reject_custom_lineage]
+    # ncbi_lineage, genbank_dict, csv_df, rejection = [lineages, new_gb_dict, df_new_ids, args.reject_custom_lineage]
 
     rejected = []
     new_entries = []
@@ -513,28 +512,28 @@ def insert_taxid(ncbi_lineage, genbank_dict):
 
     for record, tax_id in gb_taxonomy.items():
         genbank_record = genbank_dict[record]                # let genbank_record = the gb info for record.
-        ncbi_info = ncbi_lineage[record]                     # let ncbi_info = ncbi lineage info for that record. (the ncbi lineage info for record.)
-        ncbi_id = ncbi_info[0]                               # let ncbi_id = the first element of ncbi_info (the taxid).
+        ncbi_info = ncbi_lineage[record]                     # let ncbi_info = ncbi lineage info for that record.
+        ncbi_id = ncbi_info[0]                               # let ncbi_id = the first element of ncbi_info (the ncbi taxid).
         # -> If there is a taxid in gb - replace it, otherwise create new field for taxid from ncbi or delete if no tax_id given
 
         if tax_id == "":
             #If no tax_id is given in gb file but is in ncbi_lineage, NCBI taxid will be inserted
-            if ncbi_id != "":	           # then if tax_id is given in ncbi_lineage dict...
+            if ncbi_id != "":
                 field_given = 0
 
-                for (index, feature) in enumerate(genbank_record.features):            # for all the features of the record...
+                for (index, feature) in enumerate(genbank_record.features):                # for all the features of the record...
 
                     if feature.type == "source":                                           # if the feature type = "source"...
-                        #if there is already a source field, add db_xref to qualifiers
-                        feature.qualifiers['db_xref'] = ['taxon:' + ncbi_id]                   # Set the 'db_xref' qualifier of this feature to 'taxon: first_element_in_ncbi_linage_info'
-                        field_given = 1                                                        # Set field_given = 1
-                                                                                               # OTHERWISE DO NOTHING???
+                        #if there is already a "source" field, add db_xref to qualifiers
+                        feature.qualifiers['db_xref'] = ['taxon:' + ncbi_id]                      # Set the 'db_xref' qualifier of this feature to 'taxon: first_element_in_ncbi_linage_info'
+                        field_given = 1                                                           # Set field_given = 1
+
                 if field_given == 0:
                     #if there is no "source" field, add one and add db_xref to qualifiers
-                    len_record = len(genbank_record.seq)                                   # then let len_record = record's sequence length
-                    feature_location = FeatureLocation(0, len_record)                      # let feature_location = the region of sequence from 0-END OF SEQ?
-                    new_feature = SeqFeature(feature_location, type = 'source')            # let new_feature = make seq
-                    new_feature.qualifiers['db_xref'] = ['taxon:' + ncbi_id]               #???? WHOLE BLOCK STRANGE
+                    len_record = len(genbank_record.seq)                                      # then let len_record = record's sequence length
+                    feature_location = FeatureLocation(0, len_record)                         # let feature_location = the region of sequence from 0-END OF SEQ?
+                    new_feature = SeqFeature(feature_location, type = 'source')               # let new_feature = make seq
+                    new_feature.qualifiers['db_xref'] = ['taxon:' + ncbi_id]
                     genbank_record.features.append(new_feature)
 
         else:                                                                  # if tax_id is in gb_taxonomy...
@@ -603,6 +602,7 @@ def alter_features(genbank_dict):
                     del feature.qualifiers[f]                                            # delete them from features.qualifiers dict
 
                 nametags = ['gene', 'product', 'label', 'standard_name']
+
                 if any(t in feature.qualifiers.keys() for t in nametags):               # if there are any CDS qualifier keys left that are also in nametags...
                     name = 0
                     for t in nametags:                                                   # then for those t's that are in nametags and also qualifier keys
@@ -646,11 +646,7 @@ def add_lineage_df(csv_dataframe, combined_lineage):
     df.reset_index(level = 0, inplace = True)                                     # Remove the level 0 from the index, modifying the dataframe in place.
     df.rename(columns = {"index" : "name"}, inplace = True)                       # Rename "index" column to "name", modifying the dataframe in place.
 
-    df = df[['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod',
-         'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library',
-         'datasubmitter', 'projectname', 'accession', 'uin', 'notes']]
-
-    # df.to_csv('testing_csv_output.csv', index=False)
+    df = df[['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']]
 
     return df
 
@@ -672,7 +668,7 @@ def load_gb_dict_into_db(genbank_data):
 
     server = BioSeqDatabase.open_database(driver = db_driver, user = db_user, passwd = db_passwd, host = db_host, db = db_name)   # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
     db =  server[namespace]                    # db = server["mmg"]       .new_database(namespace, description='Testing MMG')
-    count = db.load(genbank_data.values())      # load dict values into database
+    count = db.load(genbank_data.values())      # load dict values (ONLY?) into database
     server.commit()                             # Commit to memory/save
 
     print("%i sequences loaded." % count)        # is count an integer?
