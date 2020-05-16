@@ -103,14 +103,14 @@ def matching_inputids(csv_dataframe, gb_dictionary):
 
     if len(csv_duplicates):
         # Check IDs are unique in the CSV metadata file.
-        sys.exit("There are multiple rows sharing the same name in your CSV file: " + ', '.join(csv_duplicates) + ". IDs must be unique.")
+        sys.exit("ERROR: There are multiple rows sharing the same name in your CSV file: " + ', '.join(csv_duplicates) + ". IDs must be unique.")
 
     if len(shared) != len(unique):
         # If the IDS in the CSV and GenBank files are not identical...
-        x = input("Your CSV and GenBank files contain different entries.\nWould you like to ignore these and proceed with shared entries only ('P') or cancel the operation ('C')?\n ?>").capitalize()
+        x = input("Your CSV and GenBank files contain different entries.\nWould you like to ignore these and proceed with shared entries only ('P') or cancel the operation ('C')?\n?>").capitalize()
 
         while not (x == 'C' or x == 'P'):
-            x = input("Type 'P' to ignore discrepant entries and proceed, or type 'C' to cancel the operation.\n ?>").capitalize()
+            x = input("Type 'P' to ignore discrepant entries and proceed, or type 'C' to cancel the operation.\n?>").capitalize()
 
         if x == 'C':
             sys.exit("Operation cancelled.")
@@ -143,20 +143,20 @@ def new_ids(genbank_dict, prefix, startvalue, padding):
     dict_new_ids = {}
 
     if len(prefix) > 4:
-        sys.exit("The prefix is too long (it should be no more than 4 characters).")
+        sys.exit("ERROR: The prefix (-p) is too long (it should be no more than 4 characters).")
 
     if prefix.isalpha() == False:
-        sys.exit("The prefix should only consist of letters.")
+        sys.exit("ERROR: The prefix (-p) should only consist of letters.")
 
     if str(startvalue).isdigit() == False:
-        sys.exit("The number should only consist of digits.")
+        sys.exit("ERROR: The number (-n) should only consist of digits.")
 
     if len(str(len(genbank_dict.keys()) + int(startvalue) - 1)) > int(padding):
         # Checks there's not too many sequences to assign serial numbers to given the padding. E.g. If we've set the padding to 3 but there are 4295 sequences in the genbank, we can't generate enough numbers to assign them all new names.             
-        sys.exit("A 0-padding by " + str(padding) + " digits is not sufficient for the ingestion of " + str(len(genbank_dict)) + " new entries.")
+        sys.exit("ERROR: A 0-padding by " + str(padding) + " digits is not sufficient for the ingestion of " + str(len(genbank_dict)) + " new entries.")
 
     if len(str(startvalue)) > int(padding):
-        sys.exit("The starting number " + str(startvalue) + " exceeds the digits for 0-padding (" + str(padding) + " digits).")
+        sys.exit("ERROR: The starting number " + str(startvalue) + " exceeds the digits for 0-padding (" + str(padding) + " digits).")
 
     for gb_record, record in genbank_dict.items():
         record_name = record.name
@@ -195,7 +195,7 @@ def check_new_ids(dict_new_ids):
             result = cur.fetchone()        # Fetch the next row of the query (i.e. selected) result set, returning a single tuple, or None when no more data is available
 
         if result is not None:             # If data is still available... (i.e. if there are any entries in the bioentry database with name = new_id...)
-            sys.exit("The new database id '" + str(new_id) + "' is already present in the database:\n" + str(result))
+            sys.exit(f"The new database id '{str(new_id)}' is already present in the database:\n{str(result)}")
 
     return()
 
@@ -331,7 +331,7 @@ def return_ncbi_taxid(entry, searchterm, email_address):
         x = input(f" - No hits found for search term '{searchterm}' in NCBI taxonomy.\n   Would you like to record this as custom lineage information for entry '{entry}' and proceed ('P') or cancel the operation ('C')?\n ?>").capitalize()
 
         while not (x == 'P' or x == 'C'):
-            x = input(f"   Type 'P' to record '{searchterm}' as custom lineage information or 'C' to cancel the operation.\n ?>").capitalize()
+            x = input(f"   Type 'P' to record '{searchterm}' as custom lineage information for entry '{entry}' or 'C' to cancel the operation.\n ?>").capitalize()
 
         if x == 'C':
             sys.exit("\nOperation cancelled.")
@@ -487,13 +487,13 @@ def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
         # Create GenBank file of rejected entries and drop them from returned genbank_dict
         print("\nPrinting rejected entries to GenBank file...")
 
+        rejected_gb_list = [genbank_dict[x] for x in rejected]
+        rejected_gb = open("rejected_entries.gb", 'w')
+        SeqIO.write(rejected_gb_list, rejected_gb, "genbank")
+        rejected_gb.close()
+
         for x in rejected:
-            rejected_gb = open("rejected_entries.gb", 'w')
-            SeqIO.write(genbank_dict[x], rejected_gb, "genbank")
-            rejected_gb.close()
-
             print(f" - Entry '{str(x)}' added to GenBank file.")
-
             del genbank_dict[x]
 
         print("\nTo keep entries with custom lineage information, run rejected entries again with flag '-r False'.")
@@ -671,7 +671,7 @@ def load_gb_dict_into_db(genbank_data):
     count = db.load(genbank_data.values())      # load dict values (ONLY?) into database
     server.commit()                             # Commit to memory/save
 
-    print("%i sequences loaded." % count)        # is count an integer?
+    print(" - %i sequences loaded." % count)        # is count an integer?
 
     return()
 
@@ -687,5 +687,76 @@ def load_df_into_db(csv_dataframe):
     engine = create_engine(mysql_engine, echo = False)       # Create an engine object based on URL: "mysql+mysqldb://root:mmgdatabase@localhost/mmg_test", NOT logging the statements as well as a repr() of their parameter lists to the default log handler.
     csv_dataframe.to_sql(name = 'metadata', if_exists = 'append', index = False, con = engine)    # write csv_dataframe to an sql database called 'metadata', inserting values to the existing table if it already exists, NOT writing DataFrame index as a column. CON??
 
+    print(" - %i entries loaded." % len(csv_dataframe.index))
+
     return()
 
+
+
+
+
+
+
+
+#---------------------
+
+
+def text_to_list(accessions):
+    """Converts text-file of IDs (one per line) into a list, exiting if duplicates are present.
+    """
+    #accessions = args.input_accessions
+
+    with open(accessions, "r") as acc:
+        #Create a comma-delimited list of accession numbers from text file (stripping any blank spaces/empty lines).
+        accs = acc.read()
+        striplist = lambda lis:[x.strip() for x in lis]
+        acc_list = list(filter(None, striplist(accs.split('\n'))))
+
+    #Check for duplicates
+    duplicates = set([idd for idd in acc_list if acc_list.count(idd) > 1])
+
+    if len(duplicates):
+        sys.exit("ERROR: There are duplicate IDs in your text-file: " + ', '.join(duplicates) + ". IDs must be unique.")
+
+    return acc_list
+
+
+def chunker(seq, size):
+
+    if type(seq) is set:
+        seq = list(seq)
+
+    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
+
+
+def return_gb_data(acc_list, email):
+    """Takes list of of IDs/accessions and returns dict of corresponding GenBank entries.    !!!!!!!!
+    """
+    #email = args.users_email
+
+    records = {}
+    Entrez.email = email
+
+    for accset in chunker(acc_list, 200):
+        with Entrez.efetch(db='nuccore', id=accset, rettype='gb') as handle:
+            for record in SeqIO.parse(handle, "gb"):
+                records[record.name] = record
+        time.sleep(0.1)
+
+    return records
+
+
+def extract_metadata(records):
+
+    #Extract metadata to separate dict
+    gb_metadata = {}
+    for id, record in records.items():
+        for feature in record.features:
+            if feature.type == "source":
+                taxid = str(feature.qualifiers['db_xref'])[8:-2]
+                gb_metadata[id] = taxid
+
+    #Write to DataFrame
+    gb_met_df = pd.DataFrame.from_dict(gb_metadata, orient='index')
+    gb_met_df.reset_index(inplace=True)
+    gb_met_df.columns = ["accession", "taxon_id"]
