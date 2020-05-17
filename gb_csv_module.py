@@ -236,6 +236,17 @@ def change_names_csv(csv_dataframe, dict_new_ids):
 
     return new_csv_df  # returns csv_dataframe with the new ids added on in a single new column called "db_id"
 
+def change_names_gb_csv(csv_dataframe, dict_new_ids):
+    """Create dictionary with new database ids and old input names to df.
+    """
+
+    dict_df = pd.DataFrame(list(dict_new_ids.items()), columns = ["accession", "db_id"])  # list(dict_new_ids.items()) creates a list of tuples of the dict pairs - (key, value)
+    #creates a 2-column dataframe with the "name" column featuring all the the old ids and the "db_id" column featuring the new ids.
+
+    #Merge csv_dataframe and dict_df -> append new database ids as a column
+    new_csv_df = pd.merge(dict_df, csv_dataframe, on = 'accession')                       # this merges both dataframes on the 'name' (old id) column, which in effect simply adds the "db_id" (new id) column in dict_df onto the csv_dataframe
+
+    return new_csv_df
 
 def taxonomy_metadata(csv_dataframe):
     """Function returning a dictionary with all the taxonomic information for each id from metadata ([] if no info given).
@@ -639,13 +650,10 @@ def add_lineage_df(csv_dataframe, combined_lineage):
 
     df_add = pd.DataFrame.from_dict(combined_lineage, orient = 'index')           # write combined_lineage dict into dataframe called 'df_add' with keys as the index
     df_add.columns = ["taxon_id", "custom_lineage"]                  # change column headers to "taxid", "ncbi_lineage", and "custom_lineage"
-
     csv_dataframe.drop(['species', 'subfamily', 'family', 'order', 'taxid'], axis=1, inplace=True)                                                    # delete "taxid" column/row from input csv_dataframe
-
     df = pd.merge(df_add, csv_dataframe, left_index = True, right_index = True)   # merge 'df_add' with 'csv_dataframe', using the index from df_add (keys of combined_lineage dict) and csv_dataframe as the join key(s), calling the resulting dataframe 'df'.
     df.reset_index(level = 0, inplace = True)                                     # Remove the level 0 from the index, modifying the dataframe in place.
     df.rename(columns = {"index" : "name"}, inplace = True)                       # Rename "index" column to "name", modifying the dataframe in place.
-
     df = df[['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']]
 
     return df
@@ -661,9 +669,7 @@ def load_gb_dict_into_db(genbank_data):
     db_name = "mmg_test"
     mysql_engine = "mysql+mysqldb://root:mmgdatabase@localhost/mmg_test"
     namespace = "mmg"
-
     """
-
     print("\nLoading genbank entries into the database...")
 
     server = BioSeqDatabase.open_database(driver = db_driver, user = db_user, passwd = db_passwd, host = db_host, db = db_name)   # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
@@ -706,8 +712,8 @@ def text_to_list(accessions):
     """
     #accessions = args.input_accessions
 
+    #Create a comma-delimited list of accession numbers from text file (stripping any blank spaces/empty lines).
     with open(accessions, "r") as acc:
-        #Create a comma-delimited list of accession numbers from text file (stripping any blank spaces/empty lines).
         accs = acc.read()
         striplist = lambda lis:[x.strip() for x in lis]
         acc_list = list(filter(None, striplist(accs.split('\n'))))
@@ -716,7 +722,14 @@ def text_to_list(accessions):
     duplicates = set([idd for idd in acc_list if acc_list.count(idd) > 1])
 
     if len(duplicates):
-        sys.exit("ERROR: There are duplicate IDs in your text-file: " + ', '.join(duplicates) + ". IDs must be unique.")
+        x = input("ERROR: There are duplicate IDs in your text-file: '" + "', '".join(duplicates) + "'. IDs must be unique.\nWould you like to skip these and proceed ('P') or cancel the operation ('C')?\n?>").capitalize()
+        while not (x == 'P' or x == 'C'):
+            x = input("Type 'P' to proceed with unique IDs only or 'C' to cancel the operation.\n?>").capitalize()
+        if x == 'C':
+            sys.exit("Operation cancelled.")
+        else:
+            print("Skipping entries: '" + "', '".join(duplicates) + "'.")
+            acc_list = [a for a in acc_list if a not in duplicates]
 
     return acc_list
 
@@ -730,7 +743,7 @@ def chunker(seq, size):
 
 
 def return_gb_data(acc_list, email):
-    """Takes list of of IDs/accessions and returns dict of corresponding GenBank entries.    !!!!!!!!
+    """Takes list of of IDs/accessions and returns dict of corresponding GenBank entries.
     """
     #email = args.users_email
 
@@ -747,7 +760,8 @@ def return_gb_data(acc_list, email):
 
 
 def extract_metadata(records):
-
+    """Extracts metadata from gb_dict and writes to DataFrame.
+    """
     #Extract metadata to separate dict
     gb_metadata = {}
     for id, record in records.items():
@@ -760,3 +774,6 @@ def extract_metadata(records):
     gb_met_df = pd.DataFrame.from_dict(gb_metadata, orient='index')
     gb_met_df.reset_index(inplace=True)
     gb_met_df.columns = ["accession", "taxon_id"]
+
+    return gb_met_df
+
