@@ -15,7 +15,7 @@ import gb_csv_module as gcm
 
 
 # Define arguments to be parsed
-parser = argparse.ArgumentParser(description="Adding a genbank- and a csv-file to the database.")
+parser = argparse.ArgumentParser(description="Adding a GenBank and a metadata CSV file to the database.")
 
 parser.add_argument('-gb', '--genbankfile', dest = 'input_genbank', required = True, help = "Name of genbank-file to ingest into the database.")
 parser.add_argument('-csv', '--csvfile', dest = 'input_csv', required = True, help = "Name of genbank-file to ingest into the databse.")
@@ -61,7 +61,7 @@ dict_new_ids = gcm.new_ids(new_gb_dict, args.prefix, args.number, args.padding) 
 #print("L: new_ids() done")
 
 #Check if new ids are not already present in the database
-gcm.check_new_ids(dict_new_ids)
+#gcm.check_new_ids(dict_new_ids)
 
 #In dataframe insert column with new database ids
 df_new_ids = gcm.change_names_csv(new_csv_df, dict_new_ids)
@@ -90,14 +90,17 @@ gcm.alter_features(new_dict)
 df_with_lineages = gcm.add_lineage_df(df_accepted, lineages)
 #print("L: df_with_lineages set to add_lineage_df(df_accepted, lineages)")
 
+#Reorder metadata df columns to load to db.
+gcm.reorder_df_cols(df_with_lineages)
+
 ##Push the genbank data into the database
 
 gcm.load_gb_dict_into_db(new_dict)
-print("L: load_gb_dict_into_db() done")
+#print("L: load_gb_dict_into_db() done")
 
 ##Push the metadata into the database
 
 gcm.load_df_into_db(df_with_lineages)
-print("L: load_df_into_db() done")
+#print("L: load_df_into_db() done")
 
 

@@ -14,6 +14,7 @@ from Bio.SeqFeature import SeqFeature, FeatureLocation
 
 ##Import modules for handeling the csv files:
 import pandas as pd
+import numpy as np
 
 ##Import modules for dealing with the mysql database:
 import MySQLdb as mdb
@@ -661,8 +662,7 @@ def reorder_df_cols(df):
 
     df = df[['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']]
 
-    return df
-
+    return()
 
 
 def load_gb_dict_into_db(genbank_data):
@@ -676,6 +676,8 @@ def load_gb_dict_into_db(genbank_data):
     mysql_engine = "mysql+mysqldb://root:mmgdatabase@localhost/mmg_test"
     namespace = "mmg"
     """
+    #genbank_data = records
+
     print("\nLoading genbank entries into the database...")
 
     server = BioSeqDatabase.open_database(driver = db_driver, user = db_user, passwd = db_passwd, host = db_host, db = db_name)   # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
@@ -693,6 +695,7 @@ def load_df_into_db(csv_dataframe):
 
     mysql_engine = "mysql+mysqldb://root:mmgdatabase@localhost/mmg_test"
     """
+    #csv_dataframe = gb_df_new_ids
 
     print("\nLoading metadata into the database...")
 
@@ -782,8 +785,11 @@ def extract_metadata(records):
     gb_met_df.reset_index(inplace=True)
     gb_met_df.columns = ["accession", "taxon_id"]
 
-    for label in ['name', 'morphospecies', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'uin', 'notes']:
+    for label in ['name', 'morphospecies', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'authors', 'library', 'datasubmitter', 'projectname', 'uin', 'notes']:
         gb_met_df[label] = ""
+
+    for header in ['latitude', 'longitude']:
+        gb_met_df[header] = np.nan
 
     return gb_met_df
 
