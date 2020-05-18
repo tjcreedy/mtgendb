@@ -654,9 +654,15 @@ def add_lineage_df(csv_dataframe, combined_lineage):
     df = pd.merge(df_add, csv_dataframe, left_index = True, right_index = True)   # merge 'df_add' with 'csv_dataframe', using the index from df_add (keys of combined_lineage dict) and csv_dataframe as the join key(s), calling the resulting dataframe 'df'.
     df.reset_index(level = 0, inplace = True)                                     # Remove the level 0 from the index, modifying the dataframe in place.
     df.rename(columns = {"index" : "name"}, inplace = True)                       # Rename "index" column to "name", modifying the dataframe in place.
+
+    return df
+
+def reorder_df_cols(df):
+
     df = df[['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']]
 
     return df
+
 
 
 def load_gb_dict_into_db(genbank_data):
@@ -762,6 +768,7 @@ def return_gb_data(acc_list, email):
 def extract_metadata(records):
     """Extracts metadata from gb_dict and writes to DataFrame.
     """
+
     #Extract metadata to separate dict
     gb_metadata = {}
     for id, record in records.items():
@@ -774,6 +781,9 @@ def extract_metadata(records):
     gb_met_df = pd.DataFrame.from_dict(gb_metadata, orient='index')
     gb_met_df.reset_index(inplace=True)
     gb_met_df.columns = ["accession", "taxon_id"]
+
+    for label in ['name', 'morphospecies', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'uin', 'notes']:
+        gb_met_df[label] = ""
 
     return gb_met_df
 
