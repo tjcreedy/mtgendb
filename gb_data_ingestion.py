@@ -21,7 +21,7 @@ parser.add_argument('-k', '--key', dest = 'key', default = 'LOCUS', choices = ['
 
 args = parser.parse_args()
 
-#LOCAL: args = parser.parse_args(["-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/subset.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "TEST", "-n", "1", "-z", "3", "-k", "LOCUS"])
+#LOCAL: args = parser.parse_args(["-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/gids.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "TEST", "-n", "1", "-z", "3", "-k", "LOCUS"])
 
 #SERVER: args = parser.parse_args(["-a", "/home/luke/Testing/subset.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "LSP", "-n", "1", "-z", "3", "-k", "LOCUS"])
 
@@ -29,8 +29,11 @@ args = parser.parse_args()
 #Convert text-file of accessions to a list.
 acc_list = gcm.text_to_list(args.input_accessions)
 
+#Check the provided accessions are formatted correctly.
+new_acc_list = gcm.check_acc_format(acc_list)
+
 #Take list of of IDs/accessions and return dict of corresponding GenBank entries.
-records = gcm.return_gb_data(acc_list, args.users_email)
+records = gcm.return_gb_data(new_acc_list, args.users_email)
 
 #Create dictionary with old input ids (key) and new database ids (value).
 dict_new_ids = gcm.new_ids(records, args.prefix, args.number, args.padding)
@@ -41,7 +44,7 @@ gb_met_df = gcm.extract_metadata(records)
 #In dataframe insert column with new database ids
 gb_df_new_ids = gcm.change_names_gb_csv(gb_met_df, dict_new_ids)
 
-gcm.reorder_df_cols(gb_df_new_ids)
+gb_df_new_ids = gcm.reorder_df_cols(gb_df_new_ids)
 
 gcm.change_ids_genbank(records, dict_new_ids, args.key)
 
