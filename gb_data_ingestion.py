@@ -33,24 +33,28 @@ acc_list = gcm.text_to_list(args.input_accessions)
 #Check the provided accessions are formatted correctly.
 new_acc_list = gcm.check_acc_format(acc_list)
 
-#Take list of of IDs/accessions and return dict of corresponding GenBank entries.
+#Take list of of IDs/accessions and return dict of corresponding GenBank records.
 records = gcm.return_gb_data(new_acc_list, args.users_email)
 
-#Create dictionary with old input ids (key) and new database ids (value).
+#Create dict with old input ids (keys) and new database ids (values).
 dict_new_ids = gcm.new_ids(records, args.prefix, args.number, args.padding)
 
-#Extract metadata from gb_dict and write to DataFrame.
+#Extract metadata from gb_records_dict and write to DataFrame.
 gb_met_df = gcm.extract_metadata(records)
 
 #In dataframe insert column with new database ids
 gb_df_new_ids = gcm.change_names_csv(gb_met_df, dict_new_ids)
 
+#Reorder dataframe columns for the database.
 gb_df_reordered = gcm.reorder_df_cols(gb_df_new_ids)
 
+#Replace old input ID with new database ID in genbank file
 gcm.change_ids_genbank(records, dict_new_ids, args.key)
 
+#Push the genbank data into the database
 gcm.load_gb_dict_into_db(records)
 
+#Push the metadata into the database
 gcm.load_df_into_db(gb_df_reordered)
 
 

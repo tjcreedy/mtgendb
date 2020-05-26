@@ -91,7 +91,7 @@ df_with_lineages = gcm.add_lineage_df(df_accepted, lineages)
 #print("L: df_with_lineages set to add_lineage_df(df_accepted, lineages)")
 
 #Reorder metadata df columns to load to db.
-gcm.reorder_df_cols(df_with_lineages)
+df_with_lineages = gcm.reorder_df_cols(df_with_lineages)
 
 ##Push the genbank data into the database
 
