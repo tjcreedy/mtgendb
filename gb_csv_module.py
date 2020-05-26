@@ -105,7 +105,7 @@ def check_acc_format(acc_list):
         if z:
             Accs.append(acc)
         else:
-            print(f"Accession '{acc}' dropped due to incorrect GenBank format.")
+            print(f"WARNING: Accession '{acc}' dropped due to incorrect GenBank format.")
 
     return Accs
 
@@ -276,17 +276,6 @@ def change_names_csv(csv_dataframe, dict_new_ids):
 
     return new_csv_df  # returns csv_dataframe with the new ids added on in a single new column called "db_id"
 
-def change_names_gb_csv(csv_dataframe, dict_new_ids):
-    """Create dictionary with new database ids and old input names to df.
-    """
-
-    dict_df = pd.DataFrame(list(dict_new_ids.items()), columns = ["accession", "db_id"])  # list(dict_new_ids.items()) creates a list of tuples of the dict pairs - (key, value)
-    #creates a 2-column dataframe with the "name" column featuring all the the old ids and the "db_id" column featuring the new ids.
-
-    #Merge csv_dataframe and dict_df -> append new database ids as a column
-    new_csv_df = pd.merge(dict_df, csv_dataframe, on = 'accession')                       # this merges both dataframes on the 'name' (old id) column, which in effect simply adds the "db_id" (new id) column in dict_df onto the csv_dataframe
-
-    return new_csv_df
 
 def taxonomy_metadata(csv_dataframe):
     """Function returning a dictionary with all the taxonomic information for each id from metadata ([] if no info given).
@@ -345,7 +334,7 @@ def return_gb_data(acc_list, email):
 
     for acc in acc_list:
         if acc not in records.keys():
-            print(f"Accession '{acc}' returned no hits on NCBI.")
+            print(f" - Accession '{acc}' returned no hits on NCBI.")
 
     return records
 
@@ -356,31 +345,52 @@ def extract_metadata(records):
     #Extract metadata to separate dict
     gb_metadata = {}
     for acc, record in records.items():
-        #e.g. 'KY942062': SeqRecord(seq=Seq('TGTGTAGTGCCTGAAT .... dbxrefs=[])
         for feature in record.features:
             if feature.type == "source":
+
                 record_metadata = []
-                if 'db_xref' in feature.qualifiers.keys():
+
+                if 'db_xref' in feature.qualifiers:
                     taxid = feature.qualifiers['db_xref'][0].split(":")[1]
-                    #e.g. qualifiers['db_xref'] = ['taxon:2480665'] ---> taxid = '2480665'
-                    record_metadata.append(taxid)
-                if 'country' in feature.qualifiers.keys():
+                else:
+                    print(f"WARNING: 'db_xref' absent from '{acc}' qualifiers.")
+                    taxid = None
+
+                if 'country' in feature.qualifiers:
                     country = feature.qualifiers['country'][0]
-                    #e.g. qualifiers['country'] = ['Yemen'] ---> country = 'Yemen'
-                    record_metadata.append(country)
-                    #For this record, the record_metadata list now looks like this: ['2480665', 'Yemen']
+                    if ': ' in country:
+                        country = feature.qualifiers['country'][0].split(": ")[0]
+                        subregion = feature.qualifiers['country'][0].split(": ")[1]
+                    else:
+                        subregion = None
+                else:
+                    country, subregion = [None, None]
+
+                if 'isolation_source' in feature.qualifiers:
+                    traptype = feature.qualifiers['isolation_source'][0]
+                else:
+                    traptype = None
+
+                if 'specimen_voucher' in feature.qualifiers:
+                    accession = feature.qualifiers['specimen_voucher'][0].translate({ord(c):None for c in ' -.:'})     #Strips all instances of ' ', '-', '.' and ':' from string.
+                else:
+                    accession = None
+
+                record_metadata.append(taxid)
+                record_metadata.append(country)
+                record_metadata.append(subregion)
+                record_metadata.append(traptype)
+                record_metadata.append(accession)
+
                 gb_metadata[acc] = record_metadata
-                #And the gb_metadata dict entry now looks like this: {'KY942062': ['64391', 'Yemen'], ... }, before looping to the next
 
     #Write to DataFrame
     gb_met_df = pd.DataFrame.from_dict(gb_metadata, orient='index')
     gb_met_df.reset_index(inplace=True)
-    gb_met_df.columns = ["accession", "taxon_id", "country"]
-    #generates python dataframe: | accession | taxon_id | country |
-    #                            | KY942062  |  64391   |  Yemen  |
-    #                                          ...
+    gb_met_df.columns = ["name", "taxon_id", "country", "subregion", "collectionmethod", "accession"]
+
     #Add other metadata columns required by database and fill them with blanks (None/NaN objects)
-    for label in ['name', 'morphospecies', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'authors', 'library', 'datasubmitter', 'projectname', 'uin', 'notes']:
+    for label in ['morphospecies', 'custom_lineage', 'specimen', 'lifestage', 'site', 'locality', 'authors', 'library', 'datasubmitter', 'projectname', 'uin', 'notes']:
         gb_met_df[label] = None
 
     for header in ['latitude', 'longitude']:
