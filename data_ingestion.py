@@ -91,16 +91,14 @@ df_with_lineages = gcm.add_lineage_df(df_accepted, lineages)
 #print("L: df_with_lineages set to add_lineage_df(df_accepted, lineages)")
 
 #Reorder metadata df columns to load to db.
-df_with_lineages = gcm.reorder_df_cols(df_with_lineages)
-
-##Push the genbank data into the database
-
-gcm.load_gb_dict_into_db(new_dict)
-#print("L: load_gb_dict_into_db() done")
+df_with_lineages = gcm.reformat_df_cols(df_with_lineages)
 
 ##Push the metadata into the database
-
 gcm.load_df_into_db(df_with_lineages)
 #print("L: load_df_into_db() done")
+
+##Push the genbank data into the database
+gcm.load_gb_dict_into_db(new_dict)
+#print("L: load_gb_dict_into_db() done")
 
 
