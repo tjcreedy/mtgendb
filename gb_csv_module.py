@@ -276,7 +276,6 @@ def change_names_csv(csv_dataframe, dict_new_ids):
 
     return new_csv_df  # returns csv_dataframe with the new ids added on in a single new column called "db_id"
 
-
 def taxonomy_metadata(csv_dataframe):
     """Function returning a dictionary with all the taxonomic information for each id from metadata ([] if no info given).
     """
@@ -775,7 +774,9 @@ def add_lineage_df(csv_dataframe, combined_lineage):
 
     return df
 
-def reorder_df_cols(df):
+def reformat_df_cols(df):
+
+    #df.rename(columns={'name': 'old_name', 'db_id': 'name'}, inplace=True)
 
     df = df[['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']]
 
