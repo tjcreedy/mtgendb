@@ -145,7 +145,7 @@ def matching_inputids(csv_dataframe, gb_dictionary):
 
     if len(shared) != len(unique):
         # If the IDS in the CSV and GenBank files are not identical...
-        x = input("Your CSV and GenBank files contain different entries.\nWould you like to ignore these and proceed with shared entries only ('P') or cancel the operation ('C')?\n?>").capitalize()
+        x = input("WARNING: Your CSV and GenBank files contain different entries.\nWould you like to ignore these and proceed with shared entries only ('P') or cancel the operation ('C')?\n?>").capitalize()
 
         while not (x == 'C' or x == 'P'):
             x = input("Type 'P' to ignore discrepant entries and proceed, or type 'C' to cancel the operation.\n?>").capitalize()
@@ -154,14 +154,14 @@ def matching_inputids(csv_dataframe, gb_dictionary):
             sys.exit("Operation cancelled.")
 
         else:
-            # return new gb_dict with discrepant entries deleted
+            #Return new gb_dict with discrepant entries deleted
             for gb_record in gb_dictionary:
                 if gb_record in discrepant_ids:
                     print(f" - Skipping entry '{gb_record}' as it appears in the GenBank file but not the CSV file.")
 
             new_gb_dict = {key: gb_dictionary[key] for key in gb_dictionary if key not in discrepant_ids}
 
-            # return new csv_dataframe with discrepant entries deleted
+            #Return new csv_dataframe with discrepant entries deleted
             for contigname in ids_csv:
                 if contigname in discrepant_ids:
                     print(f" - Skipping entry '{contigname}' as it appears in the CSV file but not the GenBank file.")
@@ -770,7 +770,7 @@ def add_lineage_df(csv_dataframe, combined_lineage):
     csv_dataframe.drop(['species', 'subfamily', 'family', 'order', 'taxid'], axis=1, inplace=True)                                                    # delete "taxid" column/row from input csv_dataframe
     df = pd.merge(df_add, csv_dataframe, left_index = True, right_index = True)   # merge 'df_add' with 'csv_dataframe', using the index from df_add (keys of combined_lineage dict) and csv_dataframe as the join key(s), calling the resulting dataframe 'df'.
     df.reset_index(level = 0, inplace = True)                                     # Remove the level 0 from the index, modifying the dataframe in place.
-    df.rename(columns = {"index" : "name"}, inplace = True)                       # Rename "index" column to "name", modifying the dataframe in place.
+    df.rename(columns = {"index": "name"}, inplace = True)                       # Rename "index" column to "name", modifying the dataframe in place.
 
     return df
 
@@ -855,12 +855,12 @@ def csv_from_sql(db_user, db_passwd, db_name, tablename, cols, specs, csv_name):
 
 def fasta_from_sql(db_user, db_passwd, db_name, ids, fasta_name):
 
-    # db_user, db_passwd, db_name, ids, fasta_name = ["root", "mmgdatabase", "mmg_test", "1, 2, 3", "fasta_output"]
+    # db_user, db_passwd, db_name, ids, fasta_name = ["root", "mmgdatabase", "mmg_test", "CCCP00269,BIOD01797,MH281574,KY856744", "fasta_output"]
 
     # Contruct mysql command
     idss = ids.split(',')
     ids = ', '.join(idss)
-    mysql_command = f"SELECT bioentry_id, seq FROM biosequence WHERE bioentry_id IN ({ids});"
+    mysql_command = f"SELECT metadata.name, biosequence.bioentry_id, biosequence.alphabet, biosequence.seq FROM bioentry JOIN biosequence ON bioentry.bioentry_id=biosequence.bioentry_id JOIN metadata ON bioentry.name=metadata.db_id;" #WHERE metadata.name IN ({ids});"
 
     # Connect to database and execute command
     con = mdb.connect(host="localhost", user=db_user, passwd=db_passwd, db=db_name)
@@ -873,3 +873,25 @@ def fasta_from_sql(db_user, db_passwd, db_name, ids, fasta_name):
     with open(f"{fasta_name}.fa", "w", newline='') as fasta_file:
         for row in records:
             fasta_file.write(f">{row[0]}\n{row[1]}\n")
+
+#------
+    from Bio.Alphabet import generic_dna
+    from Bio.Seq import Seq
+    from Bio.SeqRecord import SeqRecord
+    from Bio import SeqIO
+
+    recs = []
+    for row in records:
+        #record.annotations['molecule_type'] = 'DNA'
+        #if row[2] == 'dna':
+        #    alphabet = generic_dna
+        rec = SeqRecord(Seq(row[3], generic_dna), id=row[0], description='')
+        recs.append(rec)
+
+    SeqIO.write(recs, f"{fasta_name}.fa", "fasta")
+
+
+
+
+
+
