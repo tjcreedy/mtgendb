@@ -46,7 +46,7 @@ gb_met_df = gcm.extract_metadata(records)
 gb_df_new_ids = gcm.change_names_csv(gb_met_df, dict_new_ids)
 
 #Reorder dataframe columns for the database.
-gb_df_reordered = gcm.reorder_df_cols(gb_df_new_ids)
+gb_df_reordered = gcm.reformat_df_cols(gb_df_new_ids)
 
 #Replace old input ID with new database ID in genbank file
 gcm.change_ids_genbank(records, dict_new_ids, args.key)
