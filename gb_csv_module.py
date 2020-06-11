@@ -833,12 +833,15 @@ def load_df_into_db(csv_dataframe):
 
 
 def table_join(table_list, main_table, shared_col):
+    """Consructs MySQL command
+    """
     n = 0
-    table_string = main_table
+    table_string = ''
     while n < len(table_list):
         new_join = f" JOIN {table_list[n]} ON {main_table}.{shared_col}={table_list[n]}.{shared_col}"
         table_string += new_join
         n += 1
+
     return table_string
 
 
@@ -851,7 +854,7 @@ def construct_sql_command(data, spec):
     In _____ format
     """
     #data = ['name', 'taxon_id', 'length', 'country', 'end_pos', 'version', 'description']
-    #spec = "country='UK'"
+    #spec = "country='United Kingdom'"
 
     def enumeru(lis, string, n, dicty):
         #Enumerates all items in a list from specified no. and inserts ionto dict with key as specified prefix
@@ -859,6 +862,8 @@ def construct_sql_command(data, spec):
             dicty[f"{string}%d" % n] = val
         return
 
+
+#------------TABLE-------------------
     #Unique cols of each table (shared cols assigned to a prioritised table)
     metadata_cols = ['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
     bioentry_cols = ['bioentry_id', 'biodatabase_id', 'accession', 'identifier', 'division', 'description', 'version']
@@ -911,49 +916,39 @@ def construct_sql_command(data, spec):
         locations = list(set(tables) & set(LOCATION_ID))
         seqs = list(set(tables) & set(SEQFEATURE_ID))
 
-        joins = []
+        joins = ["metadata"]
 
         ##BIOS
         if len(bios) >= 1:
             if 'bioentry' in bios:
                 bios.remove('bioentry')
-            bios_join = table_join(bios, 'bioentry', 'bioentry_id')
+            bios_join = " JOIN bioentry ON metadata.db_id=bioentry.name" + table_join(bios, 'bioentry', 'bioentry_id')
             joins.append(bios_join)
 
+        ##TAXONS
+        if len(taxons) >= 1:
+            if 'taxon' in bios:
+                bios.remove('taxon')
+            taxons_join = " JOIN taxon ON metadata.db_id=taxon.______" + table_join(taxons, 'taxon', 'taxon_id')
+            joins.append(taxons_join)
 
-        if 'metadata' in tables:
-            metadata_join = 'metadata ON bioentry.name=metadata.db_id'
-            joins.append(metadata_join)
+        table_string = ''.join(joins)
 
-        big_ol_string = ' JOIN '.join(joins)
-
-        ##METADTA
-        if 'metadata' in tables:
-            new_join1 = f" JOIN metadata ON ______=metadata.db_id"
-            table += new_join1
+        mysql_command = f"SELECT metadata.name, db_id FROM {table_string} WHERE {spec};"
 
     return mysql_command
 
-def fetch_id_list():
+
+
+def fetch_names(mysql_command):
     """Fetch db_ids list from database using MySQL command
     """
-
-def find_db_names(id_list):
-    """Creates dictionary containing old names (keys) and db ids (values).
-    """
-    # id_list = ['KF364622', 'KT876903',  'MH404113', 'KT876913']
-
-    id_join = "','".join(id_list)
-    id_string = f"('{id_join}')"
-
-    mysql_command = f"SELECT name, db_id FROM metadata WHERE name IN {id_string};"
-
-    con = mdb.connect(host="localhost", user=db_user, passwd=db_passwd, db=db_name)
+    con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
     cur = con.cursor()
     cur.execute(mysql_command)
     records = cur.fetchall()
 
-    names_dict = {row[0]: row[1] for row in records}
+    names_dict = {row[0]: row[1] for row in set(records)}
 
     return names_dict
 
@@ -963,10 +958,9 @@ def fetch_recs(names_dict):
     """
     # names_dict = {'MH404113': 'GB001', 'KT876913': 'GB007', 'KF364622': 'GB008', 'KT876903': 'GB014'}
 
-    recs = []
+    recs = {}
 
-    server = BioSeqDatabase.open_database(driver=db_driver, user=db_user, passwd=db_passwd, host=db_host,
-                                          db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
+    server = BioSeqDatabase.open_database(driver=db_driver, user=db_user, passwd=db_passwd, host=db_host, db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
     db = server[namespace]
 
     for name, db_id in names_dict.items():
@@ -974,9 +968,7 @@ def fetch_recs(names_dict):
         seq_record.name = name
         seq_record.id = seq_record.name + ".0"
         seq_record.annotations["accessions"] = [seq_record.name]
-        recs.append(seq_record)
-
-    # SeqIO.write(recs, f"{fasta_name}.fa", "fasta")
+        recs[name] = seq_record
 
     return recs
 
@@ -1017,14 +1009,36 @@ def csv_from_sql(db_user, db_passwd, db_name, tablename, cols, specs, csv_name):
 
 
 
-def fasta_from_sql(recs_list, fasta_name):
+def fasta_from_sql(recs_dict, fasta_name):
     """Writes list of SeqRecords to fasta file
     """
 
-    SeqIO.write(recs_list, f"{fasta_name}.fa", "fasta")
+    SeqIO.write(recs_dict.values(), f"{fasta_name}.fa", "fasta")
 
     return()
 
+
+    """
+    def find_db_names(id_list):
+        #Creates dictionary containing old names (keys) and db ids (values).
+        
+        # id_list = ['KF364622', 'KT876903',  'MH404113', 'KT876913']
+
+        id_join = "','".join(id_list)
+        id_string = f"('{id_join}')"
+
+        mysql_command = f"SELECT name, db_id FROM metadata WHERE name IN {id_string};"
+
+        con = mdb.connect(host="localhost", user=db_user, passwd=db_passwd, db=db_name)
+        cur = con.cursor()
+        cur.execute(mysql_command)
+        records = cur.fetchall()
+
+        names_dict = {row[0]: row[1] for row in records}
+
+        return names_dict
+        
+        """
 
 
 
