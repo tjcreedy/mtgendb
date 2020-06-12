@@ -832,11 +832,11 @@ def load_df_into_db(csv_dataframe):
 #--------------------
 
 
-def table_join(table_list, main_table, shared_col):
+def table_join(start, table_list, main_table, shared_col):
     """Consructs MySQL command
     """
     n = 0
-    table_string = ''
+    table_string = start
     while n < len(table_list):
         new_join = f" JOIN {table_list[n]} ON {main_table}.{shared_col}={table_list[n]}.{shared_col}"
         table_string += new_join
@@ -844,24 +844,30 @@ def table_join(table_list, main_table, shared_col):
 
     return table_string
 
+import sys
 
-def construct_sql_command(data, spec):
+def construct_sql_command(cols, spec):
+    """Creates MySQL command to fetch list of IDS of records that meet certain user-provided specifications.
     """
-    Creates MySQL command to fetch list of IDS of records that meet certain user-provided specifications.
 
-    Want _____ data
-    From _____ tables
-    In _____ format
-    """
     #data = ['name', 'taxon_id', 'length', 'country', 'end_pos', 'version', 'description']
-    #spec = "country='United Kingdom'"
+    #cols = ['name', 'taxon_id', 'length', 'country', 'end_pos', 'version', 'description']
 
-    def enumeru(lis, string, n, dicty):
-        #Enumerates all items in a list from specified no. and inserts ionto dict with key as specified prefix
-        for n, val in enumerate(lis, n):
-            dicty[f"{string}%d" % n] = val
-        return
+    #cols = ['metadata.name', 'db_id'] #default
+    #spec = ["country=United Kingdom", "description=Lucanus sp. BMNH 1425267 mitochondrion, complete genome"]
 
+    # cols = ['description']
+    # spec = ["country=United Kingdom"]
+
+    # cols = ['name', 'latitude', 'accession', 'notes']
+    # spec = ["country=United Kingdom"]
+
+    # cols = ['name', 'length']
+    # spec = ["country=United Kingdom"]
+
+    #REFORMAT INPUTS
+    spec = [f"{s.split('=')[0]}='{s.split('=')[1]}'" for s in spec]
+    all_cols = list(set(cols + [s.split("=")[0] for s in spec]))
 
 #------------TABLE-------------------
     #Unique cols of each table (shared cols assigned to a prioritised table)
@@ -872,37 +878,38 @@ def construct_sql_command(data, spec):
     taxon_cols = ['ncbi_taxon_id', 'ncbi_taxon_id', 'parent_taxon_id', 'node_rank', 'genetic_code', 'mito_genetic_code', 'left_value', 'right_value']
     taxon_name_cols = ['name_class']
 
-    data_list = []
+    columns_dict = {}
 
-    for d in data:
+    for c in all_cols:
 
-        if d in metadata_cols:
-            mysql_com = f'metadata.{d}'
-        elif d in bioentry_cols:               #-name  -taxon_id
-            mysql_com = f'bioentry.{d}'
-        elif d in biosequence_cols:            # - bioentry_id
-            mysql_com = f'biosequence.{d}'
-        elif d in bioentry_reference_cols:    # - bioentry_id
-            mysql_com = f'bioentry_reference.{d}'
-        elif d in taxon_cols:                #-taxon_id
-            mysql_com = f'taxon.{d}'
-        elif d in taxon_name_cols:           #-name -taxon_id
-            mysql_com = f'taxon_name.{d}'
+        if c in metadata_cols:
+            mysql_com = f'metadata.{c}'
+        elif c in bioentry_cols:               #-name  -taxon_id
+            mysql_com = f'bioentry.{c}'
+        elif c in biosequence_cols:            # - bioentry_id
+            mysql_com = f'biosequence.{c}'
+        elif c in bioentry_reference_cols:    # - bioentry_id
+            mysql_com = f'bioentry_reference.{c}'
+        elif c in taxon_cols:                #-taxon_id
+            mysql_com = f'taxon.{c}'
+        elif c in taxon_name_cols:           #-name -taxon_id
+            mysql_com = f'taxon_name.{c}'
         else:
-            sys.exit(f"ERROR: Column '{d}' does not exist in the database.")
+            sys.exit(f"ERROR: Column '{c}' does not exist in the database.")
 
-        data_list.append(mysql_com)
+        columns_dict[c] = mysql_com
 
     #Create command
-    tables = list(set([x.split('.')[0] for x in data_list]))
+    tables = list(set([x.split('.')[0] for x in columns_dict.values()]))
 
     if len(tables) == 1:
-        columns = ', '.join(data)
-        table = tables[0]
-        commy = f"SELECT {columns} FROM {table} WHERE {spec};"
+        columns_string = ', '.join(cols)
+        table_string = tables[0]
+        spec_string = f"({') AND ('.join(spec)})"
+        mysql_command = f"SELECT {columns_string} FROM {table_string} WHERE {spec_string};"
 
     elif len(tables) > 1:
-        columns = ', '.join(data_list)
+        columns_string = ', '.join([columns_dict[x] for x in cols])
 
         #Lists of tables sharing linking columns (For duplicates it must be decided which table the column shouls be assigned to).
         BIOENTRY_ID = ['bioentry', 'bioentry_dbxref', 'bioentry_qualifier_value', 'bioentry_reference', 'biosequence', 'comment']
@@ -922,19 +929,27 @@ def construct_sql_command(data, spec):
         if len(bios) >= 1:
             if 'bioentry' in bios:
                 bios.remove('bioentry')
-            bios_join = " JOIN bioentry ON metadata.db_id=bioentry.name" + table_join(bios, 'bioentry', 'bioentry_id')
+            bios_join = table_join(" JOIN bioentry ON metadata.db_id=bioentry.name", bios, 'bioentry', 'bioentry_id')
             joins.append(bios_join)
 
+        """
         ##TAXONS
         if len(taxons) >= 1:
             if 'taxon' in bios:
                 bios.remove('taxon')
-            taxons_join = " JOIN taxon ON metadata.db_id=taxon.______" + table_join(taxons, 'taxon', 'taxon_id')
+            taxons_join = table_join(" JOIN taxon ON metadata.db_id=taxon.______", taxons, 'taxon', 'taxon_id')
             joins.append(taxons_join)
+        """
 
         table_string = ''.join(joins)
 
-        mysql_command = f"SELECT metadata.name, db_id FROM {table_string} WHERE {spec};"
+        spec = ['='.join([columns_dict[x[0]], x[1]]) for x in [x.split('=') for x in spec]]
+        spec_string = f"({') AND ('.join(spec)})"
+
+        mysql_command = f"SELECT {columns_string} FROM {table_string} WHERE {spec_string};"
+
+    else:
+        sys.exit("ERROR: No valid information provided.")
 
     return mysql_command
 
@@ -974,8 +989,12 @@ def fetch_recs(names_dict):
 
 
 
-def csv_from_sql(db_user, db_passwd, db_name, tablename, cols, specs, csv_name):
+def csv_from_sql(tables, cols, specs, csv_name):
     #cols, tablename, csv_name, specs = [None, "metadata", "metadata_output", "subregion='Sabah', collectionmethod='BEATING'"]
+
+    #!!! Write subroutine (part of the mysql command function) that creates this table list (table_string)
+
+    tablename = table_join()
 
     #Contruct mysql command
     if specs is None:
@@ -1051,8 +1070,8 @@ def fasta_from_sql(recs_dict, fasta_name):
 
 
 
-        # GROUP TABLES BASED ON SHARED COLUMNS
-        """
+# GROUP TABLES BASED ON SHARED COLUMNS
+"""
         *DB_ID = NAME"
         - 
         
@@ -1096,11 +1115,11 @@ def fasta_from_sql(recs_dict, fasta_name):
         - seqfeature_relationship
         - term_path
         - term_relationship
-        """
+"""
 
-        # db_user, db_passwd, db_name, ids, fasta_name = ["root", "mmgdatabase", "mmg_test", "CCCP00269,BIOD01797,MH281574,KY856744", "fasta_output"]
+# db_user, db_passwd, db_name, ids, fasta_name = ["root", "mmgdatabase", "mmg_test", "CCCP00269,BIOD01797,MH281574,KY856744", "fasta_output"]
 
-        """
+"""
         # Contruct mysql command
         mysql_command = f"SELECT m.name, s.bioentry_id, s.alphabet, b.description, s.seq FROM bioentry b JOIN biosequence s ON b.bioentry_id=s.bioentry_id JOIN metadata m ON b.name=m.db_id WHERE {specs};" #WHERE metadata.name IN ({ids});"
 
@@ -1120,4 +1139,4 @@ def fasta_from_sql(recs_dict, fasta_name):
             recs.append(record)
 
         SeqIO.write(recs, f"{fasta_name}.fa", "fasta")
-        """
+"""
