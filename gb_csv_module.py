@@ -859,11 +859,14 @@ def construct_sql_command(cols, spec):
     # cols = ['description']
     # spec = ["country=United Kingdom"]
 
-    # cols = ['name', 'latitude', 'accession', 'notes']
+    # cols = ['name', 'length', 'accession', 'description']
     # spec = ["country=United Kingdom"]
 
-    # cols = ['name', 'length']
-    # spec = ["country=United Kingdom"]
+    # cols = ['name', 'accession', 'taxon_id']
+    # spec = ["country=United Kingdom", "description=Lucanus sp. BMNH 1425267 mitochondrion, complete genome"]
+
+    #cols = ['metadata.name', 'db_id']
+    #spec = ["country=United Kingdom", "alphabet=dna"]
 
     #REFORMAT INPUTS
     spec = [f"{s.split('=')[0]}='{s.split('=')[1]}'" for s in spec]
@@ -909,7 +912,6 @@ def construct_sql_command(cols, spec):
         mysql_command = f"SELECT {columns_string} FROM {table_string} WHERE {spec_string};"
 
     elif len(tables) > 1:
-        columns_string = ', '.join([columns_dict[x] for x in cols])
 
         #Lists of tables sharing linking columns (For duplicates it must be decided which table the column shouls be assigned to).
         BIOENTRY_ID = ['bioentry', 'bioentry_dbxref', 'bioentry_qualifier_value', 'bioentry_reference', 'biosequence', 'comment']
@@ -940,9 +942,8 @@ def construct_sql_command(cols, spec):
             taxons_join = table_join(" JOIN taxon ON metadata.db_id=taxon.______", taxons, 'taxon', 'taxon_id')
             joins.append(taxons_join)
         """
-
+        columns_string = ', '.join([columns_dict[x] for x in cols])
         table_string = ''.join(joins)
-
         spec = ['='.join([columns_dict[x[0]], x[1]]) for x in [x.split('=') for x in spec]]
         spec_string = f"({') AND ('.join(spec)})"
 
@@ -989,20 +990,21 @@ def fetch_recs(names_dict):
 
 
 
-def csv_from_sql(tables, cols, specs, csv_name):
+def csv_from_sql(mysql_command, csv_name):
     #cols, tablename, csv_name, specs = [None, "metadata", "metadata_output", "subregion='Sabah', collectionmethod='BEATING'"]
 
     #!!! Write subroutine (part of the mysql command function) that creates this table list (table_string)
 
-    tablename = table_join()
 
     #Contruct mysql command
+    """
     if specs is None:
         mysql_command = f"SELECT {cols} FROM {tablename};"
     else:
         specs_list = specs.split(',')
         specs_string = ' AND '.join(specs_list)
         mysql_command = f"SELECT {cols} FROM {tablename} WHERE {specs_string};"
+    """
 
     #Connect to database and execute command
     con = mdb.connect(host="localhost", user=db_user, passwd=db_passwd, db=db_name)
