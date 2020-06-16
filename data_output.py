@@ -89,7 +89,7 @@ else:
 
     records = gcm.fetch_recs(names_dict)
 
-    gcm.seqfile_from_sql(records, args.output_name, args.output_format)
+    gcm.seqfile_from_sql(records, args.output_name, args.subcommand.lower())
 
 #print(f"FORMAT: {args.output_format}")
 
