@@ -30,7 +30,7 @@ parser_csv.add_argument('-t', '--table', dest = 'database_table', choices=["meta
 parser_csv.add_argument('-c', '--columns', dest = 'table_columns', nargs='+', default = '*', help = "Name of table columns you wish to extract data from (e.g. name, .")
 parser_csv.add_argument('-csvs', '--csv_specs', dest = 'mysql_specs', nargs='+', help = "Comma-separated list of mysql specifications (e.g. subregion='Sabah',collectionmethod='MALAISE').")
 
-parser_fasta = subparsers.add_parser('FA')
+parser_fasta = subparsers.add_parser('FASTA')
 parser_fasta.add_argument('-fas', '--fasta_specifications', dest = 'mysql_specs', required=True, nargs='+', help = "Comma-separated list of mysql specifications (e.g. subregion='Sabah',collectionmethod='MALAISE').")
 
 parser_gb = subparsers.add_parser('GB')
