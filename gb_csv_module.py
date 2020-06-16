@@ -1188,11 +1188,15 @@ def csv_from_sql(mysql_command, csv_name):
 
 
 
-def seqfile_from_sql(recs_dict, file_name, format):
+def seqfile_from_sql(recs_dict, file_name, extension):
     """Writes list of SeqRecords to a file of chosen format
     """
+    if extension == 'gb':
+        format = 'genbank'
+    if extension == 'fa':
+        format = 'fasta'
 
-    SeqIO.write(recs_dict.values(), f"{file_name}.{format}", format)
+    SeqIO.write(recs_dict.values(), f"{file_name}.{extension}", format)
 
     return()
 
