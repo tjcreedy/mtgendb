@@ -975,7 +975,7 @@ BUG1: takes wrong format from command line
 BUG2: if spec is Noe then it gets puts in string as ' WHERE ()'
 """
 
-
+"""
 def construct_sql_command(table, cols, spec):
     """Creates MySQL command to fetch list of IDS of records that meet certain user-provided specifications.
     """
@@ -1088,14 +1088,14 @@ def construct_sql_command(table, cols, spec):
                 bios_join = table_join(" JOIN bioentry ON metadata.db_id=bioentry.name", bios, 'bioentry', 'bioentry_id')
                 joins.append(bios_join)
 
-            """
+            
             ##TAXONS
             if len(taxons) >= 1:
                 if 'taxon' in bios:
                     bios.remove('taxon')
                 taxons_join = table_join(" JOIN taxon ON metadata.db_id=taxon.______", taxons, 'taxon', 'taxon_id')
                 joins.append(taxons_join)
-            """
+            
             columns_string = ', '.join([columns_dict[x] for x in cols])
             table_string = ''.join(joins)
             spec = ['='.join([columns_dict[x[0]], x[1]]) for x in [x.split('=') for x in spec]]
@@ -1111,7 +1111,7 @@ def construct_sql_command(table, cols, spec):
             sys.exit("ERROR: No valid information provided.")
 
     return mysql_command
-
+"""
 
 
 def fetch_names(mysql_command):
