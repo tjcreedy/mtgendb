@@ -977,8 +977,8 @@ BUG2: if spec is Noe then it gets puts in string as ' WHERE ()'
 
 """
 def construct_sql_command(table, cols, spec):
-    """Creates MySQL command to fetch list of IDS of records that meet certain user-provided specifications.
-    """
+    Creates MySQL command to fetch list of IDS of records that meet certain user-provided specifications.
+    
     #table = None
     #cols = ['name', 'length']
     #spec = ['country=United Kingdom']
