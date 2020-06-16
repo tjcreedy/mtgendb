@@ -64,7 +64,7 @@ if args.subcommand == 'CSV':
 
     mysql_command = gcm.construct_sql_command(args.database_table, args.table_columns, args.mysql_specs)
 
-    #gcm.csv_from_sql(mysql_command, args.output_name)
+    gcm.csv_from_sql(mysql_command, args.output_name)
 
     # table, cols, spec = [None, '*', ['country=United Kingdom']]
     # table, cols, spec = ['metadata', '*', ['country=United Kingdom', 'description=Lucanus sp. BMNH 1425267 mitochondrion, complete genome']]
@@ -85,11 +85,11 @@ else:
 
     # table, cols, spec = [None, ['metadata.name', 'db_id'], ['country=United Kingdom', 'description=Lucanus sp. BMNH 1425267 mitochondrion, complete genome']]
 
-    #names_dict = gcm.fetch_names(mysql_command)
+    names_dict = gcm.fetch_names(mysql_command)
 
-    #records = gcm.fetch_recs(names_dict)
+    records = gcm.fetch_recs(names_dict)
 
-    #gcm.seqfile_from_sql(records, args.output_name, args.output_format)
+    gcm.seqfile_from_sql(records, args.output_name, args.output_format)
 
 #print(f"FORMAT: {args.output_format}")
 
@@ -161,5 +161,7 @@ TO-DO
 2. Which tables join which and how?
 3. What happens if they have chosen multiple columns but have chosen an output format other than CSV?
 4. If 'tables' provided, then set cols to '*' (as output will be CSV) [if table or cols given then format must be CSV]
+5. 'name' column in both metadata and taxon_name. Must distinguish.
+6. Sort out help page.
 
 """
