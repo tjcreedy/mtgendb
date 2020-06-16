@@ -1192,7 +1192,7 @@ def seqfile_from_sql(recs_dict, file_name, format):
     """Writes list of SeqRecords to a file of chosen format
     """
 
-    SeqIO.write(recs_dict.values(), f"{file_name}.fa", format)
+    SeqIO.write(recs_dict.values(), f"{file_name}.{format}", format)
 
     return()
 
