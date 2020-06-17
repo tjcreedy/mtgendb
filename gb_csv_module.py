@@ -849,16 +849,18 @@ import sys
 
 def sql_cols(cols, spec):
 
+    #spec = ['country=United Kingdom', 'length<25000']
+
     cols_dict = {}
 
     if spec is None:
         spec = []
 
-    spec = [f"{s.split('=')[0]}='{s.split('=')[1]}'" for s in spec]
+    spec = [f"{re.split('=|>|<', s)[0]}{re.findall('=|>|<', s)[0]}{re.split('=|>|<', s)[1]}" if re.split('=|>|<', s)[1].isnumeric() else f"{re.split('=|>|<', s)[0]}='{re.split('=|>|<', s)[1]}'" for s in spec]
 
     # REFORMAT INPUTS
     cols = list(cols)
-    all_cols = list(set(cols + [s.split("=")[0] for s in spec]))
+    all_cols = list(set(cols + [re.split('=|>|<', s)[0] for s in spec]))
 
     # Unique cols of each table (shared cols assigned to a prioritised table)
     metadata_cols = ['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
