@@ -845,6 +845,7 @@ def table_join(start, table_list, main_table, shared_col):
     return table_string
 
 import sys
+import re
 
 
 def sql_cols(cols, spec):
@@ -931,11 +932,10 @@ def sql_table(table, cols_dict):
 
         ##TAXONS
         if len(taxons) >= 1:
-            if 'taxon' in bios:
-                bios.remove('taxon')
+            if 'taxon' in taxons:
+                taxons.remove('taxon')
             taxons_join = table_join(" JOIN taxon ON metadata.taxon_id=taxon.ncbi_taxon_id", taxons, 'taxon', 'taxon_id')
             joins.append(taxons_join)
-
 
         table_string = ''.join(joins)
 
@@ -954,8 +954,21 @@ def sql_spec(tables, cols_dict, spec):
         if len(tables) == 1:
             spec = f" WHERE ({') AND ('.join(spec)})"
         else:
-            spec = ['='.join([cols_dict[x[0]], x[1]]) for x in [x.split('=') for x in spec]]
+            spec = [re.findall('=|>|<', x)[0].join([cols_dict[re.split('=|>|<', x)[0]], re.split('=|>|<', x)[1]]) for x in spec]
             spec = f" WHERE ({') AND ('.join(spec)})"
+
+            """
+            #OR, EQUIVALENTLY:
+            
+            specs = []
+            for x in spec:
+                splits = re.split('=|>|<', x)
+                character = re.findall('=|>|<', x)[0]
+                new = character.join([cols_dict[splits[0]], splits[1]])
+                specs.append(new)
+            
+            spec = f" WHERE ({') AND ('.join(specs)})"
+            """
 
     return spec
 
