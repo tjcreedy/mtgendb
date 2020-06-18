@@ -13,6 +13,7 @@ import gb_csv_module as gcm
 # Define arguments to be parsed
 parser = argparse.ArgumentParser(description="Adding a genbank- and a csv-file to the database.")
 parser.add_argument('-o', '--out', dest = 'output_name', required = True, help = "Preferred filename for the output (extension will be added automatically according to your output format choice).")
+parser.add_argument('-mysql_query', '--mysql_query', dest = 'mysql_query', help = "MySQL query to pull data from database..")
 
 subparsers = parser.add_subparsers(dest="subcommand")
 
@@ -22,10 +23,10 @@ parser_csv.add_argument('-c', '--columns', dest = 'table_columns', nargs='+', de
 parser_csv.add_argument('-csvs', '--csv_specs', dest = 'mysql_specs', nargs='+', help = "Comma-separated list of mysql specifications (e.g. subregion='Sabah',collectionmethod='MALAISE').")
 
 parser_fasta = subparsers.add_parser('FASTA')
-parser_fasta.add_argument('-fas', '--fasta_specifications', dest = 'mysql_specs', required=True, nargs='+', help = "Comma-separated list of mysql specifications (e.g. subregion='Sabah',collectionmethod='MALAISE').")
+parser_fasta.add_argument('-fas', '--fasta_specifications', dest = 'mysql_specs', nargs='+', help = "Comma-separated list of mysql specifications (e.g. subregion='Sabah',collectionmethod='MALAISE').")
 
 parser_gb = subparsers.add_parser('GB')
-parser_gb.add_argument('-gbs', '--gb_specifications', dest = 'mysql_specs', required=True, nargs='+', help = "Comma-separated list of mysql specifications (e.g. subregion='Sabah',collectionmethod='MALAISE').")
+parser_gb.add_argument('-gbs', '--gb_specifications', dest = 'mysql_specs', nargs='+', help = "Comma-separated list of mysql specifications (e.g. subregion='Sabah',collectionmethod='MALAISE').")
 # args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-o", "metadateru", "-s", "subregion='Sabah'"])
 # args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-c", "name", "length", "accession", "seq", "-o", "metadateru", "-s", "country='United Kingdon' description='Lucanus sp. BMNH 1425267 mitochondrion, complete genome'", "-f", "csv"])
 
@@ -51,44 +52,39 @@ elif args.subcommand == 'GB':
 else:
     print("No output format specified.")
 """
-print(f"COLUMNS: {args.table_columns}")
-print(f"TABLE: {args.database_table}")
-print(f"SPECS: {args.mysql_specs}")
+
 
 if args.subcommand == 'CSV':
 
-    mysql_command = gcm.construct_sql_command(args.database_table, args.table_columns, args.mysql_specs)
+    if args.mysql_query is None:
 
-    #gcm.csv_from_sql(mysql_command, args.output_name)
+        mysql_command = gcm.construct_sql_command(args.database_table, args.table_columns, args.mysql_specs)
 
-    # table, cols, spec = [None, '*', ['country=United Kingdom']]
-    # table, cols, spec = ['metadata', '*', ['country=United Kingdom', 'description=Lucanus sp. BMNH 1425267 mitochondrion, complete genome', length<25000]]
-    # table, cols, spec = ['metadata', ['name', 'taxon_id'], ['country=United Kingdom']]
-    # table, cols, spec = ['metadata', ['name', 'taxon_id'], None]
-    # table, cols, spec = [None, ['name', 'taxon_id'], ['country=United Kingdom', 'description=Lucanus sp. BMNH 1425267 mitochondrion, complete genome']]
-    # table, cols, spec = ['metadata', '*', ['country=United Kingdom', 'description=Lucanus sp. BMNH 1425267 mitochondrion, complete genome']]
+    else:
 
-    #table, cols, spec = ['metadata', ['name', 'latitude'], ['country=United Kingdom', 'description=Lucanus sp. BMNH 1425267 mitochondrion, complete genome']]
-    # metadata.name, metadata.latitude ... ... WHERE (metadata.country= ...) AND (bioentry.description= ...);
+        mysql_command = args.mysql_query
+
+    gcm.csv_from_sql(mysql_command, args.output_name)
 
 else:
 
-    mysql_command = gcm.construct_sql_command(None, ['name', 'db_id'], args.mysql_specs)
+    if args.mysql_query is None:
+
+        mysql_command = gcm.construct_sql_command(None, ['name', 'db_id'], args.mysql_specs)
+
+    else:
+
+        mysql_command = args.mysql_query
+
+    names_dict = gcm.fetch_names(mysql_command)
+
+    records = gcm.fetch_recs(names_dict)
+
+    gcm.seqfile_from_sql(records, args.output_name, args.subcommand.lower())
 
 
-    # table, cols, spec = [None, ['name', 'db_id'], ['country=United Kingdom', 'length<25000']]
 
-    # table, cols, spec = [None, ['metadata.name', 'db_id'], ['country=United Kingdom', 'description=Lucanus sp. BMNH 1425267 mitochondrion, complete genome']]
-
-    #names_dict = gcm.fetch_names(mysql_command)
-
-    #records = gcm.fetch_recs(names_dict)
-
-    #gcm.seqfile_from_sql(records, args.output_name, args.subcommand.lower())
-
-#print(f"FORMAT: {args.output_format}")
-
-print(mysql_command)
+print(f"QUERY: {mysql_command}")
 
 
 
@@ -158,5 +154,6 @@ TO-DO
 4. If 'tables' provided, then set cols to '*' (as output will be CSV) [if table or cols given then format must be CSV]
 5. 'name' column in both metadata and taxon_name. Must distinguish.
 6. Sort out help page.
+7. Number of file output formats needs to be looked at...
 
 """
