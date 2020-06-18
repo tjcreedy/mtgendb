@@ -844,22 +844,39 @@ def table_join(start, table_list, main_table, shared_col):
 
     return table_string
 
+"""
+def table_join(start, table_list, shared_col):
+    #Consructs MySQL command
+    
+    n = 0
+    table_string = start
+    while n < len(table_list):
+        new_join = f" JOIN {table_list[n]} USING {shared_col}"
+        table_string += new_join
+        n += 1
+
+    return table_string
+"""
+
 import sys
 import re
 
 
-def sql_cols(cols, spec):
+def sql_cols(table, cols, spec):
 
+    #cols = ['name', 'length', 'node_rank']
+    #cols = '*'
+    #table = 'biosequence'
+    #spec = None
     #spec = ['country=United Kingdom', 'length<25000']
 
     cols_dict = {}
 
+    # REFORMAT INPUTS
     if spec is None:
         spec = []
 
     spec = [f"{re.split('=|>|<', s)[0]}{re.findall('=|>|<', s)[0]}{re.split('=|>|<', s)[1]}" if re.split('=|>|<', s)[1].isnumeric() else f"{re.split('=|>|<', s)[0]}='{re.split('=|>|<', s)[1]}'" for s in spec]
-
-    # REFORMAT INPUTS
     cols = list(cols)
     all_cols = list(set(cols + [re.split('=|>|<', s)[0] for s in spec]))
 
@@ -892,14 +909,20 @@ def sql_cols(cols, spec):
 
         cols_dict[c] = mysql_com
 
-    cols_string = ', '.join([cols_dict[x] for x in cols])
-
-    return cols_string, cols_dict, spec
-
-
-def sql_table(table, cols_dict):
-
     tables = list(filter(None, list(set([x.split('.')[0] for x in cols_dict.values() if x != '*'] + [table]))))
+
+    if cols == ['*']:
+        if len(tables) == 1:
+            cols_string = '*'
+        else:
+            cols_string = f"{table}.*"
+    else:
+        cols_string = ', '.join([cols_dict[x] for x in cols])
+
+    return tables, cols_string, cols_dict, spec
+
+
+def sql_table(tables):
 
     if len(tables) == 1:
 
@@ -942,7 +965,7 @@ def sql_table(table, cols_dict):
     else:
         sys.exit("ERROR: Cannot construct table. Invalid information provided.")
 
-    return tables, table_string
+    return table_string
 
 
 def sql_spec(tables, cols_dict, spec):
@@ -976,9 +999,9 @@ def sql_spec(tables, cols_dict, spec):
 
 def construct_sql_command(table, cols, spec):
 
-    cols_string, cols_dict, spec = sql_cols(cols, spec)
+    tables, cols_string, cols_dict, spec = sql_cols(table, cols, spec)
 
-    tables, table_string = sql_table(table, cols_dict)
+    table_string = sql_table(tables)
 
     spec_string = sql_spec(tables, cols_dict, spec)
 
