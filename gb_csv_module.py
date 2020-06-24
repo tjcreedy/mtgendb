@@ -859,12 +859,9 @@ def sql_cols(table, cols, spec):
     #spec = None
     #spec = ['country=United Kingdom', 'length<25000']
     #table, cols, spec = [None, ['name', 'db_id'], ['species=Stenus boops', 'length<25000', 'country=United Kingdom']]
+    #table, cols, spec = [None, '*', ['species=Stenus boops', 'length<25000', 'country=United Kingdom']]
 
-
-
-    cols_dict = {}
-
-    # REFORMAT INPUTS
+    #Reformat inputs
     if spec is None:
         spec = []
 
@@ -903,8 +900,10 @@ def sql_cols(table, cols, spec):
     term_relationship_cols = ['term_relationship_id', 'term_relationship.subject_term_id', 'term_relationship.predicate_term_id', 'term_relationship.object_term_id', 'term_relationship.ontology_id']
     term_relationship_term_cols = ['term_relationship_term.term_relationship_id', 'term_relationship_term.term_id']
     term_synonym_cols = ['synonym', 'term_synonym.term_id']
-    taxonomy = ['species','genus','family','order','class','phylum','kingdom']
+    taxonomy = ['species', 'genus', 'family', 'order', 'class', 'phylum', 'kingdom']
 
+    #Construct columns dictionary
+    cols_dict = {}
 
     for c in all_cols:
 
@@ -981,9 +980,9 @@ def sql_cols(table, cols, spec):
     #Construct tables list
     tables = []
     for x in cols_dict.values():
-        if type(x)==str and x!='*':
+        if type(x) == str and x != '*':
             tables.append(x.split('.')[0])
-        if type(x)==list:
+        if type(x) == list:
             tables.extend([x[0].split('.')[0], x[1].split('.')[0]])
     tables = list(filter(None, list(set(tables + [table]))))
 
@@ -992,7 +991,10 @@ def sql_cols(table, cols, spec):
         if len(tables) == 1:
             cols_string = '*'
         else:
-            cols_string = f"{table}.*"
+            if table is None:
+                cols_string = '*'
+            else:
+                cols_string = f"{table}.*"
     else:
         cols_string = ', '.join([cols_dict[x] for x in cols])
 
