@@ -864,7 +864,7 @@ import re
 
 def sql_cols(table, cols, spec):
 
-    #cols = ['name', 'length', 'node_rank']
+    #cols = ['taxon_name.name', 'length', 'node_rank']
     #cols = '*'
     #table = 'biosequence'
     #spec = None
@@ -876,17 +876,78 @@ def sql_cols(table, cols, spec):
     if spec is None:
         spec = []
 
-    spec = [f"{re.split('=|>|<', s)[0]}{re.findall('=|>|<', s)[0]}{re.split('=|>|<', s)[1]}" if re.split('=|>|<', s)[1].isnumeric() else f"{re.split('=|>|<', s)[0]}='{re.split('=|>|<', s)[1]}'" for s in spec]
+    #spec = [f"{re.split('=|>|<', s)[0]}{re.findall('=|>|<', s)[0]}{re.split('=|>|<', s)[1]}" if re.split('=|>|<', s)[1].isnumeric() else f"{re.split('=|>|<', s)[0]}='{re.split('=|>|<', s)[1]}'" for s in spec]
+    spec = [s if re.split('=|>|<', s)[1].isnumeric() else f"{re.split('=|>|<', s)[0]}='{re.split('=|>|<', s)[1]}'" for s in spec]
     cols = list(cols)
     all_cols = list(set(cols + [re.split('=|>|<', s)[0] for s in spec]))
 
     # Unique cols of each table (shared cols assigned to a prioritised table)
-    metadata_cols = ['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
-    bioentry_cols = ['bioentry_id', 'biodatabase_id', 'accession', 'identifier', 'division', 'description', 'version']
+    metadata_cols = ['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'metadata.authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
+    biodatabase_cols = ['biodatabase_id', 'biodatabase.name', 'authority', 'biodatabase.description']
+    bioentry_cols = ['bioentry_id', 'bioentry.biodatabase_id', 'bioentry.taxon_id', 'bioentry.name', 'bioentry.accession', 'identifier', 'division', 'description', 'version']
+    bioentry_dbxref_cols = ['bioentry_dbxref.bioentry_id', 'dbxref_id', 'rank']
+    bioentry_path_cols = ['object_bioentry_id', 'subject_bioentry_id', 'term_id', 'distance']
+    bioentry_qualifier_value_cols = ['bioentry_qualifier_value.bioentry_id', 'term_id', 'value', 'rank']
+    bioentry_reference_cols = ['bioentry_reference.bioentry_id', 'reference_id', 'start_pos', 'end_pos', 'rank']
+    bioentry_relationship_cols = ['bioentry_relationship_id', 'bioentry_relationship.object_bioentry', 'bioentry_relationship.subject_bioentry_id', 'term_id', 'rank']
     biosequence_cols = ['version', 'length', 'alphabet', 'seq']
-    bioentry_reference_cols = ['reference_id', 'start_pos', 'end_pos', 'rank']
-    taxon_cols = ['ncbi_taxon_id', 'ncbi_taxon_id', 'parent_taxon_id', 'node_rank', 'genetic_code', 'mito_genetic_code', 'left_value', 'right_value']
-    taxon_name_cols = ['name_class']
+    comment_cols = ['comment_id', 'comment.bioentry_id', 'comment_text', 'rank']
+    dbxref_cols = ['dbxref_id', 'dbname', 'dbxref.accession', 'version']
+    dbxref_qualifier_value_cols = ['dbxref_qualifier_value.dbxref_id', 'dbxref_qualifier_value.term_id', 'dbxref_qualifier_value.rank', 'dbxref_qualifier_value.value']
+    location_cols = ['location_id', 'seqfeature_id', 'dbxref_id', 'term_id', 'start_pos', 'end_pos', 'strand', 'rank']
+    location_qualifier_value_cols = ['location_qualifier_value.location_id', 'location_qualifier_value.term_id', 'location_qualifier_value.value', 'location_qualifier_value.int_value']
+    ontology_cols = ['ontology_id', 'ontology_cols.name', 'definition']
+    reference_cols = ['reference_id', 'reference.dbxref_id', 'location', 'title', 'authors', 'crc']
+    seqfeature_cols = ['seqfeature_id', 'seqfeature.bioentry_id', 'type_term_id', 'source_term_id', 'display_name', 'seqfeature.rank']
+    seqfeature_dbxref_cols = ['seqfeature_dbxref.seqfeature_id', 'seqfeature_dbxref.dbxref_id', 'seqfeature_dbxref.rank']
+    seqfeature_path_cols = ['object_seqfeature_id', 'subject_seqfeature_id', 'seqfeature_path.term_id', 'seqfeature_path.distance']
+    seqfeature_qualifier_value_cols = ['seqfeature_qualifier_value.seqfeature_id', 'seqfeature_qualifier_value.term_id', 'seqfeature_qualifier_value.rank', 'seqfeature_qualifier_value.value']
+    seqfeature_relationship_cols = ['seqfeature_relationship_id', 'seqfeature_relationship.object_seqfeature_id', 'seqfeature_relationship.subject_seqfeature_id', 'seqfeature_relationship.term_id', 'seqfeature_relationship.rank']
+    taxon_cols = ['taxon.taxon_id', 'ncbi_taxon_id', 'parent_taxon_id', 'node_rank', 'genetic_code', 'mito_genetic_code', 'left_value', 'right_value']
+    taxon_name_cols = ['taxon_name.taxon_id', 'taxon_name.name', 'name_class']
+    term_cols = ['term_id', 'term.name', 'term.definition', 'term.identifier', 'is_obsolete', 'term.ontology_id']
+    term_dbxref_cols = ['term_dbxref.term_id', 'term_dbxref.dbxref_id', 'term_dbxref.rank']
+    term_path_cols = ['term_path_id', 'subject_term_id', 'predicate_term_id', 'object_term_id', 'term_path.ontology_id', 'term_path.distance']
+    term_relationship_cols = ['term_relationship_id', 'subject_term_id', 'predicate_term_id', 'object_term_id', 'term_relationship.ontology_id']
+    term_relationship_term_cols = ['term_relationship_term.term_relationship_id', 'term_relationship_term.term_id']
+    term_synonym_cols = ['synonym', 'term_synonym.term_id']
+
+    """
+    ALL_TABLES = [biodatabase_cols, bioentry_cols, bioentry_dbxref_cols, bioentry_path_cols, bioentry_qualifier_value_cols, bioentry_reference_cols, bioentry_relationship_cols, biosequence_cols, comment_cols, dbxref_cols, dbxref_qualifier_value_cols, location_cols, location_qualifier_value_cols, metadata_cols, ontology_cols, reference_cols, seqfeature_cols, seqfeature_dbxref_cols, seqfeature_path_cols, seqfeature_qualifier_value_cols, seqfeature_relationship_cols, taxon_cols, taxon_name_cols, term_cols, term_dbxref_cols, term_path_cols, term_relationship_cols, term_relationship_term_cols, term_synonym_cols]
+    ALL_COLS = []
+    for table in ALL_TABLES:
+        for col in table:
+            ALL_COLS.append(col)
+    reps = []
+    for col in ALL_COLS:
+        if ALL_COLS.count(col) > 1:
+            reps.append(col)
+    print(list(set(reps)))
+    """
+
+
+    """
+    object_term_id
+    subject_term_id
+    definition
+    identifier
+    term_id
+    object_seqfeature_id
+    subject_seqfeature_id
+    distance
+    display_name
+    authors default to reference table?
+    location
+    definition
+    seqfeature_id
+    version
+    dbxref_id
+    start_pos
+    end_pos
+    rank
+    term_id
+    value
+    """
 
     for c in all_cols:
 
@@ -906,6 +967,9 @@ def sql_cols(table, cols, spec):
             mysql_com = f'taxon_name.{c}'
         else:
             sys.exit(f"ERROR: Column '{c}' does not exist in the database.")
+
+        if mysql_com.count('.') > 1:
+            mysql_com = mysql_com.split('.', 1)[1]
 
         cols_dict[c] = mysql_com
 
