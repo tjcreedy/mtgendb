@@ -1023,29 +1023,29 @@ def sql_table(tables):
     elif len(tables) > 1:
 
         # Lists of tables sharing linking columns (For duplicates it must be decided which table the column shouls be assigned to).
-        BIOENTRY_ID = ['bioentry', 'bioentry_dbxref', 'bioentry_qualifier_value', 'bioentry_reference', 'biosequence', 'comment']
+        BIOENTRY_ID = ['bioentry', 'bioentry_dbxref', 'bioentry_qualifier_value', 'bioentry_reference', 'biosequence', 'comment', 'seqfeature']
         TAXON_ID = ['taxon', 'taxon_name']
         DBXREF_ID = ['dbxref', 'dbxref_qualifier_value', 'reference', 'seqfeature_dbxref']
         LOCATION_ID = ['location', 'location_qualifier_value']
-        SEQFEATURE_ID = ['seqfeature', 'seqfeature_dbxref', 'seqfeature_qualifier_value']
+        SEQFEATURE_ID = ['seqfeature_dbxref', 'seqfeature_qualifier_value']
 
         # Identify links between provided tables
         bios = list(set(tables) & set(BIOENTRY_ID))
         taxons = list(set(tables) & set(TAXON_ID))
         dbxrefs = list(set(tables) & set(DBXREF_ID))
         locations = list(set(tables) & set(LOCATION_ID))
-        seqs = list(set(tables) & set(SEQFEATURE_ID))
+        seqfeatures = list(set(tables) & set(SEQFEATURE_ID))
 
         joins = ["metadata"]
 
-        ##BIOS
+        #Bios
         if len(bios) >= 1:
             if 'bioentry' in bios:
                 bios.remove('bioentry')
             bios_join = table_join(" JOIN bioentry ON metadata.db_id=bioentry.name", bios, 'bioentry', 'bioentry_id')
             joins.append(bios_join)
 
-        ##TAXONS
+        #Taxons
         if len(taxons) >= 1:
             if 'taxon' in taxons:
                 taxons.remove('taxon')
@@ -1053,6 +1053,8 @@ def sql_table(tables):
             joins.append(taxons_join)
 
         table_string = ''.join(joins)
+
+        #COMPLETE_TABLE_STRING = 'metadata JOIN bioentry ON metadata.db_id=bioentry.name JOIN bioentry_dbxref ON bioentry.bioentry_id=bioentry_dbxref.bioentry_id JOIN bioentry_qualifier_value ON bioentry_qualifier_value.bioentry_id=bioentry.bioentry_id JOIN bioentry_reference ON bioentry_reference.bioentry_id=bioentry.bioentry_id JOIN biosequence ON biosequence.bioentry_id=bioentry.bioentry_id JOIN comment ON comment.bioentry_id=bioentry.bioentry_id JOIN seqfeature ON seqfeature.bioentry_id=bioentry.bioentry_id JOIN seqfeature_dbxref ON seqfeature_dbxref.seqfeature_id=seqfeature.seqfeature_id JOIN seqfeature_qualifier_value ON seqfeature_qualifier_value.seqfeature_id=seqfeature.seqfeature_id JOIN taxon ON metadata.taxon_id=taxon.ncbi_taxon_id JOIN taxon_name ON taxon.taxon_id=taxon_name.taxon_id' \
 
     else:
         sys.exit("ERROR: Cannot construct table. Invalid information provided.")
