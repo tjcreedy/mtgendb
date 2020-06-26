@@ -12,21 +12,27 @@ import gb_csv_module as gcm
 
 # Define arguments to be parsed
 parser = argparse.ArgumentParser(description="Adding a genbank- and a csv-file to the database.")
-parser.add_argument('-o', '--out', dest = 'output_name', required = True, help = "Preferred filename for the output (extension will be added automatically according to your output format choice).")
-parser.add_argument('-mysql_query', '--mysql_query', dest = 'mysql_query', help = "MySQL query to pull data from database..")
+parser.add_argument('-q', '--query', dest = 'mysql_query', help = "MySQL query to pull data from database..")
 
 subparsers = parser.add_subparsers(dest="subcommand")
 
+parser_freq = subparsers.add_parser('CL')
+parser_freq.add_argument('-v', '--value', dest='value', required=True, help='Value you want to count')
+parser_freq.add_argument('-f', '--field', dest='field', required=True, help='Field in which value is to be counted')
+
 parser_csv = subparsers.add_parser('CSV')
-parser_csv.add_argument('-t', '--table', dest = 'database_table', choices=["metadata", "bioentry", "bioentry_dbxref", "bioentry_qualifier_value", "bioentry_reference", "biosequence", "comment", "taxon", "taxon_name"], help = "Name of database table you wish to extract data from.")
-parser_csv.add_argument('-c', '--columns', dest = 'table_columns', nargs='+', default = '*', help = "Name of table columns you wish to extract data from (e.g. name, .")
-parser_csv.add_argument('-csvs', '--csv_specs', dest = 'mysql_specs', nargs='+', help = "Comma-separated list of mysql specifications (e.g. subregion='Sabah',collectionmethod='MALAISE').")
+parser_csv.add_argument('-o', '--out', dest = 'output_name', required=True, help="Preferred filename for the output (extension will be added automatically according to your output format choice).")
+parser_csv.add_argument('-t', '--table', dest='database_table', choices=["metadata", "bioentry", "bioentry_dbxref", "bioentry_qualifier_value", "bioentry_reference", "biosequence", "seqfeature", "comment", "taxon", "taxon_name"], help = "Name of database table you wish to extract data from.")
+parser_csv.add_argument('-c', '--columns', dest='table_columns', nargs='+', default='*', help = "Name of table columns you wish to extract data from (e.g. name, .")
+parser_csv.add_argument('-s', '--specifications', dest='mysql_specs', nargs='+', help="Comma-separated list of mysql specifications (e.g. subregion='Sabah',collectionmethod='MALAISE').")
 
 parser_fasta = subparsers.add_parser('FASTA')
-parser_fasta.add_argument('-fas', '--fasta_specifications', dest = 'mysql_specs', nargs='+', help = "Comma-separated list of mysql specifications (e.g. subregion='Sabah',collectionmethod='MALAISE').")
+parser_fasta.add_argument('-o', '--out', dest = 'output_name', required=True, help = "Preferred filename for the output (extension will be added automatically according to your output format choice).")
+parser_fasta.add_argument('-s', '--specifications', dest = 'mysql_specs', nargs='+', help = "Comma-separated list of mysql specifications (e.g. subregion='Sabah',collectionmethod='MALAISE').")
 
 parser_gb = subparsers.add_parser('GB')
-parser_gb.add_argument('-gbs', '--gb_specifications', dest = 'mysql_specs', nargs='+', help = "Comma-separated list of mysql specifications (e.g. subregion='Sabah',collectionmethod='MALAISE').")
+parser_gb.add_argument('-o', '--out', dest = 'output_name', required=True, help = "Preferred filename for the output (extension will be added automatically according to your output format choice).")
+parser_gb.add_argument('-s', '--specifications', dest = 'mysql_specs', nargs='+', help = "Comma-separated list of mysql specifications (e.g. subregion='Sabah',collectionmethod='MALAISE').")
 # args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-o", "metadateru", "-s", "subregion='Sabah'"])
 # args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-c", "name", "length", "accession", "seq", "-o", "metadateru", "-s", "country='United Kingdon' description='Lucanus sp. BMNH 1425267 mitochondrion, complete genome'", "-f", "csv"])
 
@@ -64,7 +70,7 @@ if args.subcommand == 'CSV':
 
         mysql_command = args.mysql_query
 
-    gcm.csv_from_sql(mysql_command, args.output_name)
+    #gcm.csv_from_sql(mysql_command, args.output_name)
 
 else:
 
@@ -76,12 +82,13 @@ else:
 
         mysql_command = args.mysql_query
 
+    """
     names_dict = gcm.fetch_names(mysql_command)
 
     records = gcm.fetch_recs(names_dict)
 
     gcm.seqfile_from_sql(records, args.output_name, args.subcommand.lower())
-
+    """
 
 
 print(f"QUERY: {mysql_command}")
@@ -148,12 +155,16 @@ Need spec
 """
 TO-DO
 
-1. What if specs are to do with numbers and not strings? (e.g. instead of country='UK', length>3000)
-2. Which tables join which and how?
 3. What happens if they have chosen multiple columns but have chosen an output format other than CSV?
-4. If 'tables' provided, then set cols to '*' (as output will be CSV) [if table or cols given then format must be CSV]
-5. 'name' column in both metadata and taxon_name. Must distinguish.
 6. Sort out help page.
 7. Number of file output formats needs to be looked at...
+8. Searching taoxnomy 
+9. <>= the only symbols in a query? NO: '!='
+10. Data is stored only at the most specific taxonomic level. E.g. a Mordellidae (family) is still a Coleoptera (order), but will only come up under the spec family='Mordellidae' (and not under order='Coleoptera'). 
+
+
+USAGE NOTES:
+1. Assumes taxon name provided is the scientific name
+2. 
 
 """
