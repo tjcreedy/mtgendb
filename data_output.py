@@ -16,7 +16,7 @@ parser.add_argument('-q', '--query', dest = 'mysql_query', help = "MySQL query t
 
 subparsers = parser.add_subparsers(dest="subcommand")
 
-parser_freq = subparsers.add_parser('CL')
+parser_freq = subparsers.add_parser('COUNT')
 #parser_freq.add_argument('-v', '--value', dest='value', required=True, help='Value you want to count')
 #parser_freq.add_argument('-f', '--field', dest='field', required=True, help='Field in which value is to be counted')
 parser_freq.add_argument('-s', '--specifications', dest='mysql_specs', nargs='+', help="Comma-separated list of mysql specifications (e.g. subregion='Sabah',collectionmethod='MALAISE').")
@@ -77,7 +77,7 @@ if args.subcommand == 'CSV':
 
     #gcm.csv_from_sql(mysql_command, args.output_name)
 
-elif args.subcommand == 'CL':
+elif args.subcommand == 'COUNT':
 
     if args.mysql_query is None:
 
