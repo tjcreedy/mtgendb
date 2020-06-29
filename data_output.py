@@ -17,18 +17,23 @@ parser.add_argument('-q', '--query', dest = 'mysql_query', help = "MySQL query t
 subparsers = parser.add_subparsers(dest="subcommand")
 
 parser_freq = subparsers.add_parser('CL')
-parser_freq.add_argument('-v', '--value', dest='value', required=True, help='Value you want to count')
-parser_freq.add_argument('-f', '--field', dest='field', required=True, help='Field in which value is to be counted')
+#parser_freq.add_argument('-v', '--value', dest='value', required=True, help='Value you want to count')
+#parser_freq.add_argument('-f', '--field', dest='field', required=True, help='Field in which value is to be counted')
+parser_freq.add_argument('-s', '--specifications', dest='mysql_specs', nargs='+', help="Comma-separated list of mysql specifications (e.g. subregion='Sabah',collectionmethod='MALAISE').")
+
+#e.g. how many sequences are coleoptera?
+#e.g. how many sequences are ... ?
+
 
 parser_csv = subparsers.add_parser('CSV')
 parser_csv.add_argument('-o', '--out', dest = 'output_name', required=True, help="Preferred filename for the output (extension will be added automatically according to your output format choice).")
 parser_csv.add_argument('-t', '--table', dest='database_table', choices=["metadata", "bioentry", "bioentry_dbxref", "bioentry_qualifier_value", "bioentry_reference", "biosequence", "seqfeature", "comment", "taxon", "taxon_name"], help = "Name of database table you wish to extract data from.")
-parser_csv.add_argument('-c', '--columns', dest='table_columns', nargs='+', default='*', help = "Name of table columns you wish to extract data from (e.g. name, .")
+parser_csv.add_argument('-c', '--columns', dest='table_columns', nargs='+', default=['*'], help = "Name of table columns you wish to extract data from (e.g. name, .")
 parser_csv.add_argument('-s', '--specifications', dest='mysql_specs', nargs='+', help="Comma-separated list of mysql specifications (e.g. subregion='Sabah',collectionmethod='MALAISE').")
 
 parser_fasta = subparsers.add_parser('FASTA')
-parser_fasta.add_argument('-o', '--out', dest = 'output_name', required=True, help = "Preferred filename for the output (extension will be added automatically according to your output format choice).")
-parser_fasta.add_argument('-s', '--specifications', dest = 'mysql_specs', nargs='+', help = "Comma-separated list of mysql specifications (e.g. subregion='Sabah',collectionmethod='MALAISE').")
+parser_fasta.add_argument('-o', '--out', dest = 'output_name', required=True, help="Preferred filename for the output (extension will be added automatically according to your output format choice).")
+parser_fasta.add_argument('-s', '--specifications', dest = 'mysql_specs', nargs='+', help="Comma-separated list of mysql specifications (e.g. subregion='Sabah',collectionmethod='MALAISE').")
 
 parser_gb = subparsers.add_parser('GB')
 parser_gb.add_argument('-o', '--out', dest = 'output_name', required=True, help = "Preferred filename for the output (extension will be added automatically according to your output format choice).")
@@ -71,6 +76,18 @@ if args.subcommand == 'CSV':
         mysql_command = args.mysql_query
 
     #gcm.csv_from_sql(mysql_command, args.output_name)
+
+elif args.subcommand == 'CL':
+
+    if args.mysql_query is None:
+
+        mysql_command = gcm.construct_sql_command(None, ['count'], args.mysql_specs)
+
+    else:
+
+        mysql_command = args.mysql_query
+
+    gcm.return_count(mysql_command)
 
 else:
 
@@ -161,7 +178,7 @@ TO-DO
 8. Searching taoxnomy 
 9. <>= the only symbols in a query? NO: '!='
 10. Data is stored only at the most specific taxonomic level. E.g. a Mordellidae (family) is still a Coleoptera (order), but will only come up under the spec family='Mordellidae' (and not under order='Coleoptera'). 
-
+11. User must input db login details! Not automatic 
 
 USAGE NOTES:
 1. Assumes taxon name provided is the scientific name
