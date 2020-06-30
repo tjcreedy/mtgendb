@@ -1108,152 +1108,10 @@ def construct_sql_command(table, cols, spec):
     mysql_command = f"SELECT {cols_string} FROM {table_string}{spec_string};"
 
     return mysql_command
-"""
-BUG1: takes wrong format from command line
-BUG2: if spec is Noe then it gets puts in string as ' WHERE ()'
-"""
-
-"""
-def construct_sql_command(table, cols, spec):
-    Creates MySQL command to fetch list of IDS of records that meet certain user-provided specifications.
-    
-    #table = None
-    #cols = ['name', 'length']
-    #spec = ['country=United Kingdom']
-
-    #----> "SELECT metadata.name, biosequence.length FROM metadata JOIN bioentry ON metadata.db_id=bioentry.name JOIN biosequence ON bioentry.bioentry_id=biosequence.bioentry_id WHERE (metadata.country='United Kingdom');"
-
-    #table, cols, spec = [None, None, ['country=United Kingdom']]
-
-    #table, cols, spec = ['metadata', ['name', 'length'], None]
-
-    #table, cols, spec = [None, ['name', 'latitude'], ['country=United Kingdom']]
-
-
-
-    if table is not None:
-
-        if [cols, spec] is ['*', None]:
-            mysql_command = f"SELECT * FROM {table};"
-        elif (cols != '*') and (spec is None):
-            col_string = ', '.join(cols)
-            mysql_command = f"SELECT {col_string} FROM {table};"
-        elif (cols == '*') and (spec is not None):
-            spec_string = f"({') AND ('.join(spec)})"
-            mysql_command = f"SELECT * FROM {table} WHERE {spec_string};"
-        else:
-            col_string = ', '.join(cols)
-            spec_string = f"({') AND ('.join(spec)})"
-            mysql_command = f"SELECT {col_string} FROM {table} WHERE {spec_string};"
-
-    else:
-
-        if spec is None:
-            spec = []
-
-        #REFORMAT INPUTS
-        cols = list(cols)
-        spec = [f"{s.split('=')[0]}='{s.split('=')[1]}'" for s in spec]
-        all_cols = list(set(cols + [s.split("=")[0] for s in spec]))
-
-    #------------TABLE-------------------
-        #Unique cols of each table (shared cols assigned to a prioritised table)
-        metadata_cols = ['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
-        bioentry_cols = ['bioentry_id', 'biodatabase_id', 'accession', 'identifier', 'division', 'description', 'version']
-        biosequence_cols = ['version', 'length', 'alphabet', 'seq']
-        bioentry_reference_cols = ['reference_id', 'start_pos', 'end_pos', 'rank']
-        taxon_cols = ['ncbi_taxon_id', 'ncbi_taxon_id', 'parent_taxon_id', 'node_rank', 'genetic_code', 'mito_genetic_code', 'left_value', 'right_value']
-        taxon_name_cols = ['name_class']
-
-        columns_dict = {}
-
-        for c in all_cols:
-
-            if c == '*':
-                mysql_com = c
-            elif c in metadata_cols:
-                mysql_com = f'metadata.{c}'
-            elif c in bioentry_cols:               #-name  -taxon_id
-                mysql_com = f'bioentry.{c}'
-            elif c in biosequence_cols:            # - bioentry_id
-                mysql_com = f'biosequence.{c}'
-            elif c in bioentry_reference_cols:    # - bioentry_id
-                mysql_com = f'bioentry_reference.{c}'
-            elif c in taxon_cols:                #-taxon_id
-                mysql_com = f'taxon.{c}'
-            elif c in taxon_name_cols:           #-name -taxon_id
-                mysql_com = f'taxon_name.{c}'
-            else:
-                sys.exit(f"ERROR: Column '{c}' does not exist in the database.")
-
-            columns_dict[c] = mysql_com
-
-        #Create command
-        tables = list(set([x.split('.')[0] for x in columns_dict.values()]))
-
-        if len(tables) == 1:
-
-            columns_string = ', '.join(cols)
-            table_string = tables[0]
-
-            if len(spec) == 0:
-                spec_string = None
-            else:
-                spec_string = f" WHERE ({') AND ('.join(spec)})"
-
-            mysql_command = f"SELECT {columns_string} FROM {table_string}{spec_string};"
-
-        elif len(tables) > 1:
-
-            #Lists of tables sharing linking columns (For duplicates it must be decided which table the column shouls be assigned to).
-            BIOENTRY_ID = ['bioentry', 'bioentry_dbxref', 'bioentry_qualifier_value', 'bioentry_reference', 'biosequence', 'comment']
-            DBXREF_ID = ['dbxref', 'dbxref_qualifier_value', 'reference', 'seqfeature_dbxref']
-            LOCATION_ID = ['location', 'location_qualifier_value']
-            SEQFEATURE_ID = ['seqfeature', 'seqfeature_dbxref', 'seqfeature_qualifier_value']
-
-            #Identify links between provided tables
-            bios = list(set(tables) & set(BIOENTRY_ID))
-            dbxrefs = list(set(tables) & set(DBXREF_ID))
-            locations = list(set(tables) & set(LOCATION_ID))
-            seqs = list(set(tables) & set(SEQFEATURE_ID))
-
-            joins = ["metadata"]
-
-            ##BIOS
-            if len(bios) >= 1:
-                if 'bioentry' in bios:
-                    bios.remove('bioentry')
-                bios_join = table_join(" JOIN bioentry ON metadata.db_id=bioentry.name", bios, 'bioentry', 'bioentry_id')
-                joins.append(bios_join)
-
-            
-            ##TAXONS
-            if len(taxons) >= 1:
-                if 'taxon' in bios:
-                    bios.remove('taxon')
-                taxons_join = table_join(" JOIN taxon ON metadata.db_id=taxon.______", taxons, 'taxon', 'taxon_id')
-                joins.append(taxons_join)
-            
-            columns_string = ', '.join([columns_dict[x] for x in cols])
-            table_string = ''.join(joins)
-            spec = ['='.join([columns_dict[x[0]], x[1]]) for x in [x.split('=') for x in spec]]
-
-            if len(spec) == 0:
-                spec_string = None
-            else:
-                spec_string = f" WHERE ({') AND ('.join(spec)})"
-
-            mysql_command = f"SELECT {columns_string} FROM {table_string}{spec_string};"
-
-        else:
-            sys.exit("ERROR: No valid information provided.")
-
-    return mysql_command
-"""
 
 
 def fetch_names(mysql_command):
-    """Fetch db_ids list from database using MySQL command
+    """Fetch names and corresponding db_id's from database using MySQL command
     """
     con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
     cur = con.cursor()
@@ -1263,6 +1121,7 @@ def fetch_names(mysql_command):
     names_dict = {row[0]: row[1] for row in set(records)}
 
     return names_dict
+
 
 
 def fetch_recs(names_dict):
@@ -1288,19 +1147,6 @@ def fetch_recs(names_dict):
 def csv_from_sql(mysql_command, csv_name):
     #cols, tablename, csv_name, specs = [None, "metadata", "metadata_output", "subregion='Sabah', collectionmethod='BEATING'"]
 
-    #!!! Write subroutine (part of the mysql command function) that creates this table list (table_string)
-
-
-    #Contruct mysql command
-    """
-    if specs is None:
-        mysql_command = f"SELECT {cols} FROM {tablename};"
-    else:
-        specs_list = specs.split(',')
-        specs_string = ' AND '.join(specs_list)
-        mysql_command = f"SELECT {cols} FROM {tablename} WHERE {specs_string};"
-    """
-
     #Connect to database and execute command
     con = mdb.connect(host="localhost", user=db_user, passwd=db_passwd, db=db_name)
     cur = con.cursor()
@@ -1313,8 +1159,6 @@ def csv_from_sql(mysql_command, csv_name):
         csv_writer.writerows(cur)
 
     return()
-
-
 
 
 def seqfile_from_sql(recs_dict, file_name, format):
