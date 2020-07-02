@@ -21,10 +21,10 @@ parser.add_argument('-k', '--key', dest = 'key', default = 'LOCUS', choices = ['
 
 args = parser.parse_args()
 
-#LOCAL: args = parser.parse_args(["-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/subset.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "TEST", "-n", "1", "-z", "3", "-k", "LOCUS"])
-#       args = parser.parse_args(["-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/gids.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "TEST", "-n", "1", "-z", "4", "-k", "LOCUS"])
+#LOCAL: args = parser.parse_args(["-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/subset.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "3", "-k", "LOCUS"])
+# Long: args = parser.parse_args(["-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/gids.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "4", "-k", "LOCUS"])
 
-#SERVER: args = parser.parse_args(["-a", "/home/luke/Testing/subset.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "LSP", "-n", "1", "-z", "3", "-k", "LOCUS"])
+#SERVER: args = parser.parse_args(["-a", "/home/luke/Testing/subset.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "3", "-k", "LOCUS"])
 
 
 #Convert text-file of accessions to a list.
@@ -46,16 +46,19 @@ gb_met_df = gcm.extract_metadata(records)
 gb_df_new_ids = gcm.change_names_csv(gb_met_df, dict_new_ids)
 
 #Reorder dataframe columns for the database.
-gb_df_reordered = gcm.reformat_df_cols(gb_df_new_ids)
+gb_df_reformatted = gcm.reformat_df_cols(gb_df_new_ids)
 
 #Replace old input ID with new database ID in genbank file
 gcm.change_ids_genbank(records, dict_new_ids, args.key)
+
+#Change the features for CDS
+gcm.alter_features(records)
 
 #Push the genbank data into the database
 gcm.load_gb_dict_into_db(records)
 
 #Push the metadata into the database
-gcm.load_df_into_db(gb_df_reordered)
+gcm.load_df_into_db(gb_df_reformatted)
 
 
 
