@@ -90,7 +90,7 @@ else:
 
     records = gcm.fetch_recs(names_dict, args.db_user, args.db_pass)
 
-    gcm.seqfile_from_sql(records, args.output_name, args.subcommand.lower())
+    gcm.seqfile_from_sql(records, args.output_name, args.output_format.lower())
 
 
 
