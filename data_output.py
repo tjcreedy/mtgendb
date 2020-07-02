@@ -12,7 +12,9 @@ import gb_csv_module as gcm
 
 #Create the top-level parser
 parser = argparse.ArgumentParser(description="Extracting data from the database.")
-parser.add_argument('-q', '--query', dest='mysql_query', metavar='{custom_MySQL_query}', help = "Custom MySQL query to extract data from database. (e.g. \"SELECT * FROM metadata WHERE country='United Kingdom';\") NOTE: Your custom specification must be enclosed by double quotations, as above.")
+parser.add_argument('--db_user', dest='db_user', metavar='db_username', required=True, help = "Database username")
+parser.add_argument('--db_pass', dest='db_pass', metavar='db_password', required=True, help = "Database password")
+parser.add_argument('-q', '--query', dest='mysql_query', metavar='custom_MySQL_query', help = "Custom MySQL query to extract data from database. (e.g. \"SELECT * FROM metadata WHERE country='United Kingdom';\") NOTE: Your custom specification must be enclosed by double quotations, as above.")
 subparsers = parser.add_subparsers(dest="output_format", description='Desired output format:')
 
 #Create the parser for the 'COUNT' command
@@ -55,7 +57,8 @@ if args.output_format == 'CSV':
 
         mysql_command = args.mysql_query
 
-    #gcm.csv_from_sql(mysql_command, args.output_name)
+    #gcm.csv_from_sql(mysql_command, args.output_name, args.db_user, args.db_pass)
+
 
 elif args.output_format == 'COUNT':
 
@@ -65,9 +68,12 @@ elif args.output_format == 'COUNT':
 
     else:
 
-        mysql_command = args.mysql_query
+        import re
 
-    #gcm.return_count(mysql_command)
+        mysql_command = re.sub('SELECT.*?FROM', 'SELECT COUNT(*) FROM', args.mysql_query, 1)
+
+    #gcm.return_count(mysql_command, args.db_user, args.db_pass)
+
 
 else:
 
@@ -80,9 +86,9 @@ else:
         mysql_command = args.mysql_query
 
     """
-    names_dict = gcm.fetch_names(mysql_command)
+    names_dict = gcm.fetch_names(mysql_command, args.db_user, args.db_pass)
 
-    records = gcm.fetch_recs(names_dict)
+    records = gcm.fetch_recs(names_dict, args.db_user, args.db_pass)
 
     gcm.seqfile_from_sql(records, args.output_name, args.subcommand.lower())
     """
@@ -99,8 +105,12 @@ TO-DO
 7. Number of file output formats needs to be looked at...
 9. <>= the only symbols in a query? NO: '!='
 10. Data is stored only at the most specific taxonomic level. E.g. a Mordellidae (family) is still a Coleoptera (order), but will only come up under the spec family='Mordellidae' (and not under order='Coleoptera'). 
+
+    USEFUL COMMAND: SELECT parent.ncbi_taxon_id, tnparent.name, child.ncbi_taxon_id, tnchild.name FROM taxon AS parent JOIN taxon AS child ON parent.taxon_id=child.parent_taxon_id JOIN taxon_name AS tnparent ON parent.taxon_id=tnparent.taxon_id JOIN taxon_name AS tnchild ON child.taxon_id=tnchild.taxon_id WHERE tnchild.name='Mordellidae';
+
 11. User must input db login details! Not automatic 
 12. Add new fields to metadata 
+13. COUNT using your own specification? CUSTOM SPEC OVERRIDES ANYTHING PROVIDED AFTER COUNT
 
 USAGE NOTES:
 1. Assumes taxon name provided is the scientific name
