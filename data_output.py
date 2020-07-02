@@ -57,7 +57,7 @@ if args.output_format == 'CSV':
 
         mysql_command = args.mysql_query
 
-    #gcm.csv_from_sql(mysql_command, args.output_name, args.db_user, args.db_pass)
+    gcm.csv_from_sql(mysql_command, args.output_name, args.db_user, args.db_pass)
 
 
 elif args.output_format == 'COUNT':
@@ -72,7 +72,7 @@ elif args.output_format == 'COUNT':
 
         mysql_command = re.sub('SELECT.*?FROM', 'SELECT COUNT(*) FROM', args.mysql_query, 1)
 
-    #gcm.return_count(mysql_command, args.db_user, args.db_pass)
+    gcm.return_count(mysql_command, args.db_user, args.db_pass)
 
 
 else:
@@ -85,13 +85,13 @@ else:
 
         mysql_command = args.mysql_query
 
-    """
+
     names_dict = gcm.fetch_names(mysql_command, args.db_user, args.db_pass)
 
     records = gcm.fetch_recs(names_dict, args.db_user, args.db_pass)
 
     gcm.seqfile_from_sql(records, args.output_name, args.subcommand.lower())
-    """
+
 
 
 print(f"QUERY: {mysql_command}")
