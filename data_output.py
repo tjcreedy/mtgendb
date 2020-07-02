@@ -6,7 +6,7 @@ import argparse
 import pandas as pd
 import sys
 
-# Import the module:
+#Import the module:
 import gb_csv_module as gcm
 
 
@@ -40,6 +40,8 @@ parser_gb.add_argument('-s', '--specifications', dest='mysql_specs', metavar='{S
 
 # args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-o", "metadateru", "-s", "subregion='Sabah'"])
 # args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-c", "name", "length", "accession", "seq", "-o", "metadateru", "-s", "country='United Kingdon' description='Lucanus sp. BMNH 1425267 mitochondrion, complete genome'", "-f", "csv"])
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'GB', '-o', 'outksis', '-s',  'country!=United Kingdom'])
+
 
 args=parser.parse_args()
 
@@ -57,7 +59,7 @@ if args.output_format == 'CSV':
 
         mysql_command = args.mysql_query
 
-    gcm.csv_from_sql(mysql_command, args.output_name, args.db_user, args.db_pass)
+    #gcm.csv_from_sql(mysql_command, args.output_name, args.db_user, args.db_pass)
 
 
 elif args.output_format == 'COUNT':
@@ -72,7 +74,7 @@ elif args.output_format == 'COUNT':
 
         mysql_command = re.sub('SELECT.*?FROM', 'SELECT COUNT(*) FROM', args.mysql_query, 1)
 
-    gcm.return_count(mysql_command, args.db_user, args.db_pass)
+    #gcm.return_count(mysql_command, args.db_user, args.db_pass)
 
 
 else:
@@ -85,13 +87,15 @@ else:
 
         mysql_command = args.mysql_query
 
-
+    """
     names_dict = gcm.fetch_names(mysql_command, args.db_user, args.db_pass)
 
     records = gcm.fetch_recs(names_dict, args.db_user, args.db_pass)
+    
+    subrecs = gcm.extract_genes(records, 'cox2')
 
     gcm.seqfile_from_sql(records, args.output_name, args.output_format.lower())
-
+    """
 
 
 print(f"QUERY: {mysql_command}")
@@ -117,3 +121,4 @@ USAGE NOTES:
 2. 
 
 """
+

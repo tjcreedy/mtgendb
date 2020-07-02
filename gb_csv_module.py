@@ -683,7 +683,8 @@ def insert_taxid(ncbi_lineage, genbank_dict):
 
 
 def loadnamevariants():
-    # generates dict of name variants for each gene.
+    """Generates dict of name variants for each gene.
+    """
     output = {}
     for line in urllib.request.urlopen("https://raw.githubusercontent.com/tjcreedy/biotools/master/gene_name_variants.txt"):
         line = line.decode('utf-8').strip()
@@ -699,7 +700,8 @@ def loadnamevariants():
 
 
 def alter_features(genbank_dict):
-    # Edit the features in the genbank entries.
+    """Edit the features in the genbank entries.
+    """
 
     unidentifiable_features = set()
     different_names = loadnamevariants()
@@ -1123,7 +1125,6 @@ def fetch_names(mysql_command, db_un, db_pw):
     return names_dict
 
 
-
 def fetch_recs(names_dict, db_un, db_pw):
     """Fetches a list of SeqRecords from an input dict of record names/db ids
     """
@@ -1142,6 +1143,26 @@ def fetch_recs(names_dict, db_un, db_pw):
 
     return recs
 
+
+def extract_genes(recs, gene_name):
+    """Extract specific genes from records
+    """
+
+    #LOOK THROUGH MANUAL ON OTHER WAYS TO DO THIS (ISN'T THERE A BIOSQL AUTO ALTERNATIVE?)
+
+    subrecs = {}
+
+    #Slice down record
+    for id, record in recs.items():
+        for feature in record.features:
+            if feature.type.upper() == "CDS":
+                if feature.qualifiers['gene'][0].upper() == gene_name.upper():
+                    boundaries = re.findall(r'[0-9]+', str(feature.location))
+                    subrec = record[int(boundaries[0]):int(boundaries[1])]  # Does the lower bound need  '-1' after it to account for zero-indexing?
+                    subrec.description = re.sub('complete', 'partial', record.description)
+                    subrecs[id] = subrec
+
+    return subrecs
 
 
 def csv_from_sql(mysql_command, csv_name, db_un, db_pw):
