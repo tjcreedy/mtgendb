@@ -1147,20 +1147,26 @@ def fetch_recs(names_dict, db_un, db_pw):
 def extract_genes(recs, gene_name):
     """Extract specific genes from records
     """
+    #gene_name = 'cox1'
 
     #LOOK THROUGH MANUAL ON OTHER WAYS TO DO THIS (ISN'T THERE A BIOSQL AUTO ALTERNATIVE?)
+    # SOME RECORDS HAVE NO GENE QUALIFIERS
 
     subrecs = {}
 
     #Slice down record
     for id, record in recs.items():
         for feature in record.features:
-            if feature.type.upper() == "CDS":
-                if feature.qualifiers['gene'][0].upper() == gene_name.upper():
-                    boundaries = re.findall(r'[0-9]+', str(feature.location))
-                    subrec = record[int(boundaries[0]):int(boundaries[1])]  # Does the lower bound need  '-1' after it to account for zero-indexing?
-                    subrec.description = re.sub('complete', 'partial', record.description)
-                    subrecs[id] = subrec
+            if feature.type.upper() == "CDS" and 'gene' in feature.qualifiers and feature.qualifiers['gene'][0].upper() == gene_name.upper():
+                if feature.strand < 0:
+                    subrec = record[feature.location.start:feature.location.end].reverse_complement()
+                else:
+                    subrec = record[feature.location.start:feature.location.end]
+                subrec.description = re.sub(',|complete genome', '', record.description)
+                subrecs[id] = subrec
+
+    if len(recs) > len(subrecs):
+        print(f"WARNING: There are records satisfying your specification that do not contain a '{gene_name.upper()}' gene.")
 
     return subrecs
 
