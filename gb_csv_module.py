@@ -1166,7 +1166,7 @@ def extract_genes(recs, gene_name):
                 subrecs[id] = subrec
 
     if len(recs) > len(subrecs):
-        print(f"WARNING: There are records satisfying your specification that do not contain a '{gene_name.upper()}' gene.")
+        print(f"WARNING: There are records satisfying your specification that do not contain the '{gene_name.upper()}' gene.")
 
     return subrecs
 
