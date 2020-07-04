@@ -1143,11 +1143,11 @@ def fetch_recs(names_dict, db_un, db_pw):
 
     return recs
 
+"""
+def extract_gene(recs, gene_name):
+    Extract specific genes from records
 
-def extract_genes(recs, gene_name):
-    """Extract specific genes from records
-    """
-    #gene_name = 'cox1'
+    #gene_name = 'nd1'
 
     #LOOK THROUGH MANUAL ON OTHER WAYS TO DO THIS (ISN'T THERE A BIOSQL AUTO ALTERNATIVE?)
     # SOME RECORDS HAVE NO GENE QUALIFIERS
@@ -1155,18 +1155,47 @@ def extract_genes(recs, gene_name):
     subrecs = {}
 
     #Slice down record
-    for id, record in recs.items():
+    for idd, record in recs.items():
         for feature in record.features:
             if feature.type.upper() == "CDS" and 'gene' in feature.qualifiers and feature.qualifiers['gene'][0].upper() == gene_name.upper():
-                if feature.strand < 0:
-                    subrec = record[feature.location.start:feature.location.end].reverse_complement()
-                else:
-                    subrec = record[feature.location.start:feature.location.end]
+                subrec = feature.location.extract(record)
                 subrec.description = re.sub(',|complete genome', '', record.description)
-                subrecs[id] = subrec
+                subrecs[idd] = subrec
 
+    #Check for missing genes
     if len(recs) > len(subrecs):
         print(f"WARNING: There are records satisfying your specification that do not contain the '{gene_name.upper()}' gene.")
+
+    return subrecs
+
+
+def extract_CDS(recs):
+
+    genes = {}
+
+    for x in ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']:
+        genes[x] = extract_gene(recs, x)
+
+    return genes
+"""
+
+def extract_genes(recs, genes):
+
+    #genes = ['COX2', 'ND3', 'ATP6']
+
+    if '*' in genes:
+        genes = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
+
+    subrecs = {}
+    for idd, record in recs.items():
+        extracted_genes = {}
+        for gene in genes:
+            for feature in record.features:
+                if feature.type.upper() == "CDS" and 'gene' in feature.qualifiers and feature.qualifiers['gene'][0].upper() == gene.upper():   #.upper() not relevant, as alter_features means all in db would be upper, and choice in argparse means all in genes will be upper
+                    subrec = feature.location.extract(record)
+                    subrec.description = re.sub(',|complete genome', '', record.description)
+                    extracted_genes[gene] = subrec
+        subrecs[idd] = extracted_genes
 
     return subrecs
 
@@ -1185,14 +1214,22 @@ def csv_from_sql(mysql_command, csv_name, db_un, db_pw):
         csv_writer.writerow([i[0] for i in cur.description])  #Write headers
         csv_writer.writerows(cur)
 
-    return()
+    return
 
 
-def seqfile_from_sql(recs_dict, file_name, format):
+def seqfile_from_sql(recs_dict, file_name, frmat):
     """Writes list of SeqRecords to a file of chosen format
     """
-    # recs_dict, file_name, format = [recs, 'OUTPUTERUSKI', 'gb']
-    SeqIO.write(recs_dict.values(), f"{file_name}.{format}", format)
+    if recs_dict.values() are dict:   #!!!!
+    gene_recs = {}
+    genes = set([y for x in recs_dict.values() for y in x.keys()])
+    for gene in genes:
+        #gene_recs[gene] = [a[gene] for a in recs_dict.values() if gene in a.keys()]
+        SeqIO.write([a[gene] for a in recs_dict.values() if gene in a.keys()], f"{file_name}_{gene}.{frmat}", frmat)
+
+    else:
+        # recs_dict, file_name, format = [recs, 'OUTPUTERUSKI', 'gb']
+        SeqIO.write(recs_dict.values(), f"{file_name}.{frmat}", frmat)
 
     return
 
