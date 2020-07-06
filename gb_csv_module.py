@@ -1216,23 +1216,23 @@ def csv_from_sql(mysql_command, csv_name, db_un, db_pw):
 
     return
 
-
+"""
 def seqfile_from_sql(recs_dict, file_name, frmat):
-    """Writes list of SeqRecords to a file of chosen format
-    """
+    #Writes list of SeqRecords to a file of chosen format
+    
+    
     if recs_dict.values() are dict:   #!!!!
-    gene_recs = {}
-    genes = set([y for x in recs_dict.values() for y in x.keys()])
-    for gene in genes:
-        #gene_recs[gene] = [a[gene] for a in recs_dict.values() if gene in a.keys()]
-        SeqIO.write([a[gene] for a in recs_dict.values() if gene in a.keys()], f"{file_name}_{gene}.{frmat}", frmat)
+        genes = set([y for x in recs_dict.values() for y in x.keys()])
+        for gene in genes:
+            #gene_recs[gene] = [a[gene] for a in recs_dict.values() if gene in a.keys()]
+            SeqIO.write([rec_genes[gene] for rec_genes in recs_dict.values() if gene in rec_genes.keys()], f"{file_name}_{gene}.{frmat}", frmat)
 
     else:
         # recs_dict, file_name, format = [recs, 'OUTPUTERUSKI', 'gb']
         SeqIO.write(recs_dict.values(), f"{file_name}.{frmat}", frmat)
 
     return
-
+"""
 
 def return_count(mysql_command, db_un, db_pw):
 

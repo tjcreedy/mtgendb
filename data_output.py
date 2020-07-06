@@ -3,8 +3,6 @@
 """Data retreival from MySQL database.
 """
 import argparse
-import pandas as pd
-import sys
 
 #Import the module:
 import gb_csv_module as gcm
@@ -32,17 +30,19 @@ parser_csv.add_argument('-s', '--specifications', dest='mysql_specs', metavar='{
 parser_fasta = subparsers.add_parser('FASTA', help='Ouputs a .fasta file.')
 parser_fasta.add_argument('-o', '--out', dest = 'output_name', metavar='{Output filename}', required=True, help="Preferred filename for the output (extension will be added automatically according to your output format choice).")
 parser_fasta.add_argument('-s', '--specifications', dest='mysql_specs', metavar='{Specification(s)}', nargs='+', help="Comma-separated list of mysql specifications.\n(e.g. 'subregion=Sabah' 'length>25000' 'order=Coleoptera') NOTE: Each individual specification must be enclosed by quotations and separated from the next by a space as above.")
-parser_fasta.add_argument('-g', '--gene', dest='gene', metavar='{gene_name}', help='Name of CDS/gene you wish to extract.')
+parser_fasta.add_argument('-g', '--genes', dest='genes', metavar='{gene_names}', nargs='+', choices=['*', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6'], help='Name of mitochondrial genes you wish to extract.')
 
 #Create the parser for the 'GB' command
 parser_gb = subparsers.add_parser('GB', help="Outputs an annotated .gb file.")
 parser_gb.add_argument('-o', '--out', dest = 'output_name', metavar='{Output filename}', required=True, help="Preferred filename for the output (extension will be added automatically according to your output format choice).")
 parser_gb.add_argument('-s', '--specifications', dest='mysql_specs', metavar='{Specification(s)}', nargs='+', help="Comma-separated list of mysql specifications.\n(e.g. 'subregion=Sabah' 'length>25000' 'order=Coleoptera') NOTE: Each individual specification must be enclosed by quotations and separated from the next by a space as above.")
-parser_gb.add_argument('-g', '--gene', dest='gene', metavar='{gene_name}', help='Name of CDS/gene you wish to extract.')
+parser_gb.add_argument('-g', '--genes', dest='genes', metavar='{gene_name}', nargs='+', choices=['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6', '*'], default=['*'], help='Name of mitochondrial genes you wish to extract.')
 
 # args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-o", "metadateru", "-s", "subregion='Sabah'"])
 # args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-c", "name", "length", "accession", "seq", "-o", "metadateru", "-s", "country='United Kingdon' description='Lucanus sp. BMNH 1425267 mitochondrion, complete genome'", "-f", "csv"])
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'GB', '-o', 'outksis', '-s',  'length>0'])
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'FASTA', '-o', 'outksis', '-s',  'country=Malaysia', '-g' , 'COX2', 'ND3', 'ATP6'])
+
 
 args=parser.parse_args()
 
@@ -90,7 +90,7 @@ else:
 
     if args.gene is not None:
 
-        records = gcm.extract_genes(records, args.gene)
+        records = gcm.extract_genes(records, args.genes)
 
     gcm.seqfile_from_sql(records, args.output_name, args.output_format.lower())
 
