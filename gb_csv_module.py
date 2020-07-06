@@ -264,7 +264,7 @@ def change_ids_genbank(genbank_dict, dict_new_ids, key):
             #Erase the description as it contained the input id
             record.description = ""
 
-    return()
+    return
 
 
 def change_names_csv(csv_dataframe, dict_new_ids):
@@ -691,6 +691,7 @@ def loadnamevariants():
         name = line.split(";")[0]
         annotype = line.split(":")[0].split(";")[1]
         variants = line.split(":")[1].split(",")
+        output[name] = name
         for v in variants:
             for g in ['', ' ']:
                 v = v.replace(g, '')
@@ -702,13 +703,15 @@ def loadnamevariants():
 def alter_features(genbank_dict):
     """Edit the features in the genbank entries.
     """
+    #MORE TO ADD:
+    #
 
     unidentifiable_features = set()
     different_names = loadnamevariants()
     default_qualifier_names = {"ND1": ["ND1", "ND1 CDS", "NADH dehydrogenase subunit 1"],
                                "ND2": ["ND2", "ND2 CDS", "NADH dehydrogenase subunit 2"],
                                "ND3": ["ND3", "ND3 CDS", "NADH dehydrogenase subunit 3"],
-                               "ND4": ["ND4"," ND4 CDS", "NADH dehydrogenase subunit 4"],
+                               "ND4": ["ND4", "ND4 CDS", "NADH dehydrogenase subunit 4"],
                                "ND4L": ["ND4L", "ND4L CDS", "NADH dehydrogenase subunit 4L"],
                                "ND5": ["ND5", "ND5 CDS", "NADH dehydrogenase subunit 5"],
                                "ND6": ["ND6", "ND6 CDS", "NADH dehydrogenase subunit 6"],
@@ -728,13 +731,15 @@ def alter_features(genbank_dict):
                 del_features = []                                                        # del_features = []
 
                 for key in keys:                                                         # for each key of CDS qualifiers dict...
-                    if key not in ["gene", "location", "codon_start", "trnsl_table", "label", "product"]:   # if key is not "gene"/"location"/"codon_start"/"trnsl_table"/"label"/"product"...
+                    if key not in ["gene", "location", "codon_start", "transl_table", "label", "product"]:   # if key is not "gene"/"location"/"codon_start"/"trnsl_table"/"label"/"product"...
+                        #WHY JUST THESE^? WHY NOT 'translation', 'protein_id' etc.?
                         del_features.append(key)                                                                # add key to del_features list (so this is now a list of all keys in features.qualifiers dict that aren't mentioned above)
 
                 for f in del_features:                                               # for each of these non-mentioned keys...
                     del feature.qualifiers[f]                                            # delete them from features.qualifiers dict
 
                 nametags = ['gene', 'product', 'label', 'standard_name']
+                #HOW COULD THERE POSSIBLY BE 'standard_name' WHEN IT WAS DROPPED IN THE LAST STEP?
 
                 if any(t in feature.qualifiers.keys() for t in nametags):               # if there are any CDS qualifier keys left that are also in nametags...
                     name = 0
@@ -747,9 +752,9 @@ def alter_features(genbank_dict):
 
                         new_name = different_names[name]                                     # set new_name = the value for that key    e.g. if name=nad1 or ND1, new_name = ND1
 
-                        feature.qualifiers["gene"] = new_name                                # then set it as the value for "gene" in  feature.qualifiers dict    e.g. "gene": "ND1", ..
-                        feature.qualifiers["label"] = default_qualifier_names[new_name][1]        # then set the second element of its value in default_qualifier_names as the value for "label" in  feature.qualifiers dict   e.g. "label": "ND1 CDS"
-                        feature.qualifiers["product"] = default_qualifier_names[new_name][2]      # then set the third element of its value in default_qualifier_names as the value for "product" in  feature.qualifiers dict   e.g. "product": "NADH dehydrogenase subunit 2"
+                        feature.qualifiers["gene"] = [new_name]                                # then set it as the value for "gene" in  feature.qualifiers dict    e.g. "gene": "ND1", ..
+                        feature.qualifiers["label"] = [default_qualifier_names[new_name][1]]        # then set the second element of its value in default_qualifier_names as the value for "label" in  feature.qualifiers dict   e.g. "label": "ND1 CDS"
+                        feature.qualifiers["product"] = [default_qualifier_names[new_name][2]]      # then set the third element of its value in default_qualifier_names as the value for "product" in  feature.qualifiers dict   e.g. "product": "NADH dehydrogenase subunit 2"
 
                     else:                                                                # if name is not a key in the different_names dict
                         sys.exit("Unknown gene name for " + str(gb_record) + " in CDS features: " + str(name))
@@ -757,7 +762,7 @@ def alter_features(genbank_dict):
                 else:
                     unidentifiable_features.add((feature.type, feature.location.start, feature.location.end))
 
-        if len(unidentifiable_features) > 0:
+        if len(unidentifiable_features):
             sys.stderr.write("\nWARNING: The following sequence entries had unidentifiable annotations:\n")
             for unidfeats in unidentifiable_features:
                 sys.stderr.write(gb_record + ": " + ', '.join([f + " " + str(s) + "-" + str(e) for f, s, e in unidfeats]) + "\n")
@@ -1181,21 +1186,22 @@ def extract_CDS(recs):
 
 def extract_genes(recs, genes):
 
-    #genes = ['COX2', 'ND3', 'ATP6']
+    #genes = ['COX2', 'NAD3', 'ATP6']
 
     if '*' in genes:
         genes = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
 
     subrecs = {}
-    for idd, record in recs.items():
-        extracted_genes = {}
-        for gene in genes:
+
+    for gene in genes:
+        extracted_genes = []
+        for idd, record in recs.items():
             for feature in record.features:
-                if feature.type.upper() == "CDS" and 'gene' in feature.qualifiers and feature.qualifiers['gene'][0].upper() == gene.upper():   #.upper() not relevant, as alter_features means all in db would be upper, and choice in argparse means all in genes will be upper
+                if feature.type.upper() == "CDS" and 'gene' in feature.qualifiers and feature.qualifiers['gene'][0].upper() == gene.upper():  # .upper() not relevant, as alter_features means all in db would be upper, and choice in argparse means all in genes will be upper
                     subrec = feature.location.extract(record)
                     subrec.description = re.sub(',|complete genome', '', record.description)
-                    extracted_genes[gene] = subrec
-        subrecs[idd] = extracted_genes
+                    extracted_genes.append(subrec)
+        subrecs[gene] = extracted_genes
 
     return subrecs
 
@@ -1216,23 +1222,22 @@ def csv_from_sql(mysql_command, csv_name, db_un, db_pw):
 
     return
 
-"""
+
 def seqfile_from_sql(recs_dict, file_name, frmat):
     #Writes list of SeqRecords to a file of chosen format
-    
-    
-    if recs_dict.values() are dict:   #!!!!
-        genes = set([y for x in recs_dict.values() for y in x.keys()])
-        for gene in genes:
-            #gene_recs[gene] = [a[gene] for a in recs_dict.values() if gene in a.keys()]
-            SeqIO.write([rec_genes[gene] for rec_genes in recs_dict.values() if gene in rec_genes.keys()], f"{file_name}_{gene}.{frmat}", frmat)
+
+    if any(isinstance(x, list) for x in recs_dict.values()):
+        for gene in recs_dict.keys():
+            SeqIO.write(recs_dict[gene], f"{file_name}_{gene}.{frmat}", frmat)
 
     else:
-        # recs_dict, file_name, format = [recs, 'OUTPUTERUSKI', 'gb']
         SeqIO.write(recs_dict.values(), f"{file_name}.{frmat}", frmat)
 
     return
-"""
+
+
+
+
 
 def return_count(mysql_command, db_un, db_pw):
 
