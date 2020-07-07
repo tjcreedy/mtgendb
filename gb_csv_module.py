@@ -1186,14 +1186,12 @@ def extract_CDS(recs):
 def extract_genes(recs, genes):
     """Extracts genes from SeqRecord objects
     """
-    #genes = ['COX2', 'NAD3', 'ATP6']
+    print(f'Extracting {len(genes)} genes...')
 
     if '*' in genes:
         genes = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
 
     subrecs = {}
-
-    print('Extracting genes...')
 
     for gene in genes:
         extracted_genes = []
