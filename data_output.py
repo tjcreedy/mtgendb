@@ -41,7 +41,8 @@ parser_gb.add_argument('-g', '--genes', dest='genes', metavar='{gene_name}', nar
 # args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-o", "metadateru", "-s", "subregion='Sabah'"])
 # args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-c", "name", "length", "accession", "seq", "-o", "metadateru", "-s", "country='United Kingdon' description='Lucanus sp. BMNH 1425267 mitochondrion, complete genome'", "-f", "csv"])
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'GB', '-o', 'outksis', '-s',  'length>0'])
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'FASTA', '-o', 'outksis', '-s',  'country=Malaysia', '-g' , 'COX2', 'ND3', 'ATP6'])
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'FASTA', '-o', 'outksis', '-s',  'country!=Malaysia', '-g' , 'COX2', 'ND3', 'ATP6'])
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'FASTA', '-o', 'outksis', '-s',  'country!=Malaysia', '-g' , '*'])
 
 
 args=parser.parse_args()
@@ -88,7 +89,7 @@ else:
 
     records = gcm.fetch_recs(names_dict, args.db_user, args.db_pass)
 
-    if args.gene is not None:
+    if args.genes is not None:
 
         records = gcm.extract_genes(records, args.genes)
 

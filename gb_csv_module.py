@@ -253,9 +253,7 @@ def change_ids_genbank(genbank_dict, dict_new_ids, key):
         #Change the accession (record.id) to the new database id including version number (.0)
         new_accession = record.name + ".0"
         record.id = new_accession
-        record.annotations["accessions"] = [record.name]     #.annotations is a Python dictionary.
-        record.annotations["db_id"] = record.name
-        record.db_id = record.name
+        record.annotations["accessions"] = [record.name]
 
         #Change the version
         record.annotations["sequence_version"] = 0       # Genbank files include a version annotation. This sets it to 0, because we're going to use that ourselves to record our own versions of an entry.
@@ -634,6 +632,7 @@ def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
 
     return genbank_dict, csv_df
 
+
 def insert_taxid(ncbi_lineage, genbank_dict):
     """Insert tax id into gb data (returned from "ncbi_taxid").
     """
@@ -682,64 +681,45 @@ def insert_taxid(ncbi_lineage, genbank_dict):
     return genbank_dict
 
 
-def loadnamevariants():
+def loadnamevariants(source=None):
     """Generates dict of name variants for each gene.
     """
-    """
-    output = {}
-    for line in open("../biotools/gene_name_variants.txt", "r"):
-        line = line.strip()
-        name = line.split(";")[0]
-        annotype = line.split(":")[0].split(";")[1]
-        variants = line.split(":")[1].split(",")
-        output[name] = name
-        for v in variants:
-            for g in ['', ' ']:
-                v = v.replace(g, '')
-                for s in ['', ' GENE', ' ' + annotype.upper()]:
-                    output[v + s] = name
-    """
+    variants = {}
+    types = {}
+    products = {}
 
+    # Identify source
+    if (source is None):
+        url = 'https://raw.githubusercontent.com/tjcreedy/biotools/master/gene_name_variants.txt'
+        source = urllib.request.urlopen(url)
+    else:
+        source = open(source, 'r')
 
-    output = {}
-    for line in urllib.request.urlopen("https://raw.githubusercontent.com/tjcreedy/biotools/master/gene_name_variants.txt"):
+    # Read source
+    for line in source:
         line = line.decode('utf-8').strip()
-        name = line.split(";")[0]
-        annotype = line.split(":")[0].split(";")[1]
-        exp_name = line.split(":")[0].split(";")[2].upper()
-        variants = line.split(":")[1].split(",")
-        output[name] = name
-        output[exp_name] = name
-        for v in variants:
+        meta, listvars = line.split(':')
+        name, annotype, product = meta.split(';')
+        listvars = [name, product.upper()] + listvars.split(',')
+        types[name] = annotype
+        products[name] = product
+        for v in listvars:
             for g in ['', ' ']:
                 v = v.replace(g, '')
                 for s in ['', ' GENE', ' ' + annotype.upper()]:
-                    output[v + s] = name
+                    variants[v + s] = name
 
-    return output
+    # Close handle
+    source.close()
+
+    return variants, types, products
 
 
 def alter_features(genbank_dict):
     """Edit the features in the genbank entries.
     """
-    #MORE TO ADD:
-    #
-
     unidentifiable_features = set()
-    different_names = loadnamevariants()
-    default_qualifier_names = {"ND1": ["ND1", "ND1 CDS", "NADH dehydrogenase subunit 1"],
-                               "ND2": ["ND2", "ND2 CDS", "NADH dehydrogenase subunit 2"],
-                               "ND3": ["ND3", "ND3 CDS", "NADH dehydrogenase subunit 3"],
-                               "ND4": ["ND4", "ND4 CDS", "NADH dehydrogenase subunit 4"],
-                               "ND4L": ["ND4L", "ND4L CDS", "NADH dehydrogenase subunit 4L"],
-                               "ND5": ["ND5", "ND5 CDS", "NADH dehydrogenase subunit 5"],
-                               "ND6": ["ND6", "ND6 CDS", "NADH dehydrogenase subunit 6"],
-                               "CYTB": ["CYTB", "CYTB CDS", "cytochrome b"],
-                               "COX1": ["COX1", "COX1 CDS", "cytochrome c oxdiase subunit 1"],
-                               "COX2": ["COX2", "COX2 CDS", "cytochrome c oxdiase subunit 2"],
-                               "COX3": ["COX3", "COX3 CDS", "cytochrome c oxdiase subunit 3"],
-                               "ATP6": ["ATP6", "ATP6 CDS", "ATP synthase F0 subunit 6"],
-                               "ATP8": ["ATP8", "ATP8 CDS", "ATP synthase F0 subunit 8"]}
+    variants, types, products = loadnamevariants()
 
     for gb_record, record in genbank_dict.items():                       # for key/value pairs in genbank_dict...
 
@@ -767,13 +747,13 @@ def alter_features(genbank_dict):
                             name = feature.qualifiers[t][0].upper()                         # set name = the value for that qualifier key in uppercase. e.g. for key="gene", name = "NAD6"
                             break
 
-                    if name in different_names.keys():                                   # if it (name) is a key in the different_names dict
+                    if name in variants.keys():                                   # if it (name) is a key in the different_names dict
 
-                        new_name = different_names[name]                                     # set new_name = the value for that key    e.g. if name=nad1 or ND1, new_name = ND1
+                        new_name = variants[name]                                     # set new_name = the value for that key    e.g. if name=nad1 or ND1, new_name = ND1
 
-                        feature.qualifiers["gene"] = [new_name]                                # then set it as the value for "gene" in  feature.qualifiers dict    e.g. "gene": "ND1", ..
-                        feature.qualifiers["label"] = [default_qualifier_names[new_name][1]]        # then set the second element of its value in default_qualifier_names as the value for "label" in  feature.qualifiers dict   e.g. "label": "ND1 CDS"
-                        feature.qualifiers["product"] = [default_qualifier_names[new_name][2]]      # then set the third element of its value in default_qualifier_names as the value for "product" in  feature.qualifiers dict   e.g. "product": "NADH dehydrogenase subunit 2"
+                        feature.qualifiers["gene"] = [new_name]                              # then set it as the value for "gene" in  feature.qualifiers dict    e.g. "gene": "ND1", ..
+                        feature.qualifiers["label"] = [f"{new_name} {types[new_name]}"]       # then set the second element of its value in default_qualifier_names as the value for "label" in  feature.qualifiers dict   e.g. "label": "ND1 CDS"
+                        feature.qualifiers["product"] = [products[new_name]]      # then set the third element of its value in default_qualifier_names as the value for "product" in  feature.qualifiers dict   e.g. "product": "NADH dehydrogenase subunit 2"
 
                     else:                                                                # if name is not a key in the different_names dict
                         sys.exit(f"ERROR: Unknown gene name for '{str(gb_record)}' in CDS features: '{str(name)}'")
@@ -1204,7 +1184,8 @@ def extract_CDS(recs):
 """
 
 def extract_genes(recs, genes):
-
+    """Extracts genes from SeqRecord objects
+    """
     #genes = ['COX2', 'NAD3', 'ATP6']
 
     if '*' in genes:
@@ -1212,13 +1193,15 @@ def extract_genes(recs, genes):
 
     subrecs = {}
 
+    print('Extracting genes...')
+
     for gene in genes:
         extracted_genes = []
         for idd, record in recs.items():
             for feature in record.features:
                 if feature.type.upper() == "CDS" and 'gene' in feature.qualifiers and feature.qualifiers['gene'][0].upper() == gene.upper():  # .upper() not relevant, as alter_features means all in db would be upper, and choice in argparse means all in genes will be upper
                     subrec = feature.location.extract(record)
-                    subrec.description = re.sub(',|complete genome', '', record.description)
+                    subrec.description = re.sub(', [a-z]+ genome$', '', record.description)
                     extracted_genes.append(subrec)
         subrecs[gene] = extracted_genes
 
@@ -1245,17 +1228,16 @@ def csv_from_sql(mysql_command, csv_name, db_un, db_pw):
 def seqfile_from_sql(recs_dict, file_name, frmat):
     #Writes list of SeqRecords to a file of chosen format
 
+    #Specific genes
     if any(isinstance(x, list) for x in recs_dict.values()):
         for gene in recs_dict.keys():
             SeqIO.write(recs_dict[gene], f"{file_name}_{gene}.{frmat}", frmat)
 
+    #Full genome
     else:
         SeqIO.write(recs_dict.values(), f"{file_name}.{frmat}", frmat)
 
     return
-
-
-
 
 
 def return_count(mysql_command, db_un, db_pw):
@@ -1270,6 +1252,3 @@ def return_count(mysql_command, db_un, db_pw):
         print(row[0])
 
     return
-
-
-
