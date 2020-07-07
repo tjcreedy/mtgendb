@@ -686,6 +686,20 @@ def loadnamevariants():
     """Generates dict of name variants for each gene.
     """
     output = {}
+    for line in open("../biotools/gene_name_variants.txt", "r"):
+        line = line.strip()
+        name = line.split(";")[0]
+        annotype = line.split(":")[0].split(";")[1]
+        variants = line.split(":")[1].split(",")
+        output[name] = name
+        for v in variants:
+            for g in ['', ' ']:
+                v = v.replace(g, '')
+                for s in ['', ' GENE', ' ' + annotype.upper()]:
+                    output[v + s] = name
+
+    """
+    output = {}
     for line in urllib.request.urlopen("https://raw.githubusercontent.com/tjcreedy/biotools/master/gene_name_variants.txt"):
         line = line.decode('utf-8').strip()
         name = line.split(";")[0]
@@ -697,6 +711,7 @@ def loadnamevariants():
                 v = v.replace(g, '')
                 for s in ['', ' GENE', ' ' + annotype.upper()]:
                     output[v + s] = name
+    """
     return output
 
 
@@ -757,7 +772,7 @@ def alter_features(genbank_dict):
                         feature.qualifiers["product"] = [default_qualifier_names[new_name][2]]      # then set the third element of its value in default_qualifier_names as the value for "product" in  feature.qualifiers dict   e.g. "product": "NADH dehydrogenase subunit 2"
 
                     else:                                                                # if name is not a key in the different_names dict
-                        sys.exit("Unknown gene name for " + str(gb_record) + " in CDS features: " + str(name))
+                        sys.exit(f"ERROR: Unknown gene name for '{str(gb_record)}' in CDS features: '{str(name)}'")
 
                 else:
                     unidentifiable_features.add((feature.type, feature.location.start, feature.location.end))
