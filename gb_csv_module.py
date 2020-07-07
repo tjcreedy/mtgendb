@@ -685,6 +685,7 @@ def insert_taxid(ncbi_lineage, genbank_dict):
 def loadnamevariants():
     """Generates dict of name variants for each gene.
     """
+    """
     output = {}
     for line in open("../biotools/gene_name_variants.txt", "r"):
         line = line.strip()
@@ -697,21 +698,24 @@ def loadnamevariants():
                 v = v.replace(g, '')
                 for s in ['', ' GENE', ' ' + annotype.upper()]:
                     output[v + s] = name
-
     """
+
+
     output = {}
     for line in urllib.request.urlopen("https://raw.githubusercontent.com/tjcreedy/biotools/master/gene_name_variants.txt"):
         line = line.decode('utf-8').strip()
         name = line.split(";")[0]
         annotype = line.split(":")[0].split(";")[1]
+        exp_name = line.split(":")[0].split(";")[2].upper()
         variants = line.split(":")[1].split(",")
         output[name] = name
+        output[exp_name] = name
         for v in variants:
             for g in ['', ' ']:
                 v = v.replace(g, '')
                 for s in ['', ' GENE', ' ' + annotype.upper()]:
                     output[v + s] = name
-    """
+
     return output
 
 
