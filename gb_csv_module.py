@@ -22,7 +22,7 @@ import numpy as np
 ##Import modules for dealing with the mysql database:
 import MySQLdb as mdb
 from BioSQL import BioSeqDatabase
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, update
 
 
 ###VARIABLES
@@ -79,8 +79,6 @@ def gb_into_dictionary(gb_filename, key):
 def text_to_list(accessions):
     """Converts text-file of IDs (one per line) into a list, exiting if duplicates are present.
     """
-    #accessions = args.input_accessions  IGNORE THIS
-
     #Create a comma-delimited list of accession numbers from text file (stripping any blank spaces/empty lines).
     with open(accessions, "r") as acc:
         accs = acc.read()
@@ -100,7 +98,8 @@ def text_to_list(accessions):
 
 
 def check_acc_format(acc_list):
-
+    """Checks each accession in list satisfies genbank format, dropping any that don't.
+    """
     Accs = []
 
     for acc in acc_list:
@@ -119,11 +118,11 @@ def correct_header(csv_dataframe):
     # csv_dataframe = new_csv_df
 
     csv_header = csv_dataframe.columns.values.tolist()                                     # LUKE: creates list of csv column headers.      ## Pandas index.tolist() Converts dataframes column values to list, like below.  ###6 LUKE: So why use the .values function when .columns returns an index already?
-    expected_header = ['name', 'specimen', 'morphospecies', 'species', 'subfamily', 'family', 'order', 'taxid', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
+    expected_header = ['name', 'specimen', 'morphospecies', 'species', 'subfamily', 'family', 'order', 'taxid', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'size', 'habitat', 'feeding_behavior', 'locomotion', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
 
     if expected_header != csv_header:
         print("Incorrect header in CSV file.\n")
-        sys.exit("Current header is: " + str(csv_header) + "\n\nIt must be as follows: ['name', 'specimen', 'morphospecies', 'species', 'subfamily', 'family', 'order', 'taxid', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']")
+        sys.exit("Current header is: " + str(csv_header) + "\n\nIt must be as follows: ['name', 'specimen', 'morphospecies', 'species', 'subfamily', 'family', 'order', 'taxid', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'size', 'habitat', 'feeding_behavior', 'locomotion', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']")
 
     return()
 
@@ -220,24 +219,45 @@ asking the user to increase the padding.
 """
 
 
-def check_new_ids(dict_new_ids):
-    """Check if the new database ids already exist in the database.
+def check_ids(db_un, db_pw, ids_list, action):
+    """Check if the database ids already exist in the database.
     """
+    for idd in ids_list:
+        mysql_command = f"SELECT * FROM metadata WHERE (name='{idd}') OR (db_id='{idd}');"
+        con = mdb.connect(host=db_host, user=db_un, passwd=db_pw, db=db_name)
 
-    for old_id, new_id in dict_new_ids.items():           #for each key (old id) in the dict_new_ids dictionary...
-        # new_id = the value for that key. (Are the keys the old ids and the values the new ones?)
-        mysql_command = "SELECT * FROM bioentry WHERE name = '" + str(new_id) + "'"     # set mysql_command = the command: Select everything from the bioentry database where the name = new_id
-        con = mdb.connect(host = db_host, user = db_user, passwd = db_passwd, db = db_name)    #Connects to MySQL database
+        with con:
+            cur = con.cursor()
+            cur.execute(mysql_command)
+            result = cur.fetchone()
 
-        with con:                          # With the connection as defined above...
-            cur = con.cursor()             # Create a cursor (allows Python code to execute SQL commands in a database session) and bind it to the connection for the entire lifetime (this is what con.cursor() does).
-            cur.execute(mysql_command)     # Execute the mysql_command command. (.execute() executes a SQL statement.)
-            result = cur.fetchone()        # Fetch the next row of the query (i.e. selected) result set, returning a single tuple, or None when no more data is available
+        if action == 'replace':
+            if result is None:
+                sys.exit(f"ERROR: The name/id '{idd}' is missing from the database.")
 
-        if result is not None:             # If data is still available... (i.e. if there are any entries in the bioentry database with name = new_id...)
-            sys.exit(f"The new database id '{str(new_id)}' is already present in the database:\n{str(result)}")
+        elif action == 'ingest':
+            if result is not None:
+                sys.exit(f"ERROR: The name/id '{idd}' is already present in the database:\n{str(result)}")
 
-    return()
+        else:
+            sys.exit(f"ERROR: Unrecognized action: '{action}'")
+
+    return
+
+
+def fetch_names(mysql_command, db_un, db_pw):
+    """Fetch names and corresponding db_id's from database using MySQL command
+    """
+    con = mdb.connect(host=db_host, user=db_un, passwd=db_pw, db=db_name)
+
+    with con:
+        cur = con.cursor()
+        cur.execute(mysql_command)
+        records = cur.fetchall()
+
+    names_dict = {row[0]: row[1] for row in set(records)}
+
+    return names_dict
 
 
 def change_ids_genbank(genbank_dict, dict_new_ids, key):
@@ -390,7 +410,7 @@ def extract_metadata(records):
     gb_met_df.columns = ["name", "taxon_id", "country", "subregion", "collectionmethod", "accession"]
 
     #Add other metadata columns required by database and fill them with blanks (None/NaN objects)
-    for label in ['morphospecies', 'custom_lineage', 'specimen', 'lifestage', 'site', 'locality', 'authors', 'library', 'datasubmitter', 'projectname', 'uin', 'notes']:
+    for label in ['morphospecies', 'custom_lineage', 'specimen', 'lifestage', 'site', 'locality', 'authors', 'size', 'habitat', 'feeding_behavior', 'locomotion', 'library', 'datasubmitter', 'projectname', 'uin', 'notes']:
         gb_met_df[label] = None
 
     for header in ['latitude', 'longitude']:
@@ -606,7 +626,7 @@ def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
         # Create new DataFrame of rejected entries and drop them from returned DataFrame
         print("\nPrinting rejected entries to CSV file...")
 
-        new_dataframe = pd.DataFrame(new_entries, columns=['name', 'db_id', 'specimen', 'morphospecies', 'species', 'subfamily', 'family', 'order', 'taxid', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes'])
+        new_dataframe = pd.DataFrame(new_entries, columns=['name', 'db_id', 'specimen', 'morphospecies', 'species', 'subfamily', 'family', 'order', 'taxid', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'size', 'habitat', 'feeding_behaviour', 'locomotion', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes'])
         del new_dataframe['db_id']
         new_dataframe.to_csv('rejected_metadata.csv', index=False)  # Write new_dataframe to a comma-separated values (csv) file.
 
@@ -774,12 +794,12 @@ def add_lineage_df(csv_dataframe, combined_lineage):
     """
     # csv_dataframe, combined_lineage = [df_accepted, lineages]
 
-    df_add = pd.DataFrame.from_dict(combined_lineage, orient = 'index')           # write combined_lineage dict into dataframe called 'df_add' with keys as the index
+    df_add = pd.DataFrame.from_dict(combined_lineage, orient='index')           # write combined_lineage dict into dataframe called 'df_add' with keys as the index
     df_add.columns = ["taxon_id", "custom_lineage"]                  # change column headers to "taxid", "ncbi_lineage", and "custom_lineage"
     csv_dataframe.drop(['species', 'subfamily', 'family', 'order', 'taxid'], axis=1, inplace=True)                                                    # delete "taxid" column/row from input csv_dataframe
-    df = pd.merge(df_add, csv_dataframe, left_index = True, right_index = True)   # merge 'df_add' with 'csv_dataframe', using the index from df_add (keys of combined_lineage dict) and csv_dataframe as the join key(s), calling the resulting dataframe 'df'.
-    df.reset_index(level = 0, inplace = True)                                     # Remove the level 0 from the index, modifying the dataframe in place.
-    df.rename(columns = {"index": "name"}, inplace = True)                       # Rename "index" column to "name", modifying the dataframe in place.
+    df = pd.merge(df_add, csv_dataframe, left_index=True, right_index=True)   # merge 'df_add' with 'csv_dataframe', using the index from df_add (keys of combined_lineage dict) and csv_dataframe as the join key(s), calling the resulting dataframe 'df'.
+    df.reset_index(level=0, inplace=True)                                     # Remove the level 0 from the index, modifying the dataframe in place.
+    df.rename(columns={"index": "name"}, inplace=True)                       # Rename "index" column to "name", modifying the dataframe in place.
 
     return df
 
@@ -787,7 +807,7 @@ def reformat_df_cols(df):
 
     #df.rename(columns={'name': 'old_name', 'db_id': 'name'}, inplace=True)
 
-    df = df[['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']]
+    df = df[['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'size', 'habitat', 'feeding_behavior', 'locomotion', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']]
 
     return df
 
@@ -827,7 +847,7 @@ def load_df_into_db(csv_dataframe):
     print("\nLoading metadata into the database...")
 
     engine = create_engine(mysql_engine, echo = False)       # Create an engine object based on URL: "mysql+mysqldb://root:mmgdatabase@localhost/mmg_test", NOT logging the statements as well as a repr() of their parameter lists to the default log handler.
-    csv_dataframe.to_sql(name = 'metadata', if_exists = 'append', index = False, con = engine)    # write csv_dataframe to an sql database called 'metadata', inserting values to the existing table if it already exists, NOT writing DataFrame index as a column. CON??
+    csv_dataframe.to_sql(name='metadata', if_exists='append', index=False, con=engine)    # write csv_dataframe to an sql database called 'metadata', inserting values to the existing table if it already exists, NOT writing DataFrame index as a column. CON??
 
     print(" - %i entries loaded." % len(csv_dataframe.index))
 
@@ -836,25 +856,6 @@ def load_df_into_db(csv_dataframe):
 
 
 #--------------------
-
-
-
-"""
-def table_join(start, table_list, shared_col):
-    #Consructs MySQL command
-    
-    n = 0
-    table_string = start
-    while n < len(table_list):
-        new_join = f" JOIN {table_list[n]} USING {shared_col}"
-        table_string += new_join
-        n += 1
-
-    return table_string
-"""
-
-import sys
-import re
 
 
 def sql_cols(table, cols, spec):
@@ -867,17 +868,20 @@ def sql_cols(table, cols, spec):
     #table, cols, spec = [None, ['name', 'db_id'], ['species=Stenus boops', 'length<25000', 'country=United Kingdom']]
     #table, cols, spec = [None, ['*'], ['species=Stenus boops', 'length<25000', 'country!=United Kingdom']]
 
+    # table, cols, spec = [None, None, ['length>25000', 'country=United Kingdom', 'locomotion=arboreal', 'size=12mm']]
 
     #Reformat inputs
     if spec is None:
         spec = []
+    if cols is None:
+        cols = []
 
     #spec = [f"{re.split('=|>|<', s)[0]}{re.findall('=|>|<', s)[0]}{re.split('=|>|<', s)[1]}" if re.split('=|>|<', s)[1].isnumeric() else f"{re.split('=|>|<', s)[0]}='{re.split('=|>|<', s)[1]}'" for s in spec]
     #cols = list(cols)
     all_cols = list(set(cols + [re.split('=|!=|>|<', s)[0] for s in spec]))
 
     # Unique cols of each table (shared cols assigned to a prioritised table)
-    metadata_cols = ['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'metadata.authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
+    metadata_cols = ['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'metadata.authors', 'size', 'habitat', 'feeding_behavior', 'locomotion', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
     #biodatabase_cols = ['biodatabase_id', 'biodatabase.name', 'authority', 'biodatabase.description']
     bioentry_cols = ['bioentry_id', 'bioentry.biodatabase_id', 'bioentry.taxon_id', 'bioentry.name', 'bioentry.accession', 'identifier', 'division', 'description', 'version']
     bioentry_dbxref_cols = ['bioentry_dbxref.bioentry_id', 'bioentry_dbxref.dbxref_id', 'bioentry_dbxref.rank']
@@ -1076,7 +1080,7 @@ def sql_table(tables):
     return table_string
 
 
-def sql_spec(tables, cols_dict, spec):
+def sql_spec(tables, cols_dict, spec, spec_type):
     # spec = ['country!=United Kingdom', 'description=Lucanus sp. BMNH 1425267 mitochondrion, complete genome']
 
     spec = [s if re.split('=|!=|>|<', s)[1].isnumeric() else f"{re.split('=|!=|>|<', s)[0]}{re.findall('=|!=|>|<', s)[0]}'{re.split('=|!=|>|<', s)[1]}'" for s in spec]
@@ -1098,20 +1102,42 @@ def sql_spec(tables, cols_dict, spec):
                 else:
                     specs.append(re.findall('=|!=|>|<', x)[0].join([cols_dict[s[0]], s[1]]))
 
-            spec = f" WHERE ({') AND ('.join(specs)})"
+            if spec_type == "output":
+                spec = f" WHERE ({') AND ('.join(specs)})"
+
+            if spec_type == "update":
+                spec = ', '.join(specs)
 
     return spec
 
 
-def construct_sql_command(table, cols, spec):
+def construct_sql_output_query(table, cols, spec):
 
     tables, cols_string, cols_dict, spec = sql_cols(table, cols, spec)
 
     table_string = sql_table(tables)
 
-    spec_string = sql_spec(tables, cols_dict, spec)
+    spec_string = sql_spec(tables, cols_dict, spec, "output")
 
     mysql_command = f"SELECT {cols_string} FROM {table_string}{spec_string};"
+
+    return mysql_command
+
+
+def construct_sql_update_query(table, update, spec):
+
+    #update = ['locomotion=arboreal', 'size=12mm']
+    #spec = ['length>25000', 'country=United Kingdom']
+
+    tables, _, cols_dict, _ = sql_cols(None, None, spec + update)
+
+    table_string = sql_table(tables)
+
+    spec_string = sql_spec(tables, cols_dict, spec, "output")
+
+    update_string = sql_spec(tables, cols_dict, update, "update")
+
+    mysql_command = f"UPDATE {table_string} SET {update_string}{spec_string};"
 
     return mysql_command
 
@@ -1120,13 +1146,27 @@ def fetch_names(mysql_command, db_un, db_pw):
     """Fetch names and corresponding db_id's from database using MySQL command
     """
     con = mdb.connect(host=db_host, user=db_un, passwd=db_pw, db=db_name)
-    cur = con.cursor()
-    cur.execute(mysql_command)
-    records = cur.fetchall()
+
+    with con:
+        cur = con.cursor()
+        cur.execute(mysql_command)
+        records = cur.fetchall()
 
     names_dict = {row[0]: row[1] for row in set(records)}
 
     return names_dict
+
+
+def execute_query(mysql_query, db_un, db_pw):
+    """Connect to db and execute mysql query
+    """
+    con = mdb.connect(host=db_host, user=db_un, passwd=db_pw, db=db_name)
+
+    with con:
+        cur = con.cursor()
+        cur.execute(mysql_query)
+
+    return
 
 
 def fetch_recs(names_dict, db_un, db_pw):
@@ -1144,6 +1184,8 @@ def fetch_recs(names_dict, db_un, db_pw):
         seq_record.id = seq_record.name + ".0"
         seq_record.annotations["accessions"] = [seq_record.name]
         recs[name] = seq_record
+
+    server.close()
 
     return recs
 
@@ -1184,7 +1226,7 @@ def extract_CDS(recs):
 """
 
 def extract_genes(recs, genes):
-    """Extracts genes from SeqRecord objects
+    """Extracts genes from SeqRecord objects and writes to dict: {gene_name :  list_of_sliced_seqrecords, ...}
     """
     print(f'Extracting {len(genes)} genes...')
 
@@ -1220,6 +1262,8 @@ def csv_from_sql(mysql_command, csv_name, db_un, db_pw):
         csv_writer.writerow([i[0] for i in cur.description])  #Write headers
         csv_writer.writerows(cur)
 
+    cur.close()
+
     return
 
 
@@ -1249,4 +1293,159 @@ def return_count(mysql_command, db_un, db_pw):
     for row in cur:
         print(row[0])
 
+    cur.close()
+
     return
+
+
+def mysql_replace_into(table, conn, keys, data_iter):
+    """Mimics the behavior of sql REPLACE INTO by passing this callable to to_sql
+    """
+    from sqlalchemy.dialects.mysql import insert
+    from sqlalchemy.ext.compiler import compiles
+    from sqlalchemy.sql.expression import Insert
+    @compiles(Insert)
+    def replace_string(insert, compiler, **kw):
+        s = compiler.visit_insert(insert, **kw)
+        s = s.replace("INSERT INTO", "REPLACE INTO")
+        return s
+    data = [dict(zip(keys, row)) for row in data_iter]
+    conn.execute(table.table.insert(replace_string=""), data)
+
+
+def mysql_replace_into_2(table, conn, keys, data_iter):
+    """Mimics the behavior of INSERT ... ON DUPLICATE KEY UPDATE ...
+    """
+    from sqlalchemy.dialects.mysql import insert
+    data = [dict(zip(keys, row)) for row in data_iter]
+    stmt = insert(table.table).values(data)
+    update_stmt = stmt.on_duplicate_key_update(**dict(zip(stmt.inserted.keys(), stmt.inserted.values())))
+    conn.execute(update_stmt)
+
+
+def to_sql_update(df, engine, schema, table):
+    """grab a table from a MySQL database (whole or filtered), update/add some rows, and want to perform a REPLACE INTO statement with df.to_sql().
+    """
+    #df.reset_index(inplace=True)
+    sql = f"SELECT column_name FROM information_schema.columns WHERE table_schema = '{schema}' AND table_name = '{table}' AND COLUMN_KEY = 'PRI';"
+    id_cols = [x[0] for x in engine.execute(sql).fetchall()]
+    id_vals = [df[col_name].tolist() for col_name in id_cols]
+    sql = f" DELETE FROM {schema}.{table} WHERE 0"
+    for row in zip(*id_vals):
+        sql_row = ' AND '.join([" {}='{}' ".format(n, v) for n, v in zip(id_cols, row)])
+        sql += f' OR ({sql_row}) '
+    engine.execute(sql)
+    #df.to_sql(df, engine, schema=schema, if_exists='append', index=False)
+    df.to_sql(name=table, if_exists='append', schema=schema, index=False, con=engine)
+    return
+
+
+def overwrite_data(metadata, gb_dict):
+    """Overwrite records in the database
+    """
+    con = mdb.connect(host="localhost", user=db_user, passwd=db_passwd, db=db_name)
+    cur = con.cursor()
+    server = BioSeqDatabase.open_database(driver=db_driver, user=db_user, passwd=db_passwd, host=db_host, db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
+    db = server[namespace]
+
+    if gb_dict:
+
+        for nom in gb_dict.keys():
+            cur.execute(f"SELECT db_id FROM metadata WHERE name='{nom}';")
+            for row in cur:
+                db_id = row[0]
+
+            for record in db.values():
+                if record.name == db_id:
+                    idd = record.id
+                    accession = record.annotations["accessions"]
+                    sequence_version = record.annotations["sequence_version"][0]
+                    record = gb_dict[nom]
+                    record.name = db_id
+                    record.id = idd
+                    record.annotations["accessions"] = accession
+                    record.annotations["sequence_version"][0] = int(sequence_version) + 1
+"""
+    if metadata:
+        #https://stackoverflow.com/questions/34661318/replace-rows-in-mysql-database-table-with-pandas-dataframe
+        #https://tedboy.github.io/pandas/_modules/pandas/io/sql.html
+
+        engine = create_engine(mysql_engine, echo=False)
+
+        for nom in metadata['name']:
+
+            #Grabs row from local df corresponding to name
+            row = csv_df.loc[csv_df['name'] == nom]
+
+            engine = create_engine(mysql_engine, echo=False)
+
+            to_sql_update(row, engine, 'mmg_test', 'metadata')
+
+            sql_row = pd.io.sql.SQLTable(row, engine, index=False)
+
+            row.to_sql(name='metadata', if_exists='append', method=mysql_replace_into_2(sql_row, cur, list(row.columns), row_vals), con=engine)
+            # OR row.to_sql(name='metadata', if_exists='append', method=mysql_replace_into_2, index=False, con=engine)
+
+
+
+
+
+
+
+            row = csv_df.loc[csv_df['name'] == 'BIOD00197']
+            row_vals = row.values.tolist()
+            row_vals = [['QINL077', None, 'MG73', None, 'Galerucinae', 'Chrysomelidae', 'Coleoptera', None, None, 'Adult', None, None, 'Qinling', 'China', np.nan, np.nan, ';)', None, None, None, 'Nie et al', 'lib7', None, 'Qinling Chrysomelidae', None, None, None]]
+
+            engine = create_engine(mysql_engine, echo=False)
+
+            row.to_sql(name='metadata', if_exists='append', method=mysql_replace_into_2(row, cur, list(row.columns), row_vals), con=engine)
+
+            row.to_sql(name='metadata', if_exists='append', method=mysql_replace_into_2, index=False, con=engine)
+
+            sql_row = pd.io.sql.SQLTable(row, engine, index=False)
+
+
+            #For mapping Pandas tables to SQL tables.
+            'BIOD02014'
+
+            sql_row = pd.io.sql.SQLTable(row)
+
+
+            help(pd.io.sql.SQLTable)
+
+
+    cur.close()
+    server.commit()
+    server.close()
+
+    return
+
+
+def mysql_replace_into(table, conn, keys, data_iter):
+    #Mimics the behavior of sql REPLACE INTO by passing this callable to to_sql
+    
+    from sqlalchemy.dialects.mysql import insert
+    from sqlalchemy.ext.compiler import compiles
+    from sqlalchemy.sql.expression import Insert
+    @compiles(Insert)
+    def replace_string(insert, compiler, **kw):
+        s = compiler.visit_insert(insert, **kw)
+        s = s.replace("INSERT INTO", "REPLACE INTO")
+        return s
+    data = [dict(zip(keys, row)) for row in data_iter]
+    conn.execute(table.insert(replace_string=""), data)
+
+
+
+def mysql_replace_into_2(table, conn, keys, data_iter):
+    #Mimics the behavior of INSERT ... ON DUPLICATE KEY UPDATE ...
+    
+    #keys = cols
+    #data_iter = row_vals
+
+    from sqlalchemy.dialects.mysql import insert
+    data = [dict(zip(keys, row)) for row in data_iter]
+    stmt = insert(table.table).values(data)
+    update_stmt = stmt.on_duplicate_key_update(**dict(zip(stmt.inserted.keys(), stmt.inserted.values())))
+    conn.execute(update_stmt)
+"""

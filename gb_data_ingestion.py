@@ -12,17 +12,17 @@ import gb_csv_module as gcm
 # Define arguments to be parsed
 parser = argparse.ArgumentParser(description="Adding GenBank data to the database.")
 
-parser.add_argument('-a', '--accessions', dest = 'input_accessions', required = True, help = "Name of text-file containing accession numbers to search on GenBank.")
-parser.add_argument('-e', '--email', dest = 'users_email', required = True, help = "Enter your email address in order to access NCBI.")
-parser.add_argument('-p', '--prefix', dest = 'prefix', required = True, help = "The prefix for the database id names.")
-parser.add_argument('-n', '--number', dest = 'number', required = True, help = "The start number for the database id names")
-parser.add_argument('-z', '--zeros', dest = 'padding', required = True, help = "By how many zeros the number should be 0-padded.")
-parser.add_argument('-k', '--key', dest = 'key', default = 'LOCUS', choices = ['LOCUS', 'ACCESSION', 'DEFINITION'], help = "Field of the genbank-file where the name of the entry can be found.")
+parser.add_argument('-a', '--accessions', dest='input_accessions', required=True, help="Name of text-file containing accession numbers to search on GenBank.")
+parser.add_argument('-e', '--email', dest='users_email', required=True, help="Enter your email address in order to access NCBI.")
+parser.add_argument('-p', '--prefix', dest='prefix', required=True, help="The prefix for the database id names.")
+parser.add_argument('-n', '--number', dest='number', required=True, help="The start number for the database id names")
+parser.add_argument('-z', '--zeros', dest='padding', required=True, help="By how many zeros the number should be 0-padded.")
+parser.add_argument('-k', '--key', dest='key', default='LOCUS', choices=['LOCUS', 'ACCESSION', 'DEFINITION'], help = "Field of the genbank-file where the name of the entry can be found.")
 
 args = parser.parse_args()
 
 #LOCAL: args = parser.parse_args(["-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/subset.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "3", "-k", "LOCUS"])
-# Long: args = parser.parse_args(["-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/gids.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "4", "-k", "LOCUS"])
+# Long: args = parser.parse_args(["-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/500accessions.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "4", "-k", "LOCUS"])
 
 #SERVER: args = parser.parse_args(["-a", "/home/luke/Testing/subset.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "3", "-k", "LOCUS"])
 
@@ -59,12 +59,3 @@ gcm.load_gb_dict_into_db(records)
 
 #Push the metadata into the database
 gcm.load_df_into_db(gb_df_reformatted)
-
-
-
-
-
-
-
-
-
