@@ -807,7 +807,7 @@ def reformat_df_cols(df):
 
     #df.rename(columns={'name': 'old_name', 'db_id': 'name'}, inplace=True)
 
-    df = df[['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'size', 'habitat', 'feeding_behavior', 'locomotion', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']]
+    df = df[['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'size', 'habitat', 'feeding_behaviour', 'locomotion', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']]
 
     return df
 
