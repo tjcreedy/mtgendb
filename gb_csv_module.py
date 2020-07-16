@@ -1347,6 +1347,7 @@ def overwrite_data(metadata, gb_dict):
     cur = con.cursor()
     server = BioSeqDatabase.open_database(driver=db_driver, user=db_user, passwd=db_passwd, host=db_host, db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
     db = server[namespace]
+    engine = create_engine(mysql_engine, echo=False)
 
     if gb_dict:
 
@@ -1365,60 +1366,65 @@ def overwrite_data(metadata, gb_dict):
                     record.id = idd
                     record.annotations["accessions"] = accession
                     record.annotations["sequence_version"][0] = int(sequence_version) + 1
-"""
-    if metadata:
+
+    if metadata is not None:
         #https://stackoverflow.com/questions/34661318/replace-rows-in-mysql-database-table-with-pandas-dataframe
         #https://tedboy.github.io/pandas/_modules/pandas/io/sql.html
 
-        engine = create_engine(mysql_engine, echo=False)
-
         for nom in metadata['name']:
-
+            cur.execute(f"SELECT db_id FROM metadata WHERE name='{nom}';")
+            for row in cur:
+                db_id = row[0]
             #Grabs row from local df corresponding to name
-            row = csv_df.loc[csv_df['name'] == nom]
+            row = metadata.loc[metadata['name'] == nom]
+            to_sql_update(row, engine, db_name, 'metadata')
+            cur.execute(f"UPDATE metadata SET db_id='{db_id}' WHERE name='{nom}';")
 
-            engine = create_engine(mysql_engine, echo=False)
-
-            to_sql_update(row, engine, 'mmg_test', 'metadata')
-
-            sql_row = pd.io.sql.SQLTable(row, engine, index=False)
-
-            row.to_sql(name='metadata', if_exists='append', method=mysql_replace_into_2(sql_row, cur, list(row.columns), row_vals), con=engine)
-            # OR row.to_sql(name='metadata', if_exists='append', method=mysql_replace_into_2, index=False, con=engine)
-
-
-
-
-
-
-
-            row = csv_df.loc[csv_df['name'] == 'BIOD00197']
-            row_vals = row.values.tolist()
-            row_vals = [['QINL077', None, 'MG73', None, 'Galerucinae', 'Chrysomelidae', 'Coleoptera', None, None, 'Adult', None, None, 'Qinling', 'China', np.nan, np.nan, ';)', None, None, None, 'Nie et al', 'lib7', None, 'Qinling Chrysomelidae', None, None, None]]
-
-            engine = create_engine(mysql_engine, echo=False)
-
-            row.to_sql(name='metadata', if_exists='append', method=mysql_replace_into_2(row, cur, list(row.columns), row_vals), con=engine)
-
-            row.to_sql(name='metadata', if_exists='append', method=mysql_replace_into_2, index=False, con=engine)
-
-            sql_row = pd.io.sql.SQLTable(row, engine, index=False)
-
-
-            #For mapping Pandas tables to SQL tables.
-            'BIOD02014'
-
-            sql_row = pd.io.sql.SQLTable(row)
-
-
-            help(pd.io.sql.SQLTable)
-
+            #BUG: REPLACES DB_ID.
 
     cur.close()
     server.commit()
     server.close()
 
     return
+
+
+
+
+# OR row.to_sql(name='metadata', if_exists='append', method=mysql_replace_into_2, index=False, con=engine)
+
+
+
+
+
+"""
+
+sql_row = pd.io.sql.SQLTable(row, engine, index=False)
+
+row.to_sql(name='metadata', if_exists='append', method=mysql_replace_into_2(sql_row, cur, list(row.columns), row_vals), con=engine)
+row = csv_df.loc[csv_df['name'] == ['BIOD00197', 'BIOD01431', 'CCCP00081']]
+row = csv_df.loc[['BIOD00197', 'BIOD01431', 'CCCP00081']]
+
+row_vals = row.values.tolist()
+row_vals = [['QINL077', None, 'MG73', None, 'Galerucinae', 'Chrysomelidae', 'Coleoptera', None, None, 'Adult', None, None, 'Qinling', 'China', np.nan, np.nan, ';)', None, None, None, 'Nie et al', 'lib7', None, 'Qinling Chrysomelidae', None, None, None]]
+
+engine = create_engine(mysql_engine, echo=False)
+
+row.to_sql(name='metadata', if_exists='append', method=mysql_replace_into_2(row, cur, list(row.columns), row_vals), con=engine)
+
+row.to_sql(name='metadata', if_exists='append', method=mysql_replace_into_2, index=False, con=engine)
+
+sql_row = pd.io.sql.SQLTable(row, engine, index=False)
+
+
+#For mapping Pandas tables to SQL tables.
+'BIOD02014'
+
+sql_row = pd.io.sql.SQLTable(row)
+
+
+help(pd.io.sql.SQLTable)
+"""
 
 
 def mysql_replace_into(table, conn, keys, data_iter):
@@ -1448,4 +1454,3 @@ def mysql_replace_into_2(table, conn, keys, data_iter):
     stmt = insert(table.table).values(data)
     update_stmt = stmt.on_duplicate_key_update(**dict(zip(stmt.inserted.keys(), stmt.inserted.values())))
     conn.execute(update_stmt)
-"""
