@@ -3,6 +3,7 @@
 """Data retreival from MySQL database.
 """
 import argparse
+import re
 
 #Import the module:
 import gb_csv_module as gcm
@@ -69,8 +70,6 @@ elif args.output_format == 'COUNT':
         mysql_command = gcm.construct_sql_output_query(None, ['count'], args.mysql_specs)
 
     else:
-
-        import re
 
         mysql_command = re.sub('SELECT.*?FROM', 'SELECT COUNT(*) FROM', args.mysql_query, 1)
 

@@ -1157,18 +1157,6 @@ def fetch_names(mysql_command, db_un, db_pw):
     return names_dict
 
 
-def execute_query(mysql_query, db_un, db_pw):
-    """Connect to db and execute mysql query
-    """
-    con = mdb.connect(host=db_host, user=db_un, passwd=db_pw, db=db_name)
-
-    with con:
-        cur = con.cursor()
-        cur.execute(mysql_query)
-
-    return
-
-
 def fetch_recs(names_dict, db_un, db_pw):
     """Fetches a list of SeqRecords from an input dict of record names/db ids
     """
@@ -1180,14 +1168,23 @@ def fetch_recs(names_dict, db_un, db_pw):
 
     for name, db_id in names_dict.items():
         seq_record = db.lookup(name=db_id)
-        seq_record.name = name
-        seq_record.id = seq_record.name + ".0"
-        seq_record.annotations["accessions"] = [seq_record.name]
         recs[name] = seq_record
 
     server.close()
 
     return recs
+
+
+def execute_query(mysql_query, db_un, db_pw):
+    """Connect to db and execute mysql query
+    """
+    con = mdb.connect(host=db_host, user=db_un, passwd=db_pw, db=db_name)
+
+    with con:
+        cur = con.cursor()
+        cur.execute(mysql_query)
+
+    return
 
 """
 def extract_gene(recs, gene_name):
@@ -1228,10 +1225,10 @@ def extract_CDS(recs):
 def extract_genes(recs, genes):
     """Extracts genes from SeqRecord objects and writes to dict: {gene_name :  list_of_sliced_seqrecords, ...}
     """
-    print(f'Extracting {len(genes)} genes...')
-
     if '*' in genes:
         genes = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
+
+    print(f"Extracting {len(genes)} genes: {', '.join(genes)}.")
 
     subrecs = {}
 
@@ -1343,6 +1340,8 @@ def to_sql_update(df, engine, schema, table):
 def overwrite_data(metadata, gb_dict):
     """Overwrite records in the database
     """
+    #Grabbing db_id with sql alchemy now futile
+
     con = mdb.connect(host="localhost", user=db_user, passwd=db_passwd, db=db_name)
     cur = con.cursor()
     server = BioSeqDatabase.open_database(driver=db_driver, user=db_user, passwd=db_passwd, host=db_host, db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
@@ -1375,6 +1374,7 @@ def overwrite_data(metadata, gb_dict):
             cur.execute(f"SELECT db_id FROM metadata WHERE name='{nom}';")
             for row in cur:
                 db_id = row[0]
+
             #Grabs row from local df corresponding to name
             row = metadata.loc[metadata['name'] == nom]
             to_sql_update(row, engine, db_name, 'metadata')

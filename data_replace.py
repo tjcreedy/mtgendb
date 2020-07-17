@@ -51,7 +51,7 @@ if args.manual_update:
     #Case where the update and the spec share the same column?
 
     #Connect to database and execute command
-    names_dict = gcm.execute_query(mysql_query, args.db_user, args.db_pass)
+    gcm.execute_query(mysql_query, args.db_user, args.db_pass)
 
     # Add 1 to version no.?
 #-----------
@@ -87,19 +87,7 @@ else:
     #Check if new ids are not already present in the database
     gcm.check_ids(args.db_user, args.db_pass, ids_list, 'replace')
 
-    #Add 1 to version_no. of each new data using ids_list
+    gcm.overwrite_data(csv_df, gb_dict)
 
-"""
-    if args.input_genbank:
-    
-        #Overwrite genetic info with gb_dict
-        
-        IT MUST:
-        1. Overwrite data but assume same db_id (metadata.db_id, bioentry.name, bioentry.accession)
-    
-    if args.input_csv:
-    
-        #Overwrite metadata with csv_df
-"""
+    #Add 1 to version_no. of each new data using ids_list??
 
-mysql_query = "UPDATE table SET col1=newvalue1, col2=newvalue2 WHERE spec"
