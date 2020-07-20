@@ -1340,6 +1340,10 @@ def to_sql_update(df, engine, schema, table):
 def overwrite_data(metadata, gb_dict):
     """Overwrite records in the database
     """
+    #2 cases:
+    #1) Something pulled from db (under db_id), edited, and reingested.
+    #2) A new version of a record (under name) needs to be pushed in
+
     #Grabbing db_id with sql alchemy now futile
 
     con = mdb.connect(host="localhost", user=db_user, passwd=db_passwd, db=db_name)
