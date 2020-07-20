@@ -1166,8 +1166,9 @@ def fetch_recs(names_dict, db_un, db_pw):
     server = BioSeqDatabase.open_database(driver=db_driver, user=db_un, passwd=db_pw, host=db_host, db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
     db = server[namespace]
 
-    for name, db_id in names_dict.items():
-        recs[name] = db.lookup(name=db_id)
+    with db:
+        for name, db_id in names_dict.items():
+            recs[name] = db.lookup(name=db_id)
 
     #server.close()
 
