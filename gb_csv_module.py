@@ -1167,11 +1167,9 @@ def fetch_recs(names_dict, db_un, db_pw):
     db = server[namespace]
 
     for name, db_id in names_dict.items():
-        #seq_record = db.lookup(name=db_id)
-        #recs[name] = seq_record
         recs[name] = db.lookup(name=db_id)
 
-    server.close()
+    #server.close()
 
     return recs
 
@@ -1229,7 +1227,7 @@ def extract_genes(recs, genes):
     if '*' in genes:
         genes = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
 
-    print(f"Extracting {len(genes)} genes: {', '.join(genes)}.")
+    print(f"Extracting {len(genes)} genes: {', '.join(genes)}")
 
     subrecs = {}
 
