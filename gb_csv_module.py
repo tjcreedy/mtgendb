@@ -1167,8 +1167,9 @@ def fetch_recs(names_dict, db_un, db_pw):
     db = server[namespace]
 
     for name, db_id in names_dict.items():
-        seq_record = db.lookup(name=db_id)
-        recs[name] = seq_record
+        #seq_record = db.lookup(name=db_id)
+        #recs[name] = seq_record
+        recs[name] = db.lookup(name=db_id)
 
     server.close()
 
