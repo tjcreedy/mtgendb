@@ -15,7 +15,7 @@ req_group = parser.add_argument_group('Required arguments')
 req_group.add_argument('--db_user', dest='db_user', metavar='{db_username}', required=True, help="Database username")
 req_group.add_argument('--db_pass', dest='db_pass', metavar='{db_password}', required=True, help="Database password")
 parser.add_argument('-q', '--query', dest='mysql_query', metavar='custom_MySQL_query', help="Custom MySQL query to extract data from database. (e.g. \"SELECT * FROM metadata WHERE country='United Kingdom';\") NOTE: Your custom specification must be enclosed by double quotations, as above.")
-subparsers = parser.add_subparsers(dest="output_format", required=True, description='Desired output format:')
+subparsers = parser.add_subparsers(dest="output_format", description='Desired output format:')
 
 #Create the parser for the 'COUNT' command
 parser_count = subparsers.add_parser('COUNT', help="Prints an integer on the command line —— For help file see 'data_output.py COUNT -h'.")
