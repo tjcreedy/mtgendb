@@ -865,7 +865,7 @@ def sql_cols(table, cols, spec):
     #table = 'biosequence'
     #spec = None
     #table, cols, spec = [None, ['count'], ['country=United Kingdom', 'length<25000']]
-    #table, cols, spec = [None, ['name', 'db_id'], ['species=Stenus boops', 'length<25000', 'country=United Kingdom']]
+    #table, cols, spec = [None, ['name', 'db_id'], ['species=cucujiformia', 'length<25000', 'country=United Kingdom']]
     #table, cols, spec = [None, ['*'], ['species=Stenus boops', 'length<25000', 'country!=United Kingdom']]
 
     # table, cols, spec = [None, None, ['length>25000', 'country=United Kingdom', 'locomotion=arboreal', 'size=12mm']]
@@ -920,13 +920,12 @@ def sql_cols(table, cols, spec):
     for c in all_cols:
 
         if c == '*':
-            #mysql_com = '*'
             continue
         elif c == 'count':
-            #mysql_com = 'COUNT(*)'
             continue
         elif c in taxonomy:
-            mysql_com = ['taxon.node_rank', 'taxon_name.name']
+            #mysql_com = ['taxon.node_rank', 'taxon_name.name']
+            continue
         elif c in metadata_cols:
             mysql_com = f'metadata.{c}'
         #elif c in biodatabase_cols:
@@ -994,13 +993,14 @@ def sql_cols(table, cols, spec):
         cols_dict[c] = mysql_com
 
     #Construct tables list
-    tables = []
+    """tables = []
     for x in cols_dict.values():
         if type(x) == str:
             tables.append(x.split('.')[0])
         else:
             tables.extend([x[0].split('.')[0], x[1].split('.')[0]])
-    tables = list(filter(None, list(set(tables + [table]))))
+    tables = list(filter(None, list(set(tables + [table]))))"""
+    tables = list(filter(None, list(set([x.split('.')[0] for x in cols_dict.values()] + [table]))))
 
     #Construct columns string
     if cols == ['*']:
@@ -1082,7 +1082,7 @@ def sql_table(tables):
 
 def sql_spec(tables, cols_dict, spec, spec_type):
     # spec = ['country!=United Kingdom', 'description=Lucanus sp. BMNH 1425267 mitochondrion, complete genome']
-
+    # spec_type='output'
     spec = [s if re.split('=|!=|>|<', s)[1].isnumeric() else f"{re.split('=|!=|>|<', s)[0]}{re.findall('=|!=|>|<', s)[0]}'{re.split('=|!=|>|<', s)[1]}'" for s in spec]
 
     if len(spec) == 0:
@@ -1095,10 +1095,11 @@ def sql_spec(tables, cols_dict, spec, spec_type):
             for x in spec:
                 s = re.split('=|!=|>|<', x)
                 if s[0] in ['subspecies', 'species', 'genus', 'tribe', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom']:
-                    spec1 = f"{cols_dict[s[0]][0]}='{s[0]}'"
-                    spec2 = f"{cols_dict[s[0]][1]}={s[1]}"
-                    spec3 = "taxon_name.name_class='scientific name'"
-                    specs.extend([spec1, spec2, spec3])
+                    #spec1 = f"{cols_dict[s[0]][0]}='{s[0]}'"
+                    #spec2 = f"{cols_dict[s[0]][1]}={s[1]}"
+                    #spec3 = "taxon_name.name_class='scientific name'"
+                    #specs.extend([spec1, spec2, spec3])
+                    specs.append(f"metadata.taxon_id IN (SELECT DISTINCT include.ncbi_taxon_id FROM taxon INNER JOIN taxon AS include ON (include.left_value BETWEEN taxon.left_value AND taxon.right_value) WHERE taxon.taxon_id IN (SELECT taxon_id FROM taxon_name WHERE name COLLATE LATIN1_GENERAL_CI LIKE '%{s[1][1:-1]}%'))")
                 else:
                     specs.append(re.findall('=|!=|>|<', x)[0].join([cols_dict[s[0]], s[1]]))
 
@@ -1112,6 +1113,7 @@ def sql_spec(tables, cols_dict, spec, spec_type):
 
 
 def construct_sql_output_query(table, cols, spec):
+    #table, cols, spec
 
     tables, cols_string, cols_dict, spec = sql_cols(table, cols, spec)
 
@@ -1238,6 +1240,8 @@ def extract_genes(recs, genes):
                 if feature.type.upper() == "CDS" and 'gene' in feature.qualifiers and feature.qualifiers['gene'][0].upper() == gene.upper():  # .upper() not relevant, as alter_features means all in db would be upper, and choice in argparse means all in genes will be upper
                     subrec = feature.location.extract(record)
                     subrec.description = re.sub(', [a-z]+ genome$', '', record.description)
+                    subrec.id = record.id
+                    subrec.name = record.name
                     extracted_genes.append(subrec)
         subrecs[gene] = extracted_genes
 
