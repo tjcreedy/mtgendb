@@ -867,6 +867,8 @@ def sql_cols(table, cols, spec):
     #table, cols, spec = [None, ['count'], ['country=United Kingdom', 'length<25000']]
     #table, cols, spec = [None, ['name', 'db_id'], ['species=cucujiformia', 'length<25000', 'country=United Kingdom']]
     #table, cols, spec = [None, ['*'], ['species=Stenus boops', 'length<25000', 'country!=United Kingdom']]
+    #table, cols, spec = [None, ['count'], ['species=Stenus boops']]
+    # 'length<25000', 'country!=United Kingdom']]
 
     # table, cols, spec = [None, None, ['length>25000', 'country=United Kingdom', 'locomotion=arboreal', 'size=12mm']]
 
@@ -925,7 +927,8 @@ def sql_cols(table, cols, spec):
             continue
         elif c in taxonomy:
             #mysql_com = ['taxon.node_rank', 'taxon_name.name']
-            continue
+            #continue
+            mysql_com = f'metadata.TAXON'
         elif c in metadata_cols:
             mysql_com = f'metadata.{c}'
         #elif c in biodatabase_cols:
@@ -1088,26 +1091,19 @@ def sql_spec(tables, cols_dict, spec, spec_type):
     if len(spec) == 0:
         spec = ''
     else:
-        if len(tables) == 1:
-            spec = f" WHERE ({') AND ('.join(spec)})"
-        else:
-            specs = []
-            for x in spec:
-                s = re.split('=|!=|>|<', x)
-                if s[0] in ['subspecies', 'species', 'genus', 'tribe', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom']:
-                    #spec1 = f"{cols_dict[s[0]][0]}='{s[0]}'"
-                    #spec2 = f"{cols_dict[s[0]][1]}={s[1]}"
-                    #spec3 = "taxon_name.name_class='scientific name'"
-                    #specs.extend([spec1, spec2, spec3])
-                    specs.append(f"metadata.taxon_id IN (SELECT DISTINCT include.ncbi_taxon_id FROM taxon INNER JOIN taxon AS include ON (include.left_value BETWEEN taxon.left_value AND taxon.right_value) WHERE taxon.taxon_id IN (SELECT taxon_id FROM taxon_name WHERE name COLLATE LATIN1_GENERAL_CI LIKE '%{s[1][1:-1]}%'))")
-                else:
-                    specs.append(re.findall('=|!=|>|<', x)[0].join([cols_dict[s[0]], s[1]]))
+        specs = []
+        for x in spec:
+            s = re.split('=|!=|>|<', x)
+            if s[0] in ['subspecies', 'species', 'genus', 'tribe', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom']:
+                specs.append(f"metadata.taxon_id IN (SELECT DISTINCT include.ncbi_taxon_id FROM taxon INNER JOIN taxon AS include ON (include.left_value BETWEEN taxon.left_value AND taxon.right_value) WHERE taxon.taxon_id IN (SELECT taxon_id FROM taxon_name WHERE name COLLATE LATIN1_GENERAL_CI LIKE '%{s[1][1:-1]}%'))")
+            else:
+                specs.append(re.findall('=|!=|>|<', x)[0].join([cols_dict[s[0]], s[1]]))
 
-            if spec_type == "output":
-                spec = f" WHERE ({') AND ('.join(specs)})"
+        if spec_type == "output":
+            spec = f" WHERE ({') AND ('.join(specs)})"
 
-            if spec_type == "update":
-                spec = ', '.join(specs)
+        if spec_type == "update":
+            spec = ', '.join(specs)
 
     return spec
 
