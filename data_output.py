@@ -104,15 +104,10 @@ else:
 TO-DO
 
 7. Number of file output formats... GENBANK SUBMISSION - .sqn?
-9. <>= the only symbols in a query? NO: '!='
-10. Data is stored only at the most specific taxonomic level. E.g. a Mordellidae (family) is still a Coleoptera (order), but will only come up under the spec family='Mordellidae' (and not under order='Coleoptera'). 
-
-    USEFUL COMMAND: SELECT parent.ncbi_taxon_id, tnparent.name, child.ncbi_taxon_id, tnchild.name FROM taxon AS parent JOIN taxon AS child ON parent.taxon_id=child.parent_taxon_id JOIN taxon_name AS tnparent ON parent.taxon_id=tnparent.taxon_id JOIN taxon_name AS tnchild ON child.taxon_id=tnchild.taxon_id WHERE tnchild.name='Mordellidae';
-14. Fasta outputs put accession instead of name as id.
 
 USAGE NOTES:
 1. Assumes taxon name provided is the scientific name
 2. GENES: can it be made such that if flag is not given, full genome assumed, if it is given with no argument, all 13 genes are assumes, and if genes specified, then only those genes assumed?
-
+3. Any command entered after -q will be parsed. So be cautious.
 """
 

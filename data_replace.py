@@ -24,8 +24,9 @@ parser_manup.add_argument('-s', '--specs', dest='mysql_specs', metavar='{specifi
 parser_manup.add_argument('-u', '--update', dest='update_specs', metavar='{update_specs}', nargs='+', help="Specifications of updates to be made. (E.g. 'locomotion=arboreal' 'size=12mm')")
 parser_manup.add_argument('-q', '--custom_query', dest='custom_query', metavar='{custom_query}', help="Custom MySQL query to update data in database. (e.g. \"UPDATE metadata SET subregion='Sabah', size='12mm' WHERE name='BIOD00234';\") NOTE: Your custom specification must be enclosed by double quotations, as above.")
 
-args = parser.parse_args()
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-gb", "./testdata/test_genbank.gb", "-csv", "./testdata/test_metadata.csv", '-k', 'LOCUS'])
 
+args = parser.parse_args()
 
 #Define restrictions
 if not (args.manual_update or args.input_genbank or args.input_csv):
