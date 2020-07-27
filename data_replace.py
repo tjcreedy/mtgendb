@@ -24,7 +24,7 @@ parser_manup.add_argument('-s', '--specs', dest='mysql_specs', metavar='{specifi
 parser_manup.add_argument('-u', '--update', dest='update_specs', metavar='{update_specs}', nargs='+', help="Specifications of updates to be made. (E.g. 'locomotion=arboreal' 'size=12mm')")
 parser_manup.add_argument('-q', '--custom_query', dest='custom_query', metavar='{custom_query}', help="Custom MySQL query to update data in database. (e.g. \"UPDATE metadata SET subregion='Sabah', size='12mm' WHERE name='BIOD00234';\") NOTE: Your custom specification must be enclosed by double quotations, as above.")
 
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-gb", "./testdata/test_genbank.gb", "-csv", "./testdata/test_metadata.csv", '-k', 'LOCUS'])
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-gb", "./testdata/replace.gb", "-csv", "./testdata/replace.csv", '-k', 'LOCUS'])
 
 args = parser.parse_args()
 
@@ -72,7 +72,7 @@ else:
         csv_df = pd.read_csv(args.input_csv, quotechar='"')
 
         #Check if the header in the csv is correct
-        gcm.correct_header(csv_df)
+        #gcm.correct_header(csv_df)   #THIS IS A PROBLEM, AS FIRST ROUND OF INGESTION ADDS NEW FIELDS TO EACH ROW THAT DON'T PASS THE CORRECT_HEADER FUNC
 
         #Generate ids list
         ids_list = list(csv_df['name'])
@@ -80,7 +80,7 @@ else:
     if args.input_genbank and args.input_csv:
 
         #Check if the genbank and metadata file have matching entries
-        csv_df, gb_dict = gcm.matching_inputids(csv_df, gb_dict)
+        csv_df, gb_dict = gcm.matching_inputids(csv_df, gb_dict, 'replace')
 
         #Generate ids list
         ids_list = list(gb_dict.keys())

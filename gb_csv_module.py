@@ -122,12 +122,12 @@ def correct_header(csv_dataframe):
 
     if expected_header != csv_header:
         print("Incorrect header in CSV file.\n")
-        sys.exit("Current header is: " + str(csv_header) + "\n\nIt must be as follows: ['name', 'specimen', 'morphospecies', 'species', 'subfamily', 'family', 'order', 'taxid', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'size', 'habitat', 'feeding_behavior', 'locomotion', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']")
+        sys.exit("Current header is: " + str(csv_header) + "\n\nIt must be as follows: " + str(expected_header))
 
     return()
 
 
-def matching_inputids(csv_dataframe, gb_dictionary):
+def matching_inputids(csv_dataframe, gb_dictionary, action):
     """Check if the GenBank and CSV metadata files have matching entries, and that there are no duplicates in the CSV file. (Duplicates in the GenBank file would
     have generated an error when first loaded into a dictionary in gb_into_dictionary.)
     """
@@ -135,7 +135,11 @@ def matching_inputids(csv_dataframe, gb_dictionary):
 
     new_gb_dict, new_csv_df = [gb_dictionary, csv_dataframe]
 
-    ids_csv = csv_dataframe['name'].values.tolist()
+    if action == 'ingest':
+        ids_csv = csv_dataframe['name'].values.tolist()
+    else:
+        ids_csv = csv_dataframe['db_id'].values.tolist()
+
     unique = list(set(ids_csv + list(gb_dictionary.keys())))                        #all IDs in both files (the union).
     shared = list(set(ids_csv) & set(gb_dictionary.keys()))                         #all IDs shared by by both files (the intersection).
     discrepant_ids = [a for a in unique if a not in shared]                         #all IDs that aren't shared by both files.
@@ -1255,8 +1259,9 @@ def csv_from_sql(mysql_command, csv_name, db_un, db_pw):
     #Write data to CSV file
     with open(f"{csv_name}.csv", "w", newline='') as csv_file:
         csv_writer = csv.writer(csv_file)
-        csv_writer.writerow([i[0] for i in cur.description])  #Write headers
-        csv_writer.writerows(cur)
+        headers = [i[0] for i in cur.description if i[0] != 'metadata_id']
+        csv_writer.writerow(headers)  #Write headers
+        csv_writer.writerows(x[1:] for x in cur)
 
     cur.close()
 
