@@ -881,10 +881,10 @@ def sql_cols(table, cols, spec):
     # table, cols, spec = [None, None, ['length>25000', 'country=United Kingdom', 'locomotion=arboreal', 'size=12mm']]
 
     #Reformat inputs
-    if spec is None:
-        spec = []
-    if cols is None:
-        cols = []
+    #if spec is None:
+    #    spec = []
+    #if cols is None:
+    #    cols = []
 
     #spec = [f"{re.split('=|>|<', s)[0]}{re.findall('=|>|<', s)[0]}{re.split('=|>|<', s)[1]}" if re.split('=|>|<', s)[1].isnumeric() else f"{re.split('=|>|<', s)[0]}='{re.split('=|>|<', s)[1]}'" for s in spec]
     #cols = list(cols)
@@ -902,7 +902,7 @@ def sql_cols(table, cols, spec):
     taxon_cols = ['taxon.taxon_id', 'ncbi_taxon_id', 'parent_taxon_id', 'node_rank', 'genetic_code', 'mito_genetic_code', 'left_value', 'right_value']
 
     #Special queries
-    taxonomy = ['subspecies', 'species', 'genus', 'tribe', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom']
+    taxonomy = ['subspecies', 'species', 'genus', 'tribe', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom', 'taxon']
 
     #Construct columns dictionary (adding prefixes for table joins)
     cols_dict = {}

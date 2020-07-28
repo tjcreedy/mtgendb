@@ -14,59 +14,59 @@ parser = argparse.ArgumentParser(description="Extracting data from the database.
 req_group = parser.add_argument_group('Required arguments')
 req_group.add_argument('--db_user', dest='db_user', help="Database username", metavar='{db_username}', required=True)
 req_group.add_argument('--db_pass', dest='db_pass', help="Database password", metavar='{db_password}', required=True)
-parser.add_argument('-q', '--query', dest='mysql_query', help="""Custom MySQL 
-query to extract data from database. (e.g. \"SELECT * FROM metadata WHERE 
-country='United Kingdom';\") NOTE: Your custom specification must be enclosed by double quotations, as above.""",
-                    metavar='custom_MySQL_query')
+parser.add_argument('-q', '--query', dest='mysql_query', help="""Custom MySQL query to extract data from database. (e.g. \"SELECT * FROM metadata WHERE country='United Kingdom';\") NOTE: Your custom specification must be enclosed by double quotations, as above.""", metavar='custom_MySQL_query')
 subparsers = parser.add_subparsers(dest="output_format", description='Desired output format:')
 
 #Create the parser for the 'COUNT' command
-parser_count = subparsers.add_parser('COUNT', help="""Prints an integer on the command line —— 
-For help file see 'data_output.py COUNT -h'.""")
-parser_count.add_argument('-s', '--specifications', dest='mysql_specs', help="""Comma-separated 
-list of mysql specifications.\n(e.g. 'subregion=Sabah' 'length>25000' 'order=Coleoptera') 
-REMEMBER: Each individual spec must be enclosed by quotations and separated from the 
-next by a space as above.""", metavar='{specifications}', nargs='+')
+parser_count = subparsers.add_parser('COUNT', help="""Prints an integer on the command line —— For help file see 'data_output.py COUNT -h'.""")
+parser_count.add_argument('-s', '--specifications', dest='mysql_specs', default=[], metavar='{Specification(s)}', nargs='+', help="""Comma-separated list of mysql specifications.\n(e.g. 'subregion=Sabah' 'length>25000' 'order=Coleoptera') REMEMBER: Each individual spec must be enclosed by quotations and separated from the next by a space as above.""")
+parser_count.add_argument('-x', '--taxonomy', dest='taxonomy_spec', help="""Taxonomic searchterm to run through database""", metavar='{taxonomy}')
 
 #Create the parser for the 'CSV' command
-parser_csv = subparsers.add_parser('CSV', help="""Ouputs a .csv file —— For 
-help file see 'data_output.py CSV -h'.""")
-parser_csv.add_argument('-o', '--out', dest = 'output_name',
-                        help="""Preferred filename for the output (extension 
-                        will be added automatically according to your 
-                        output format choice).""",
-                        metavar='{Output filename}', required=True)
+parser_csv = subparsers.add_parser('CSV', help="""Ouputs a .csv file —— For help file see 'data_output.py CSV -h'.""")
+parser_csv.add_argument('-o', '--out', dest = 'output_name', help="""Preferred filename for the output (extension will be added automatically according to your output format choice).""", metavar='{Output filename}', required=True)
 parser_csv.add_argument('-t', '--table', dest='database_table', metavar='{Table name}', choices=["metadata", "bioentry", "bioentry_dbxref", "bioentry_qualifier_value", "bioentry_reference", "biosequence", "seqfeature", "comment", "taxon", "taxon_name"], help="Name of database table you wish to extract data from. (e.g. metadata.) If provided, the script will assume you require data from every column in the specified table. If this is not the case then stating only the required columns under the -c flag will suffice.")
-parser_csv.add_argument('-c', '--columns', dest='table_columns', metavar='{Column name(s)}', nargs='+', default=['*'], help="Name of table columns you wish to extract data from. (e.g. name length description)")
-parser_csv.add_argument('-s', '--specifications', dest='mysql_specs', metavar='{Specification(s)}', nargs='+', help="Comma-separated list of mysql specifications.\n(e.g. 'subregion=Sabah' 'length>25000' 'order=Coleoptera') NOTE: Each individual specification must be enclosed by quotations and separated from the next by a space as above.")
+parser_csv.add_argument('-c', '--columns', dest='table_columns', default=['*'], metavar='{Column name(s)}', nargs='+', help="Name of table columns you wish to extract data from. (e.g. name length description)")
+parser_csv.add_argument('-s', '--specifications', dest='mysql_specs', default=[], metavar='{Specification(s)}', nargs='+', help="Comma-separated list of mysql specifications.\n(e.g. 'subregion=Sabah' 'length>25000' 'order=Coleoptera') NOTE: Each individual specification must be enclosed by quotations and separated from the next by a space as above.")
+parser_csv.add_argument('-x', '--taxonomy', dest='taxonomy_spec', help="""Taxonomic searchterm to run through database""", metavar='{taxonomy}')
 
 #Create the parser for the 'FASTA' command
 parser_fasta = subparsers.add_parser('FASTA', help="Ouputs a .fasta file —— For help file see 'data_output.py FASTA -h'.")
 parser_fasta.add_argument('-o', '--out', dest = 'output_name', metavar='{Output filename}', required=True, help="Preferred filename for the output (extension will be added automatically according to your output format choice).")
-parser_fasta.add_argument('-s', '--specifications', dest='mysql_specs', metavar='{Specification(s)}', nargs='+', help="Comma-separated list of mysql specifications.\n(e.g. 'subregion=Sabah' 'length>25000' 'order=Coleoptera') NOTE: Each individual specification must be enclosed by quotations and separated from the next by a space as above.")
+parser_fasta.add_argument('-s', '--specifications', dest='mysql_specs', default=[], metavar='{Specification(s)}', nargs='+', help="Comma-separated list of mysql specifications.\n(e.g. 'subregion=Sabah' 'length>25000' 'order=Coleoptera') NOTE: Each individual specification must be enclosed by quotations and separated from the next by a space as above.")
+parser_fasta.add_argument('-x', '--taxonomy', dest='taxonomy_spec', help="""Taxonomic searchterm to run through database""", metavar='{taxonomy}')
 parser_fasta.add_argument('-g', '--genes', dest='genes', metavar='{gene_names}', nargs='+', choices=['*', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6'], help='Name of mitochondrial genes you wish to extract.')
 
 #Create the parser for the 'GB' command
 parser_gb = subparsers.add_parser('GB', help="Outputs an annotated .gb file —— For help file see 'data_output.py GB -h'.")
 parser_gb.add_argument('-o', '--out', dest = 'output_name', metavar='{Output filename}', required=True, help="Preferred filename for the output (extension will be added automatically according to your output format choice).")
-parser_gb.add_argument('-s', '--specifications', dest='mysql_specs', metavar='{Specification(s)}', nargs='+', help="Comma-separated list of mysql specifications.\n(e.g. 'subregion=Sabah' 'length>25000' 'order=Coleoptera') NOTE: Each individual specification must be enclosed by quotations and separated from the next by a space as above.")
+parser_gb.add_argument('-s', '--specifications', dest='mysql_specs', default=[], metavar='{Specification(s)}', nargs='+', help="Comma-separated list of mysql specifications.\n(e.g. 'subregion=Sabah' 'length>25000' 'order=Coleoptera') NOTE: Each individual specification must be enclosed by quotations and separated from the next by a space as above.")
+parser_gb.add_argument('-x', '--taxonomy', dest='taxonomy_spec', help="""Taxonomic searchterm to run through database""", metavar='{taxonomy}')
 parser_gb.add_argument('-g', '--genes', dest='genes', metavar='{gene_names}', nargs='+', choices=['*', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6'], help='Name of mitochondrial genes you wish to extract.')
 
-# args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-o", "metadateru", "-s", "subregion='Sabah'"])
+# args = parser.parse_args(["--db_user", "root", "--db_pass", "mmgdatabase", '-q', "SELECT * FROM metadata WHERE country='China';", 'CSV', "-t", "metadata", '-c', 'name', "-o", "metadateru", "-s", "subregion='Sabah'"])
 # args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-c", "name", "length", "accession", "seq", "-o", "metadateru", "-s", "country='United Kingdon' description='Lucanus sp. BMNH 1425267 mitochondrion, complete genome'", "-f", "csv"])
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'GB', '-o', 'replace', '-s',  'country=China'])
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'GB', '-o', 'replace', '-x', 'Cucujiformia'])
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'FASTA', '-o', 'outksis', '-s',  'country!=Malaysia', '-g' , 'COX2', 'ND3', 'ATP6'])
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'FASTA', '-o', 'outksis', '-s',  'country!=Malaysia', '-g' , '*'])
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'FASTA', '-o', 'malays', '-s',  'species=Stenus boops', '-g', 'COX2', 'ND3', 'ATP6'])
 
-
 args = parser.parse_args()
+
+#Define restrictions
+if args.mysql_query and (args.taxonomy_spec or args.mysql_specs or args.database_table or args.table_columns):
+    parser.error("""query-building specifications and custom mysql query both provided.
+    Please proceed with one method.""")
 
 #gcm.csv_from_sql(args.sql_user, args.sql_password, args.db_name, args.database_table, args.table_columns, args.mysql_specs, args.output_name)
 
 if args.output_format == 'CSV':
 
     if not args.mysql_query:
+
+        if args.taxonomy_spec:
+
+            args.mysql_specs.append(f'taxon={args.taxonomy_spec}')
 
         mysql_command = gcm.construct_sql_output_query(args.database_table, args.table_columns, args.mysql_specs)
 
@@ -80,6 +80,10 @@ elif args.output_format == 'COUNT':
 
     if not args.mysql_query:
 
+        if args.taxonomy_spec:
+
+            args.mysql_specs.append(f'taxon={args.taxonomy_spec}')
+
         mysql_command = gcm.construct_sql_output_query(None, ['count'], args.mysql_specs)
 
     else:
@@ -91,6 +95,10 @@ elif args.output_format == 'COUNT':
 else:
 
     if not args.mysql_query:
+
+        if args.taxonomy_spec:
+
+            args.mysql_specs.append(f'taxon={args.taxonomy_spec}')
 
         mysql_command = gcm.construct_sql_output_query(None, ['name', 'db_id'], args.mysql_specs)
 
@@ -107,7 +115,6 @@ else:
         records = gcm.extract_genes(records, args.genes)
 
     gcm.seqfile_from_sql(records, args.output_name, args.output_format.lower())
-
 
 #print(f"QUERY: {mysql_command}")
 
