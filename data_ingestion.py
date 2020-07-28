@@ -45,7 +45,7 @@ csv_df = pd.read_csv(args.input_csv, quotechar='"')
 gcm.correct_header(csv_df)
 
 #Check if the genbank and metadata file have matching entries
-new_csv_df, new_gb_dict = gcm.matching_inputids(csv_df, gb_dict)
+new_csv_df, new_gb_dict = gcm.matching_inputids(csv_df, gb_dict, 'ingest')
 
 #Create dictionary with old input ids (key) and new database ids (value)
 dict_new_ids = gcm.new_ids(new_gb_dict, args.prefix, args.number, args.padding)
