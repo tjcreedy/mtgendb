@@ -112,13 +112,17 @@ def check_acc_format(acc_list):
     return Accs
 
 
-def correct_header(csv_dataframe):
+def correct_header(csv_dataframe, action):
     """Check metadata file has correct columns #by creating a list of its column headers and checking it against a list of the expected headers.
     """
     # csv_dataframe = csv_df
 
     csv_header = csv_dataframe.columns.values.tolist()                                     # LUKE: creates list of csv column headers.      ## Pandas index.tolist() Converts dataframes column values to list, like below.  ###6 LUKE: So why use the .values function when .columns returns an index already?
-    expected_header = ['name', 'specimen', 'morphospecies', 'species', 'subfamily', 'family', 'order', 'taxid', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'size', 'habitat', 'feeding_behaviour', 'locomotion', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
+
+    if action == 'ingest':
+        expected_header = ['name', 'specimen', 'morphospecies', 'species', 'subfamily', 'family', 'order', 'taxid', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'size', 'habitat', 'feeding_behaviour', 'locomotion', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
+    else:
+        expected_header = ['name', 'db_id', 'specimen', 'morphospecies', 'species', 'subfamily', 'family', 'order', 'taxid', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'size', 'habitat', 'feeding_behaviour', 'locomotion', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
 
     if expected_header != csv_header:
         print("Incorrect header in CSV file.\n")
@@ -414,7 +418,7 @@ def extract_metadata(records):
     gb_met_df.columns = ["name", "taxon_id", "country", "subregion", "collectionmethod", "accession"]
 
     #Add other metadata columns required by database and fill them with blanks (None/NaN objects)
-    for label in ['morphospecies', 'custom_lineage', 'specimen', 'lifestage', 'site', 'locality', 'authors', 'size', 'habitat', 'feeding_behavior', 'locomotion', 'library', 'datasubmitter', 'projectname', 'uin', 'notes']:
+    for label in ['morphospecies', 'custom_lineage', 'specimen', 'lifestage', 'site', 'locality', 'authors', 'size', 'habitat', 'feeding_behaviour', 'locomotion', 'library', 'datasubmitter', 'projectname', 'uin', 'notes']:
         gb_met_df[label] = None
 
     for header in ['latitude', 'longitude']:
