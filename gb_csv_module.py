@@ -1030,7 +1030,7 @@ def sql_spec(tables, cols_dict, spec, spec_type):
         specs = []
         for x in spec:
             s = re.split('=|!=|>|<', x)
-            if s[0] in ['subspecies', 'species', 'genus', 'tribe', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom']:
+            if s[0] in ['subspecies', 'species', 'genus', 'tribe', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom', 'taxon']:
                 specs.append(f"metadata.taxon_id IN (SELECT DISTINCT include.ncbi_taxon_id FROM taxon INNER JOIN taxon AS include ON (include.left_value BETWEEN taxon.left_value AND taxon.right_value) WHERE taxon.taxon_id IN (SELECT taxon_id FROM taxon_name WHERE name COLLATE LATIN1_GENERAL_CI LIKE '%{s[1][1:-1]}%'))")
             else:
                 specs.append(re.findall('=|!=|>|<', x)[0].join([cols_dict[s[0]], s[1]]))
