@@ -888,34 +888,14 @@ def sql_cols(table, cols, spec):
 
     # Unique cols of each table (shared cols assigned to a prioritised table)
     metadata_cols = ['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'metadata.authors', 'size', 'habitat', 'feeding_behavior', 'locomotion', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
-    #biodatabase_cols = ['biodatabase_id', 'biodatabase.name', 'authority', 'biodatabase.description']
     bioentry_cols = ['bioentry_id', 'bioentry.biodatabase_id', 'bioentry.taxon_id', 'bioentry.name', 'bioentry.accession', 'identifier', 'division', 'description', 'version']
     bioentry_dbxref_cols = ['bioentry_dbxref.bioentry_id', 'bioentry_dbxref.dbxref_id', 'bioentry_dbxref.rank']
-    #bioentry_path_cols = ['object_bioentry_id', 'subject_bioentry_id', 'bioentry_path.term_id', 'distance']
     bioentry_qualifier_value_cols = ['bioentry_qualifier_value.bioentry_id', 'bioentry_qualifier_value.term_id', 'value', 'bioentry_qualifier_value.rank']
     bioentry_reference_cols = ['bioentry_reference.bioentry_id', 'bioentry_reference.reference_id', 'bioentry_reference.start_pos', 'bioentry_reference.end_pos', 'bioentry_reference.rank']
-    #bioentry_relationship_cols = ['bioentry_relationship_id', 'bioentry_relationship.object_bioentry', 'bioentry_relationship.subject_bioentry_id', 'bioentry_relationship.term_id', 'bioentry_relationship.rank']
     biosequence_cols = ['biosequence.version', 'length', 'alphabet', 'seq']
     comment_cols = ['comment_id', 'comment.bioentry_id', 'comment_text', 'comment.rank']
-    #dbxref_cols = ['dbxref_id', 'dbname', 'dbxref.accession', 'dbxref.version']
-    #dbxref_qualifier_value_cols = ['dbxref_qualifier_value.dbxref_id', 'dbxref_qualifier_value.term_id', 'dbxref_qualifier_value.rank', 'dbxref_qualifier_value.value']
-    #location_cols = ['location_id', 'location.seqfeature_id', 'location.dbxref_id', 'location.term_id', 'start_pos', 'end_pos', 'strand', 'rank']
-    #location_qualifier_value_cols = ['location_qualifier_value.location_id', 'location_qualifier_value.term_id', 'location_qualifier_value.value', 'location_qualifier_value.int_value']
-    #ontology_cols = ['ontology_id', 'ontology_cols.name', 'definition']
-    #reference_cols = ['reference_id', 'reference.dbxref_id', 'location', 'title', 'authors', 'crc']
     seqfeature_cols = ['seqfeature_id', 'seqfeature.bioentry_id', 'type_term_id', 'source_term_id', 'display_name', 'seqfeature.rank']
-    #seqfeature_dbxref_cols = ['seqfeature_dbxref.seqfeature_id', 'seqfeature_dbxref.dbxref_id', 'seqfeature_dbxref.rank']
-    #seqfeature_path_cols = ['object_seqfeature_id', 'subject_seqfeature_id', 'seqfeature_path.term_id', 'seqfeature_path.distance']
-    #seqfeature_qualifier_value_cols = ['seqfeature_qualifier_value.seqfeature_id', 'seqfeature_qualifier_value.term_id', 'seqfeature_qualifier_value.rank', 'seqfeature_qualifier_value.value']
-    #seqfeature_relationship_cols = ['seqfeature_relationship_id', 'seqfeature_relationship.object_seqfeature_id', 'seqfeature_relationship.subject_seqfeature_id', 'seqfeature_relationship.term_id', 'seqfeature_relationship.rank']
     taxon_cols = ['taxon.taxon_id', 'ncbi_taxon_id', 'parent_taxon_id', 'node_rank', 'genetic_code', 'mito_genetic_code', 'left_value', 'right_value']
-    taxon_name_cols = ['taxon_name.taxon_id', 'taxon_name.name', 'name_class']
-    #term_cols = ['term_id', 'term.name', 'term.definition', 'term.identifier', 'is_obsolete', 'term.ontology_id']
-    #term_dbxref_cols = ['term_dbxref.term_id', 'term_dbxref.dbxref_id', 'term_dbxref.rank']
-    #term_path_cols = ['term_path_id', 'subject_term_id', 'predicate_term_id', 'object_term_id', 'term_path.ontology_id', 'term_path.distance']
-    #term_relationship_cols = ['term_relationship_id', 'term_relationship.subject_term_id', 'term_relationship.predicate_term_id', 'term_relationship.object_term_id', 'term_relationship.ontology_id']
-    #term_relationship_term_cols = ['term_relationship_term.term_relationship_id', 'term_relationship_term.term_id']
-    #term_synonym_cols = ['synonym', 'term_synonym.term_id']
 
     #Special queries
     taxonomy = ['subspecies', 'species', 'genus', 'tribe', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom']
@@ -930,67 +910,27 @@ def sql_cols(table, cols, spec):
         elif c == 'count':
             continue
         elif c in taxonomy:
-            #mysql_com = ['taxon.node_rank', 'taxon_name.name']
-            #continue
             mysql_com = f'metadata.TAXON'
         elif c in metadata_cols:
             mysql_com = f'metadata.{c}'
-        #elif c in biodatabase_cols:
-        #    mysql_com = f'biodatabase.{c}'
         elif c in bioentry_cols:  # -name  -taxon_id
             mysql_com = f'bioentry.{c}'
         elif c in bioentry_dbxref_cols:
             mysql_com = f'bioentry_dbxref.{c}'
-        #elif c in bioentry_path_cols:
-        #    mysql_com = f'bioentry_path.{c}'
         elif c in bioentry_qualifier_value_cols:
             mysql_com = f'bioentry_qualifier_value.{c}'
         elif c in bioentry_reference_cols:
             mysql_com = f'bioentry_reference.{c}'
-        #elif c in bioentry_relationship_cols:
-        #    mysql_com = f'bioentry_relationship.{c}'
         elif c in biosequence_cols:
             mysql_com = f'biosequence.{c}'
         elif c in comment_cols:
             mysql_com = f'comment.{c}'
-        #elif c in dbxref_cols:
-        #    mysql_com = f'dbxref.{c}'
-        #elif c in dbxref_qualifier_value_cols:
-        #    mysql_com = f'dbxref_qualifier_value.{c}'
-        #elif c in location_cols:
-        #    mysql_com = f'location.{c}'
-        #elif c in location_qualifier_value_cols:
-        #    mysql_com = f'location_qualifier_value.{c}'
-        #elif c in ontology_cols:
-        #    mysql_com = f'ontology.{c}'
-        #elif c in reference_cols:
-        #    mysql_com = f'reference.{c}'
         elif c in seqfeature_cols:
             mysql_com = f'seqfeature.{c}'
-        #elif c in seqfeature_dbxref_cols:
-        #    mysql_com = f'seqfeature_dbxref.{c}'
-        #elif c in seqfeature_path_cols:
-        #    mysql_com = f'seqfeature_path.{c}'
-        #elif c in seqfeature_qualifier_value_cols:
-        #    mysql_com = f'seqfeature_qualifier_value.{c}'
-        #elif c in seqfeature_relationship_cols:
-        #    mysql_com = f'seqfeature_relationship.{c}'
         elif c in taxon_cols:
             mysql_com = f'taxon.{c}'
         elif c in taxon_name_cols:
             mysql_com = f'taxon_name.{c}'
-        #elif c in term_cols:
-        #    mysql_com = f'term.{c}'
-        #elif c in term_dbxref_cols:
-        #    mysql_com = f'term_dbxref.{c}'
-        #elif c in term_path_cols:
-        #    mysql_com = f'term_path.{c}'
-        #elif c in term_relationship_cols:
-        #    mysql_com = f'term_relationship.{c}'
-        #elif c in term_relationship_term_cols:
-        #    mysql_com = f'term_relationship_term.{c}'
-        #elif c in term_synonym_cols:
-        #    mysql_com = f'term_synonym.{c}'
         else:
             sys.exit(f"ERROR: Column '{c}' does not exist in the database.")
 
@@ -1000,13 +940,6 @@ def sql_cols(table, cols, spec):
         cols_dict[c] = mysql_com
 
     #Construct tables list
-    """tables = []
-    for x in cols_dict.values():
-        if type(x) == str:
-            tables.append(x.split('.')[0])
-        else:
-            tables.extend([x[0].split('.')[0], x[1].split('.')[0]])
-    tables = list(filter(None, list(set(tables + [table]))))"""
     tables = list(filter(None, list(set([x.split('.')[0] for x in cols_dict.values()] + [table]))))
 
     #Construct columns string
@@ -1050,17 +983,12 @@ def sql_table(tables):
         #Lists of tables sharing linking columns (For duplicates it must be decided which table the column shouls be assigned to).
         BIOENTRY_ID = ['bioentry', 'bioentry_dbxref', 'bioentry_qualifier_value', 'bioentry_reference', 'biosequence', 'comment', 'seqfeature']
         TAXON_ID = ['taxon', 'taxon_name']
-        #DBXREF_ID = ['dbxref', 'dbxref_qualifier_value', 'reference', 'seqfeature_dbxref']
-        #LOCATION_ID = ['location', 'location_qualifier_value']
-        #SEQFEATURE_ID = ['seqfeature_dbxref', 'seqfeature_qualifier_value']
 
         #Split provided tables into groups according to shared columns
         bios = list(set(tables) & set(BIOENTRY_ID))
         taxons = list(set(tables) & set(TAXON_ID))
-        #dbxrefs = list(set(tables) & set(DBXREF_ID))
-        #locations = list(set(tables) & set(LOCATION_ID))
-        #seqfeatures = list(set(tables) & set(SEQFEATURE_ID))
 
+        ##JOIN TABLES
         joins = ["metadata"]
 
         #Bios

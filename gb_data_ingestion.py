@@ -17,7 +17,7 @@ parser.add_argument('-e', '--email', dest='users_email', required=True, help="En
 parser.add_argument('-p', '--prefix', dest='prefix', required=True, help="The prefix for the database id names.")
 parser.add_argument('-n', '--number', dest='number', required=True, help="The start number for the database id names")
 parser.add_argument('-z', '--zeros', dest='padding', required=True, help="By how many zeros the number should be 0-padded.")
-parser.add_argument('-k', '--key', dest='key', default='LOCUS', choices=['LOCUS', 'ACCESSION', 'DEFINITION'], help = "Field of the genbank-file where the name of the entry can be found.")
+parser.add_argument('-k', '--key', dest='key', default='LOCUS', choices=['LOCUS', 'ACCESSION', 'DEFINITION'], help="Field of the genbank-file where the name of the entry can be found.")
 
 args = parser.parse_args()
 
@@ -25,7 +25,7 @@ args = parser.parse_args()
 # Long: args = parser.parse_args(["-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/500accessions.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "4", "-k", "LOCUS"])
 
 #SERVER: args = parser.parse_args(["-a", "/home/luke/Testing/subset.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "3", "-k", "LOCUS"])
-
+#COM: python3 gb_data_ingestion.py -a testdata/500accessions.txt -e luke.swaby@ngm.ac.uk -p GB -n 1 -z 3 -k LOCUS
 
 #Convert text-file of accessions to a list.
 acc_list = gcm.text_to_list(args.input_accessions)
@@ -45,11 +45,11 @@ gb_met_df = gcm.extract_metadata(records)
 #In dataframe insert column with new database ids
 gb_df_new_ids = gcm.change_names_csv(gb_met_df, dict_new_ids)
 
-#Reorder dataframe columns for the database.
-gb_df_reformatted = gcm.reformat_df_cols(gb_df_new_ids)
-
 #Replace old input ID with new database ID in genbank file
 gcm.change_ids_genbank(records, dict_new_ids, args.key)
+
+#Reorder dataframe columns for the database.
+gb_df_reformatted = gcm.reformat_df_cols(gb_df_new_ids)
 
 #Change the features for CDS
 gcm.alter_features(records)
