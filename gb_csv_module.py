@@ -122,13 +122,13 @@ def correct_header(csv_dataframe, action):
     if action == 'ingest':
         expected_header = ['name', 'specimen', 'morphospecies', 'species', 'subfamily', 'family', 'order', 'taxid', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'size', 'habitat', 'feeding_behaviour', 'locomotion', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
     else:
-        expected_header = ['name', 'db_id', 'specimen', 'morphospecies', 'species', 'subfamily', 'family', 'order', 'taxid', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'size', 'habitat', 'feeding_behaviour', 'locomotion', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
+        expected_header = ['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'size', 'habitat', 'feeding_behaviour', 'locomotion', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
 
     if expected_header != csv_header:
         print("Incorrect header in CSV file.\n")
         sys.exit("Current header is: " + str(csv_header) + "\n\nIt must be as follows: " + str(expected_header))
 
-    return()
+    return
 
 
 def matching_inputids(csv_dataframe, gb_dictionary, action):
@@ -835,8 +835,8 @@ def load_gb_dict_into_db(genbank_data):
 
     print("\nLoading genbank entries into the database...")
 
-    server = BioSeqDatabase.open_database(driver = db_driver, user = db_user, passwd = db_passwd, host = db_host, db = db_name)   # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
-    db =  server[namespace]
+    server = BioSeqDatabase.open_database(driver=db_driver, user=db_user, passwd=db_passwd, host=db_host, db=db_name)   # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
+    db = server[namespace]
     count = db.load(genbank_data.values())
     server.commit()                             #Commit to memory/save
 
@@ -1117,6 +1117,10 @@ def execute_query(mysql_query, db_un, db_pw):
         cur = con.cursor()
         cur.execute(mysql_query)
 
+    #OR
+
+
+
     return
 
 """
@@ -1394,3 +1398,24 @@ def mysql_replace_into_2(table, conn, keys, data_iter):
     stmt = insert(table.table).values(data)
     update_stmt = stmt.on_duplicate_key_update(**dict(zip(stmt.inserted.keys(), stmt.inserted.values())))
     conn.execute(update_stmt)
+
+
+def update_master_table(gb_dict):
+
+    server = BioSeqDatabase.open_database(driver=db_driver, user=db_un,
+                                          passwd=db_pw, host=db_host, db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
+    db = server[namespace]
+    adaptor = db.adaptor
+
+    #recs[name] = db.lookup(name=db_id)
+
+    for record in gb_dict.values():
+        name = record.name
+
+    sql = f"""INSERT INTO master(db_id, bioentry_id, metadata_id, version) 
+    VALUES ('{name}',{bioentry_id},{metadata_id},{version});"""
+
+
+
+        #obtain
+
