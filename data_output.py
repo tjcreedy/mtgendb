@@ -52,6 +52,7 @@ parser_gb.add_argument('-g', '--genes', dest='genes', metavar='{gene_names}', na
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'FASTA', '-o', 'outksis', '-s',  'country!=Malaysia', '-g' , 'COX2', 'ND3', 'ATP6'])
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'FASTA', '-o', 'outksis', '-s',  'country!=Malaysia', '-g' , '*'])
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'FASTA', '-o', 'malays', '-s',  'species=Stenus boops', '-g', 'COX2', 'ND3', 'ATP6'])
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'CSV', '-o', 'Pan', '-t', 'metadata', '-s',  'country=Panama'])
 
 args = parser.parse_args()
 
@@ -70,6 +71,8 @@ if args.output_format == 'CSV':
 
             args.mysql_specs.append(f'taxon={args.taxonomy_spec}')
 
+            print('Taxonomy searches may take a few minutes...')
+
         mysql_command = gcm.construct_sql_output_query(args.database_table, args.table_columns, args.mysql_specs)
 
     else:
@@ -85,6 +88,8 @@ elif args.output_format == 'COUNT':
         if args.taxonomy_spec:
 
             args.mysql_specs.append(f'taxon={args.taxonomy_spec}')
+
+            print('Taxonomy searches may take a few minutes...')
 
         mysql_command = gcm.construct_sql_output_query(None, ['count'], args.mysql_specs)
 
@@ -102,6 +107,8 @@ else:
 
             args.mysql_specs.append(f'taxon={args.taxonomy_spec}')
 
+            print('Taxonomy searches may take a few minutes...')
+
         mysql_command = gcm.construct_sql_output_query(None, ['name', 'db_id'], args.mysql_specs)
 
     else:
@@ -111,6 +118,8 @@ else:
     names_dict = gcm.fetch_names(mysql_command, args.db_user, args.db_pass)
 
     records = gcm.fetch_recs(names_dict, args.db_user, args.db_pass)
+    #names_dict = {'NC_041172': 'GB428'}
+    #in_record = gcm.fetch_recs(names_dict, args.db_user, args.db_pass)
 
     if args.genes:
 
@@ -118,7 +127,7 @@ else:
 
     gcm.seqfile_from_sql(records, args.output_name, args.output_format.lower())
 
-#print(f"QUERY: {mysql_command}")
+print(f"QUERY: {mysql_command}")
 
 
 """

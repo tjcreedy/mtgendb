@@ -74,6 +74,9 @@ gcm.alter_features(new_dict)
 #Add columns with lineages and tax id to dataframe
 df_with_lineages = gcm.add_lineage_df(df_accepted, lineages)
 
+#Add column with version number
+df_with_lineages['version'] = 0
+
 #Reorder metadata df columns to load to db.
 df_with_lineages = gcm.reformat_df_cols(df_with_lineages)
 

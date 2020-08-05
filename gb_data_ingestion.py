@@ -48,6 +48,9 @@ gb_df_new_ids = gcm.change_names_csv(gb_met_df, dict_new_ids)
 #Replace old input ID with new database ID in genbank file
 gcm.change_ids_genbank(records, dict_new_ids, args.key)
 
+#Add column with version number
+gb_df_new_ids['version'] = 0
+
 #Reorder dataframe columns for the database.
 gb_df_reformatted = gcm.reformat_df_cols(gb_df_new_ids)
 

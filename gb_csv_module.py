@@ -253,6 +253,19 @@ def check_ids(db_un, db_pw, ids_list, action):
     return
 
 
+def check_version(db_id,):
+
+    con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
+
+    with con:
+        cur = con.cursor()
+        sql = f"SELECT version FROM metadata WHERE db_id='{db_id}';"
+        cur.execute(sql)
+        version = int(list(cur.fetchone())[0])
+
+    return version
+
+
 def fetch_names(mysql_command, db_un, db_pw):
     """Fetch names and corresponding db_id's from database using MySQL command
     """
@@ -811,11 +824,12 @@ def add_lineage_df(csv_dataframe, combined_lineage):
 
     return df
 
+
 def reformat_df_cols(df):
 
     #df.rename(columns={'name': 'old_name', 'db_id': 'name'}, inplace=True)
 
-    df = df[['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'size', 'habitat', 'feeding_behaviour', 'locomotion', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']]
+    df = df[['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'authors', 'size', 'habitat', 'feeding_behaviour', 'locomotion', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes', 'version']]
 
     return df
 
@@ -828,6 +842,7 @@ def load_gb_dict_into_db(genbank_data):
     db_host = "localhost"
     db_user = "root"
     db_name = "mmg_test"
+    db_name = 'testeru'
     mysql_engine = "mysql+mysqldb://root:mmgdatabase@localhost/mmg_test"
     namespace = "mmg"
     """
@@ -849,12 +864,14 @@ def load_df_into_db(csv_dataframe):
     """Loading pandas dataframe with metadata into the database.
 
     mysql_engine = "mysql+mysqldb://root:mmgdatabase@localhost/mmg_test"
+        mysql_engine = "mysql+mysqldb://root:mmgdatabase@localhost/testeru"
+
     """
     #csv_dataframe = gb_df_new_ids
 
     print("\nLoading metadata into the database...")
 
-    engine = create_engine(mysql_engine, echo = False)       # Create an engine object based on URL: "mysql+mysqldb://root:mmgdatabase@localhost/mmg_test", NOT logging the statements as well as a repr() of their parameter lists to the default log handler.
+    engine = create_engine(mysql_engine, echo=False)       # Create an engine object based on URL: "mysql+mysqldb://root:mmgdatabase@localhost/mmg_test", NOT logging the statements as well as a repr() of their parameter lists to the default log handler.
     csv_dataframe.to_sql(name='metadata', if_exists='append', index=False, con=engine)    # write csv_dataframe to an sql database called 'metadata', inserting values to the existing table if it already exists, NOT writing DataFrame index as a column. CON??
 
     print(" - %i entries loaded." % len(csv_dataframe.index))
@@ -1117,10 +1134,6 @@ def execute_query(mysql_query, db_un, db_pw):
         cur = con.cursor()
         cur.execute(mysql_query)
 
-    #OR
-
-
-
     return
 
 """
@@ -1187,6 +1200,8 @@ def extract_genes(recs, genes):
 def csv_from_sql(mysql_command, csv_name, db_un, db_pw):
     #cols, tablename, csv_name, specs = [None, "metadata", "metadata_output", "subregion='Sabah', collectionmethod='BEATING'"]
 
+    # cur = ((1, 'BIOD00197', 'TEST001', 'Mord33', '219430', '', '1426729', 'YPT', 'Adult', 'Santa Fe', 'PNA', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE2', None, 'Biodiversity Initiative NHM', None, None, '753'), (7, 'BIOD02033', 'TEST007', 'Chrys151', '27439', '', '1721528', 'MALAISE1', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE10', None, 'Biodiversity Initiative NHM', None, None, '766'), (10, 'BIOD01983', 'TEST010', 'Lyc14', '71195', '', '1426866', 'MALAISE1', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE9', None, 'Biodiversity Initiative NHM', None, None, '754'), (25, 'BIOD01740', 'TEST025', 'Ero9', '196992', '', '1721743', 'MALAISE2', 'Adult', 'Cerro Hoya', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE8', None, 'Biodiversity Initiative NHM', None, None, '768'), (26, 'BIOD00733', 'TEST026', 'Lyc6', '71195', '', '1721173', 'MALAISE1', 'Adult', 'Cerro Hoya', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE4', None, 'Biodiversity Initiative NHM', None, None, '762'), (30, 'BIOD01826', 'TEST030', 'Elat5', '30009', '', '1426416', 'FIT2', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE9', None, 'Biodiversity Initiative NHM', None, None, '749'), (31, 'BIOD00778', 'TEST031', 'Curc88', '7042', '', '1426395', 'FIT1', 'Adult', 'Santa Fe', 'P6', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE4', None, 'Biodiversity Initiative NHM', None, None, '749'), (32, 'BIOD00050', 'TEST032', 'Curc36', '7042', '', '1427174', 'FIT2', 'Adult', 'Cerro Hoya', 'P7', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE1', None, 'Biodiversity Initiative NHM', None, None, '757'), (34, 'BIOD00437', 'TEST034', 'Phen3', '94777', '', '1427229', 'FIT1', 'Adult', 'Cerro Hoya', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'H3', None, 'Biodiversity Initiative NHM', None, None, '758'), (35, 'BIOD01314', 'TEST035', 'Mord34', '219430', '', '1426731', 'YPT', 'Adult', 'Santa Fe', 'PNA', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE7', None, 'Biodiversity Initiative NHM', None, None, '753'), (39, 'BIOD02163', 'TEST039', 'Staph127', '29026', '', '1426980', 'MALAISE1', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE10', None, 'Biodiversity Initiative NHM', None, None, '755'), (41, 'BIOD01004', 'TEST041', 'Curc225', '7042', '', '1427202', 'LL1', 'Adult', 'Santa Fe', 'P6', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE5', None, 'Biodiversity Initiative NHM', None, None, '758'), (45, 'BIOD00369', 'TEST045', 'Scar8', '7055', '', '1426136', 'FIT1', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'H3', None, 'Biodiversity Initiative NHM', None, None, '746'), (48, 'BIOD00662', 'TEST048', 'Scar11', '7055', '', '1426272', 'FIT2', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE4', None, 'Biodiversity Initiative NHM', None, None, '748'), (50, 'BIOD01754', 'TEST050', 'Hist17', '110043', '', '1427082', 'FIT2', 'Adult', 'Cerro Hoya', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE8', None, 'Biodiversity Initiative NHM', None, None, '756'), (58, 'BIOD01798', 'TEST058', 'UNK139', '32644', '', '1721589', 'MALAISE1', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE9', None, 'Biodiversity Initiative NHM', None, None, '767'), (59, 'BIOD00057', 'TEST059', 'Elat18', '30009', '', '1721640', 'SLAM1', 'Adult', 'Cerro Hoya', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE1', None, 'Biodiversity Initiative NHM', None, None, '767'), (62, 'BIOD01588', 'TEST062', 'Curc201', '7042', '', '1426914', 'MALAISE2', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE8', None, 'Biodiversity Initiative NHM', None, None, '755'), (63, 'BIOD00890', 'TEST063', 'Chrys74', '27439', '', '1426725', 'YPT', 'Adult', 'Santa Fe', 'PNA', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE5', None, 'Biodiversity Initiative NHM', None, None, '753'), (70, 'BIOD01106', 'TEST070', 'Mel2', '219420', '', '1426972', 'SLAM2', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE6', None, 'Biodiversity Initiative NHM', None, None, '755'), (71, 'BIOD01529', 'TEST071', 'Ero11', '196992', '', '1721537', 'MALAISE2', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE7', None, 'Biodiversity Initiative NHM', None, None, '766'), (73, 'BIOD00313', 'TEST073', 'Elat3', '30009', '', '1426393', 'FIT1', 'Adult', 'Santa Fe', 'P6', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE2', None, 'Biodiversity Initiative NHM', None, None, '749'), (74, 'BIOD00416', 'TEST074', 'Curc312', '7042', '', '1721593', 'MALAISE1', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'H3', None, 'Biodiversity Initiative NHM', None, None, '767'), (77, 'BIOD00870', 'TEST077', 'Chrys102', '27439', '', '1426796', 'MALAISE1', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE5', None, 'Biodiversity Initiative NHM', None, None, '753'), (82, 'BIOD01056', 'TEST082', 'Curc84', '7042', '', '1426375', 'FIT1', 'Adult', 'Santa Fe', 'P5', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE5', None, 'Biodiversity Initiative NHM', None, None, '749'), (85, 'BIOD00217', 'TEST085', 'Curc121', '55867', '', '1721122', 'LL', 'Adult', 'Cerro Hoya', 'P5', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE2', None, 'Biodiversity Initiative NHM', None, None, '762'), (86, 'BIOD01503', 'TEST086', 'Mord26', '219430', '', '1721701', 'MALAISE2', 'Adult', 'Cerro Hoya', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE7', None, 'Biodiversity Initiative NHM', None, None, '768'), (89, 'BIOD01663', 'TEST089', 'Mord63', '219430', '', '1721314', 'SLAM2', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE8', None, 'Biodiversity Initiative NHM', None, None, '764'), (91, 'BIOD02186', 'TEST091', 'Scaph2', '7041', 'Scaphidiidae', '1427161', 'FIT2', 'Adult', 'Cerro Hoya', 'P7', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE10', None, 'Biodiversity Initiative NHM', None, None, '757'), (98, 'BIOD00013', 'TEST098', 'Staph74', '29026', '', '1426424', 'FIT2', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE1', None, 'Biodiversity Initiative NHM', None, None, '749'), (104, 'MG193532', 'GB005', None, '2219472', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (113, 'MG193336', 'GB014', None, '2219391', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (115, 'MG193436', 'GB016', None, '2219477', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (116, 'MG193444', 'GB017', None, '2219413', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (125, 'MG193456', 'GB026', None, '2219404', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (145, 'MG193427', 'GB046', None, '2219380', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (149, 'KX035174', 'GB050', None, '1903775', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040002', None, None), (152, 'MG193450', 'GB053', None, '2219467', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (159, 'KX035193', 'GB060', None, '1903793', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040351', None, None), (161, 'KX035187', 'GB062', None, '1903788', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040265', None, None), (164, 'MG193379', 'GB065', None, '2219400', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (169, 'MG193453', 'GB070', None, '2219459', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (174, 'MG193457', 'GB075', None, '2219299', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (181, 'KX035185', 'GB082', None, '1903786', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040174', None, None), (182, 'MG193433', 'GB083', None, '2219360', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (198, 'MG193374', 'GB099', None, '2219449', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (200, 'MG193458', 'GB101', None, '2219406', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (202, 'MG193447', 'GB103', None, '2219465', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (211, 'KX035170', 'GB112', None, '1903771', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1039965', None, None), (216, 'KX035176', 'GB117', None, '1903777', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040049', None, None), (220, 'KX035179', 'GB121', None, '1903780', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040067', None, None), (225, 'MG193439', 'GB126', None, '2219359', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (228, 'MG193530', 'GB129', None, '2219441', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (229, 'KX035186', 'GB130', None, '1903787', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040235', None, None), (237, 'KX035183', 'GB138', None, '1903784', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040118', None, None), (281, 'MG193443', 'GB182', None, '206507', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (282, 'MG193322', 'GB183', None, '2219643', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (283, 'MG193441', 'GB184', None, '2219409', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (288, 'MG193383', 'GB189', None, '2219434', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (295, 'MG193380', 'GB196', None, '2219279', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (298, 'NC_036284', 'GB199', None, '124033', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1043087', None, None), (306, 'KX035184', 'GB207', None, '1903785', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040146', None, None), (310, 'KX035190', 'GB211', None, '1903791', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040331', None, None), (314, 'MG193348', 'GB215', None, '2219369', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (323, 'MG193529', 'GB224', None, '2219280', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (326, 'MG193528', 'GB227', None, '2219405', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (334, 'MG193437', 'GB235', None, '2219461', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (339, 'MG193327', 'GB240', None, '2219347', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (343, 'MG193460', 'GB244', None, '2219418', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (346, 'MG193452', 'GB247', None, '2219476', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (349, 'KX035163', 'GB250', None, '1903764', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1039837', None, None), (354, 'MG193459', 'GB255', None, '2219419', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (355, 'KX035180', 'GB256', None, '1903781', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040069', None, None), (357, 'KX035199', 'GB258', None, '1903798', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1043133', None, None), (368, 'MG193454', 'GB269', None, '2219402', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (369, 'MG193442', 'GB270', None, '2219455', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (374, 'KX035192', 'GB275', None, '1903792', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040341', None, None), (375, 'MG193455', 'GB276', None, '2219446', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (381, 'MG193461', 'GB282', None, '2219374', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (393, 'MG193421', 'GB294', None, '2219372', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (409, 'KX035167', 'GB310', None, '1903768', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1039896', None, None), (425, 'KX035177', 'GB326', None, '1903778', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040052', None, None), (432, 'MG193352', 'GB333', None, '2219398', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (438, 'MG193451', 'GB339', None, '2219470', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (443, 'MG193434', 'GB344', None, '2219462', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (447, 'MG193378', 'GB348', None, '2219401', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (458, 'MG193337', 'GB359', None, '2219441', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (459, 'KX035194', 'GB360', None, '1903794', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1043001', None, None), (461, 'MG193536', 'GB362', None, '2219384', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (465, 'MG193346', 'GB366', None, '2219378', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (466, 'MG193438', 'GB367', None, '2219417', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (467, 'MG193382', 'GB368', None, '2219291', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (479, 'MG193410', 'GB380', None, '2219396', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (482, 'MG193408', 'GB383', None, '2219444', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (487, 'MG193406', 'GB388', None, '2219368', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (488, 'KX035189', 'GB389', None, '1903790', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040327', None, None), (489, 'MG193446', 'GB390', None, '2219352', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (496, 'MG193445', 'GB397', None, '2219436', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (502, 'MG193531', 'GB403', None, '2219487', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (505, 'MG193448', 'GB406', None, '2219466', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (514, 'KX035195', 'GB415', None, '1903795', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1043031', None, None), (517, 'MG193440', 'GB418', None, '2219393', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (522, 'MG193329', 'GB423', None, '2219350', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (524, 'KX035171', 'GB425', None, '1903772', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1039990', None, None), (528, 'KX035165', 'GB429', None, '1903766', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1039866', None, None), (550, 'MG193426', 'GB451', None, '2219361', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (551, 'KX035172', 'GB452', None, '1903773', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1039994', None, None), (553, 'MG193345', 'GB454', None, '2219373', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (554, 'MG193435', 'GB455', None, '2219453', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (557, 'MG193429', 'GB458', None, '2219451', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (561, 'MG193431', 'GB462', None, '2219392', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (570, 'MG193328', 'GB471', None, '2219452', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (576, 'MG193381', 'GB477', None, '2219375', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None))
+    # headers = ['metadata_id', 'name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'size', 'habitat', 'feeding_behaviour', 'locomotion', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
     #Connect to database and execute command
     con = mdb.connect(host="localhost", user=db_un, passwd=db_pw, db=db_name)
     cur = con.cursor()
@@ -1195,9 +1210,25 @@ def csv_from_sql(mysql_command, csv_name, db_un, db_pw):
     #Write data to CSV file
     with open(f"{csv_name}.csv", "w", newline='') as csv_file:
         csv_writer = csv.writer(csv_file)
-        headers = [i[0] for i in cur.description if i[0] != 'metadata_id']
+        headers = [i[0] for i in cur.description]
+        rows = [list(row) for row in cur]
+
+        #Delete surrogate keys
+        if 'version' in headers or 'metadata_id' in headers:
+            indicies = []
+            if 'version' in headers:
+                version_index = headers.index('version')
+                indicies.append(version_index)
+            if 'metadata_id' in headers:
+                metadata_id_index = headers.index('metadata_id')
+                indicies.append(metadata_id_index)
+            for index in indicies:
+                del headers[index]
+                for row in rows:
+                    del row[index]
+
         csv_writer.writerow(headers)  #Write headers
-        csv_writer.writerows(x[1:] for x in cur)
+        csv_writer.writerows(rows)
 
     cur.close()
 
@@ -1235,187 +1266,84 @@ def return_count(mysql_command, db_un, db_pw):
     return
 
 
-def mysql_replace_into(table, conn, keys, data_iter):
-    """Mimics the behavior of sql REPLACE INTO by passing this callable to to_sql
-    """
-    from sqlalchemy.dialects.mysql import insert
-    from sqlalchemy.ext.compiler import compiles
-    from sqlalchemy.sql.expression import Insert
-    @compiles(Insert)
-    def replace_string(insert, compiler, **kw):
-        s = compiler.visit_insert(insert, **kw)
-        s = s.replace("INSERT INTO", "REPLACE INTO")
-        return s
-    data = [dict(zip(keys, row)) for row in data_iter]
-    conn.execute(table.table.insert(replace_string=""), data)
-
-
-def mysql_replace_into_2(table, conn, keys, data_iter):
-    """Mimics the behavior of INSERT ... ON DUPLICATE KEY UPDATE ...
-    """
-    from sqlalchemy.dialects.mysql import insert
-    data = [dict(zip(keys, row)) for row in data_iter]
-    stmt = insert(table.table).values(data)
-    update_stmt = stmt.on_duplicate_key_update(**dict(zip(stmt.inserted.keys(), stmt.inserted.values())))
-    conn.execute(update_stmt)
-
-
-def to_sql_update(df, engine, schema, table):
-    """grab a table from a MySQL database (whole or filtered), update/add some rows, and want to perform a REPLACE INTO statement with df.to_sql().
-    """
-    #df.reset_index(inplace=True)
-    sql = f"SELECT column_name FROM information_schema.columns WHERE table_schema = '{schema}' AND table_name = '{table}' AND COLUMN_KEY = 'PRI';"
-    id_cols = [x[0] for x in engine.execute(sql).fetchall()]
-    id_vals = [df[col_name].tolist() for col_name in id_cols]
-    sql = f" DELETE FROM {schema}.{table} WHERE 0"
-    for row in zip(*id_vals):
-        sql_row = ' AND '.join([" {}='{}' ".format(n, v) for n, v in zip(id_cols, row)])
-        sql += f' OR ({sql_row}) '
-    engine.execute(sql)
-    #df.to_sql(df, engine, schema=schema, if_exists='append', index=False)
-    df.to_sql(name=table, if_exists='append', schema=schema, index=False, con=engine)
-    return
-
-
 def overwrite_data(metadata, gb_dict):
     """Overwrite records in the database
     """
     #2 cases:
     #1) Something pulled from db (under db_id), edited, and reingested.
-    #2) A new version of a record (under name) needs to be pushed in
+    #2) A new version of a record (under name) needs to be pushed in - ?????
 
-    #Grabbing db_id with sql alchemy now futile
-
+    #Connect to db
     con = mdb.connect(host="localhost", user=db_user, passwd=db_passwd, db=db_name)
     cur = con.cursor()
-    server = BioSeqDatabase.open_database(driver=db_driver, user=db_user, passwd=db_passwd, host=db_host, db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
-    db = server[namespace]
-    engine = create_engine(mysql_engine, echo=False)
 
+    ##OVERWRITE GENETIC DATA
     if gb_dict:
 
-        for nom in gb_dict.keys():
-            cur.execute(f"SELECT db_id FROM metadata WHERE name='{nom}';")
-            for row in cur:
-                db_id = row[0]
+        #Update accession, and gi
+        for rec in gb_dict.values():
+            version = int(rec.annotations["gi"].split('.')[1]) + 1
+            new_gi = f"{rec.annotations['gi'].split('.')[0]}.{version}"
+            new_acc = [f"{rec.annotations['accessions'][0]}.{version}"]
+            rec.annotations['accessions'] = new_acc
+            rec.annotations['gi'] = new_gi
 
-            for record in db.values():
-                if record.name == db_id:
-                    idd = record.id
-                    accession = record.annotations["accessions"]
-                    sequence_version = record.annotations["sequence_version"][0]
-                    record = gb_dict[nom]
-                    record.name = db_id
-                    record.id = idd
-                    record.annotations["accessions"] = accession
-                    record.annotations["sequence_version"][0] = int(sequence_version) + 1
+        accs = [rec.annotations['accessions'][0] for rec in gb_dict.values()]
 
+        #Load into db
+        load_gb_dict_into_db(gb_dict)
+
+        #Update version
+        for acc in accs:
+            sql = f"UPDATE bioentry SET version = version + 1 WHERE accession='{acc}';"
+            cur.execute(sql)
+
+    ##OVERWRITE METADATA
     if metadata is not None:
-        #https://stackoverflow.com/questions/34661318/replace-rows-in-mysql-database-table-with-pandas-dataframe
-        #https://tedboy.github.io/pandas/_modules/pandas/io/sql.html
 
-        for nom in metadata['name']:
-            cur.execute(f"SELECT db_id FROM metadata WHERE name='{nom}';")
-            for row in cur:
-                db_id = row[0]
+        metadata['version'] = 0
+        metadata.set_index('db_id', inplace=True)
 
-            #Grabs row from local df corresponding to name
-            row = metadata.loc[metadata['name'] == nom]
-            to_sql_update(row, engine, db_name, 'metadata')
-            cur.execute(f"UPDATE metadata SET db_id='{db_id}' WHERE name='{nom}';")
+        #Update version
+        for db_id in metadata.index:
+            version = check_version(db_id)
+            metadata.loc[db_id, 'version'] = version + 1
 
-            #BUG: REPLACES DB_ID.
+        #Load into db
+        metadata.reset_index(inplace=True)
+        metadata = reformat_df_cols(metadata)
+        load_df_into_db(metadata)
 
     cur.close()
-    server.commit()
-    server.close()
 
     return
 
 
 
+def update_master_table(gb_dict, metadata):
 
-# OR row.to_sql(name='metadata', if_exists='append', method=mysql_replace_into_2, index=False, con=engine)
-
-
-
-
-
-"""
-
-sql_row = pd.io.sql.SQLTable(row, engine, index=False)
-
-row.to_sql(name='metadata', if_exists='append', method=mysql_replace_into_2(sql_row, cur, list(row.columns), row_vals), con=engine)
-row = csv_df.loc[csv_df['name'] == ['BIOD00197', 'BIOD01431', 'CCCP00081']]
-row = csv_df.loc[['BIOD00197', 'BIOD01431', 'CCCP00081']]
-
-row_vals = row.values.tolist()
-row_vals = [['QINL077', None, 'MG73', None, 'Galerucinae', 'Chrysomelidae', 'Coleoptera', None, None, 'Adult', None, None, 'Qinling', 'China', np.nan, np.nan, ';)', None, None, None, 'Nie et al', 'lib7', None, 'Qinling Chrysomelidae', None, None, None]]
-
-engine = create_engine(mysql_engine, echo=False)
-
-row.to_sql(name='metadata', if_exists='append', method=mysql_replace_into_2(row, cur, list(row.columns), row_vals), con=engine)
-
-row.to_sql(name='metadata', if_exists='append', method=mysql_replace_into_2, index=False, con=engine)
-
-sql_row = pd.io.sql.SQLTable(row, engine, index=False)
-
-
-#For mapping Pandas tables to SQL tables.
-'BIOD02014'
-
-sql_row = pd.io.sql.SQLTable(row)
-
-
-help(pd.io.sql.SQLTable)
-"""
-
-
-def mysql_replace_into(table, conn, keys, data_iter):
-    #Mimics the behavior of sql REPLACE INTO by passing this callable to to_sql
-    
-    from sqlalchemy.dialects.mysql import insert
-    from sqlalchemy.ext.compiler import compiles
-    from sqlalchemy.sql.expression import Insert
-    @compiles(Insert)
-    def replace_string(insert, compiler, **kw):
-        s = compiler.visit_insert(insert, **kw)
-        s = s.replace("INSERT INTO", "REPLACE INTO")
-        return s
-    data = [dict(zip(keys, row)) for row in data_iter]
-    conn.execute(table.insert(replace_string=""), data)
-
-
-
-def mysql_replace_into_2(table, conn, keys, data_iter):
-    #Mimics the behavior of INSERT ... ON DUPLICATE KEY UPDATE ...
-    
-    #keys = cols
-    #data_iter = row_vals
-
-    from sqlalchemy.dialects.mysql import insert
-    data = [dict(zip(keys, row)) for row in data_iter]
-    stmt = insert(table.table).values(data)
-    update_stmt = stmt.on_duplicate_key_update(**dict(zip(stmt.inserted.keys(), stmt.inserted.values())))
-    conn.execute(update_stmt)
-
-
-def update_master_table(gb_dict):
-
-    server = BioSeqDatabase.open_database(driver=db_driver, user=db_un,
-                                          passwd=db_pw, host=db_host, db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
+    server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
+                                          passwd=db_passwd, host=db_host, db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
     db = server[namespace]
     adaptor = db.adaptor
 
-    #recs[name] = db.lookup(name=db_id)
+    con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
 
-    for record in gb_dict.values():
-        name = record.name
+    if gb_dict:
 
-    sql = f"""INSERT INTO master(db_id, bioentry_id, metadata_id, version) 
-    VALUES ('{name}',{bioentry_id},{metadata_id},{version});"""
+        for record in gb_dict.values():
+            name = record.name
+            bioentry_id = adaptor.fetch_seqid_by_display_id(1, name)
+            with con:
+                cur = con.cursor()
+                cur.execute(f"SELECT metadata_id FROM metadata WHERE db_id='{name}';")
+                for row in cur:
+                    metadata_id = row[0]
+                cur.execute(f"SELECT version FROM bioentry WHERE name='{name}';")
+                for row in cur:
+                    version = row[0]
+                sql = f"""INSERT INTO master(db_id, bioentry_id, metadata_id, version) 
+                VALUES ('{name}',{bioentry_id},{metadata_id},{version});"""
+                cur.execute(sql)
 
-
-
-        #obtain
-
+    return

@@ -25,6 +25,8 @@ parser_manup.add_argument('-u', '--update', dest='update_specs', metavar='{updat
 parser_manup.add_argument('-q', '--custom_query', dest='custom_query', metavar='{custom_query}', help="Custom MySQL query to update data in database. (e.g. \"UPDATE metadata SET subregion='Sabah', size='12mm' WHERE name='BIOD00234';\") NOTE: Your custom specification must be enclosed by double quotations, as above.")
 
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-gb", "./testdata/replace.gb", "-csv", "./testdata/replace.csv", '-k', 'LOCUS'])
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-gb", "./testdata/CHINAS.gb", "-csv", "./testdata/CHINAS.csv", '-k', 'LOCUS'])
+
 
 args = parser.parse_args()
 
@@ -72,7 +74,7 @@ else:
         csv_df = pd.read_csv(args.input_csv, quotechar='"')
 
         #Check if the header in the csv is correct
-        #gcm.correct_header(csv_df)   #THIS IS A PROBLEM, AS FIRST ROUND OF INGESTION ADDS NEW FIELDS TO EACH ROW THAT DON'T PASS THE CORRECT_HEADER FUNC
+        gcm.correct_header(csv_df, 'replace')   #THIS IS A PROBLEM, AS FIRST ROUND OF INGESTION ADDS NEW FIELDS TO EACH ROW THAT DON'T PASS THE CORRECT_HEADER FUNC
 
         #Generate ids list
         ids_list = list(csv_df['name'])
@@ -85,7 +87,7 @@ else:
         #Generate ids list
         ids_list = list(gb_dict.keys())
 
-    #Check if new ids are not already present in the database
+    #Check ids are already present in the database
     gcm.check_ids(args.db_user, args.db_pass, ids_list, 'replace')
 
     gcm.overwrite_data(csv_df, gb_dict)
