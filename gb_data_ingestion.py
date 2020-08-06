@@ -62,3 +62,6 @@ gcm.load_gb_dict_into_db(records)
 
 #Push the metadata into the database
 gcm.load_df_into_db(gb_df_reformatted)
+
+#Update master table
+gcm.update_master_table(records, gb_df_reformatted)

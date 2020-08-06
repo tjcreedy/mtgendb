@@ -85,3 +85,6 @@ gcm.load_df_into_db(df_with_lineages)
 
 ##Push the genbank data into the database
 gcm.load_gb_dict_into_db(new_dict)
+
+#Update master table
+gcm.update_master_table(new_dict, df_with_lineages)

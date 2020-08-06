@@ -90,7 +90,9 @@ else:
     #Check ids are already present in the database
     gcm.check_ids(args.db_user, args.db_pass, ids_list, 'replace')
 
-    gcm.overwrite_data(csv_df, gb_dict)
+    gcm.update_data(csv_df, gb_dict)
+
+    gcm.update_master_table(gb_dict, csv_df)
 
     #Add 1 to version_no. of each new data using ids_list??
 

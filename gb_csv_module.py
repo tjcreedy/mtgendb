@@ -253,17 +253,20 @@ def check_ids(db_un, db_pw, ids_list, action):
     return
 
 
-def check_version(db_id,):
+def check_latest_version(db_id):
 
     con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
 
     with con:
         cur = con.cursor()
-        sql = f"SELECT version FROM metadata WHERE db_id='{db_id}';"
+        sql = f"""SELECT MAX(metadata.version), MAX(bioentry.version) FROM 
+            metadata JOIN bioentry ON metadata.db_id=bioentry.name WHERE 
+            metadata.db_id='{db_id}';"""
         cur.execute(sql)
-        version = int(list(cur.fetchone())[0])
+        for row in cur.fetchall():
+            metadata_version, bioentry_version = row
 
-    return version
+    return metadata_version, bioentry_version
 
 
 def fetch_names(mysql_command, db_un, db_pw):
@@ -1118,6 +1121,8 @@ def fetch_recs(names_dict, db_un, db_pw):
     db = server[namespace]
 
     for name, db_id in names_dict.items():
+        #record = db.get_Seq_by_ver(f'{db_id}.{version}')
+        #recs[name] = record
         recs[name] = db.lookup(name=db_id)
 
     #server.close()
@@ -1266,84 +1271,93 @@ def return_count(mysql_command, db_un, db_pw):
     return
 
 
-def overwrite_data(metadata, gb_dict):
+def update_data(metadata, gb_dict):
     """Overwrite records in the database
     """
     #2 cases:
     #1) Something pulled from db (under db_id), edited, and reingested.
     #2) A new version of a record (under name) needs to be pushed in - ?????
 
-    #Connect to db
-    con = mdb.connect(host="localhost", user=db_user, passwd=db_passwd, db=db_name)
-    cur = con.cursor()
-
-    ##OVERWRITE GENETIC DATA
+    ##UPDATE GENETIC DATA
     if gb_dict:
 
         #Update accession, and gi
         for rec in gb_dict.values():
-            version = int(rec.annotations["gi"].split('.')[1]) + 1
-            new_gi = f"{rec.annotations['gi'].split('.')[0]}.{version}"
-            new_acc = [f"{rec.annotations['accessions'][0]}.{version}"]
-            rec.annotations['accessions'] = new_acc
-            rec.annotations['gi'] = new_gi
-
-        accs = [rec.annotations['accessions'][0] for rec in gb_dict.values()]
+            _, bio_version = check_latest_version(rec.name)
+            bio_version += 1
+            rec.id = f"{rec.name}.{bio_version}"
+            """
+            accession, version = rec.id.split('.')
+            new_version = int(version) + 1
+            rec.id = f"{accession}.{new_version}"
+            """
+            del rec.annotations['gi']
 
         #Load into db
         load_gb_dict_into_db(gb_dict)
 
-        #Update version
-        for acc in accs:
-            sql = f"UPDATE bioentry SET version = version + 1 WHERE accession='{acc}';"
-            cur.execute(sql)
-
-    ##OVERWRITE METADATA
+    ##UPDATE METADATA
     if metadata is not None:
 
         metadata['version'] = 0
-        metadata.set_index('db_id', inplace=True)
+        #metadata.set_index('db_id', inplace=True)
 
         #Update version
-        for db_id in metadata.index:
-            version = check_version(db_id)
-            metadata.loc[db_id, 'version'] = version + 1
+        for db_id in metadata['db_id']:
+        #for db_id in metadata.index:
+            meta_version, _ = check_latest_version(db_id)
+            metadata.loc[db_id, 'version'] = meta_version + 1
 
         #Load into db
-        metadata.reset_index(inplace=True)
+        #metadata.reset_index(inplace=True)
         metadata = reformat_df_cols(metadata)
         load_df_into_db(metadata)
-
-    cur.close()
 
     return
 
 
-
 def update_master_table(gb_dict, metadata):
 
-    server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
-                                          passwd=db_passwd, host=db_host, db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
-    db = server[namespace]
-    adaptor = db.adaptor
-
+    #Connect to Database
     con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
 
     if gb_dict:
 
-        for record in gb_dict.values():
-            name = record.name
-            bioentry_id = adaptor.fetch_seqid_by_display_id(1, name)
+        #Connect to BioSQL
+        server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
+                                              passwd=db_passwd, host=db_host,
+                                              db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
+        db = server[namespace]
+        adaptor = db.adaptor
+
+        for db_id in [rec.name for rec in gb_dict.values()]:
+
+            #Find bioentry_id for latest version
+            _, bio_version = check_latest_version(db_id)
+            bioentry_id = adaptor.fetch_seqid_by_version(1, f"{db_id}.{bio_version}")
+
+            #Update master table
+            sql = f"UPDATE master SET bioentry_id={bioentry_id} WHERE db_id='{db_id}';"
             with con:
                 cur = con.cursor()
-                cur.execute(f"SELECT metadata_id FROM metadata WHERE db_id='{name}';")
+                cur.execute(sql)
+
+    if metadata is not None:
+
+        for db_id in metadata['db_id']:
+
+            #Find metadata_id for latest version
+            meta_version, _ = check_latest_version(db_id)
+            sql = f"""SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') 
+                AND (version={meta_version});"""
+
+            with con:
+                cur = con.cursor()
+                cur.execute(sql)
                 for row in cur:
                     metadata_id = row[0]
-                cur.execute(f"SELECT version FROM bioentry WHERE name='{name}';")
-                for row in cur:
-                    version = row[0]
-                sql = f"""INSERT INTO master(db_id, bioentry_id, metadata_id, version) 
-                VALUES ('{name}',{bioentry_id},{metadata_id},{version});"""
-                cur.execute(sql)
+                sql_master = f"""UPDATE master SET metadata_id={metadata_id} WHERE 
+                    db_id='{db_id}';"""
+                cur.execute(sql_master)
 
     return
