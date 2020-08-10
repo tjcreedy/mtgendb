@@ -1331,7 +1331,7 @@ def update_master_table(gb_dict, metadata, action):
 
     if action == 'ingest':
 
-        for db_id in [rec.id for rec in gb_dict.values()]:
+        for db_id in metadata['db_id']:
 
             #Fetch bioentry_id
             bioentry_id = adaptor.fetch_seqid_by_display_id(1, db_id)
