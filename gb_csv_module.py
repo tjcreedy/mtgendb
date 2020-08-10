@@ -1303,17 +1303,15 @@ def update_data(metadata, gb_dict):
     if metadata is not None:
 
         metadata['version'] = 0
-        #metadata.set_index('db_id', inplace=True)
+        metadata.set_index('db_id', inplace=True)
 
         #Update version
-        for db_id in metadata['db_id']:
-        #for db_id in metadata.index:
-
+        for db_id in metadata.index:
             meta_version, _ = check_latest_version(db_id)
-            metadata.loc[db_id, 'version'] = meta_version + 1
+            metadata.ix[db_id, 'version'] = meta_version + 1
 
         #Load into db
-        #metadata.reset_index(inplace=True)
+        metadata.reset_index(inplace=True)
         metadata = reformat_df_cols(metadata)
         load_df_into_db(metadata)
 
