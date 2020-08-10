@@ -26,6 +26,7 @@ parser_manup.add_argument('-q', '--custom_query', dest='custom_query', metavar='
 
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-gb", "./testdata/replace.gb", "-csv", "./testdata/replace.csv", '-k', 'LOCUS'])
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-gb", "./testdata/CHINAS.gb", "-csv", "./testdata/CHINAS.csv", '-k', 'LOCUS'])
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-gb", "./testdata/Honduras_test.gb", '-k', 'LOCUS'])
 
 
 args = parser.parse_args()
@@ -92,7 +93,7 @@ else:
 
     gcm.update_data(csv_df, gb_dict)
 
-    gcm.update_master_table(gb_dict, csv_df)
+    gcm.update_master_table(gb_dict, csv_df, 'replace')
 
     #Add 1 to version_no. of each new data using ids_list??
 

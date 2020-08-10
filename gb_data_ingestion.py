@@ -64,4 +64,4 @@ gcm.load_gb_dict_into_db(records)
 gcm.load_df_into_db(gb_df_reformatted)
 
 #Update master table
-gcm.update_master_table(records, gb_df_reformatted)
+gcm.update_master_table(records, gb_df_reformatted, 'ingest')

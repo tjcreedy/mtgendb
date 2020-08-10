@@ -860,7 +860,7 @@ def load_gb_dict_into_db(genbank_data):
 
     print(" - %i sequences loaded." % count)
 
-    return()
+    return
 
 
 def load_df_into_db(csv_dataframe):
@@ -1291,7 +1291,8 @@ def update_data(metadata, gb_dict):
             new_version = int(version) + 1
             rec.id = f"{accession}.{new_version}"
             """
-            del rec.annotations['gi']
+            if 'gi' in rec.annotations.keys():
+                del rec.annotations['gi']
 
         #Load into db
         load_gb_dict_into_db(gb_dict)
@@ -1305,6 +1306,7 @@ def update_data(metadata, gb_dict):
         #Update version
         for db_id in metadata['db_id']:
         #for db_id in metadata.index:
+
             meta_version, _ = check_latest_version(db_id)
             metadata.loc[db_id, 'version'] = meta_version + 1
 
@@ -1316,48 +1318,65 @@ def update_data(metadata, gb_dict):
     return
 
 
-def update_master_table(gb_dict, metadata):
+def update_master_table(gb_dict, metadata, action):
 
     #Connect to Database
     con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
+    # Connect to BioSQL
+    server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
+                                          passwd=db_passwd, host=db_host,
+                                          db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
+    db = server[namespace]
+    adaptor = db.adaptor
 
-    if gb_dict:
+    if action == 'ingest':
 
-        #Connect to BioSQL
-        server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
-                                              passwd=db_passwd, host=db_host,
-                                              db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
-        db = server[namespace]
-        adaptor = db.adaptor
+        for db_id in [rec.id for rec in gb_dict.values()]:
 
-        for db_id in [rec.name for rec in gb_dict.values()]:
+            #Fetch bioentry_id
+            bioentry_id = adaptor.fetch_seqid_by_display_id(1, db_id)
 
-            #Find bioentry_id for latest version
-            _, bio_version = check_latest_version(db_id)
-            bioentry_id = adaptor.fetch_seqid_by_version(1, f"{db_id}.{bio_version}")
-
-            #Update master table
-            sql = f"UPDATE master SET bioentry_id={bioentry_id} WHERE db_id='{db_id}';"
+            #Fetch metadata_id and update master table
+            sql = f"SELECT metadata_id FROM metadata WHERE db_id='{db_id}';"
             with con:
                 cur = con.cursor()
                 cur.execute(sql)
-
-    if metadata is not None:
-
-        for db_id in metadata['db_id']:
-
-            #Find metadata_id for latest version
-            meta_version, _ = check_latest_version(db_id)
-            sql = f"""SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') 
-                AND (version={meta_version});"""
-
-            with con:
-                cur = con.cursor()
+                metadata_id = cur.fetchone()[0]
+                sql = f"""INSERT INTO master(db_id, bioentry_id, metadata_id) 
+                    VALUES ({db_id}, {bioentry_id}, {metadata_id};"""
                 cur.execute(sql)
-                for row in cur:
-                    metadata_id = row[0]
-                sql_master = f"""UPDATE master SET metadata_id={metadata_id} WHERE 
-                    db_id='{db_id}';"""
-                cur.execute(sql_master)
+
+    else:
+
+        if gb_dict:
+
+            for db_id in [rec.name for rec in gb_dict.values()]:
+
+                #Find bioentry_id for latest version
+                _, bio_version = check_latest_version(db_id)
+                bioentry_id = adaptor.fetch_seqid_by_version(1, f"{db_id}.{bio_version}")
+
+                #Update master table
+                sql = f"UPDATE master SET bioentry_id={bioentry_id} WHERE db_id='{db_id}';"
+                with con:
+                    cur = con.cursor()
+                    cur.execute(sql)
+
+        if metadata is not None:
+
+            for db_id in metadata['db_id']:
+
+                #Find metadata_id for latest version
+                meta_version, _ = check_latest_version(db_id)
+                sql = f"""SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') 
+                    AND (version={meta_version});"""
+
+                with con:
+                    cur = con.cursor()
+                    cur.execute(sql)
+                    metadata_id = cur.fetchone()[0]
+                    sql = f"""UPDATE master SET metadata_id={metadata_id} WHERE 
+                        db_id='{db_id}';"""
+                    cur.execute(sql)
 
     return
