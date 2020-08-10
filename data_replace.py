@@ -26,7 +26,8 @@ parser_manup.add_argument('-q', '--custom_query', dest='custom_query', metavar='
 
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-gb", "./testdata/replace.gb", "-csv", "./testdata/replace.csv", '-k', 'LOCUS'])
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-gb", "./testdata/CHINAS.gb", "-csv", "./testdata/CHINAS.csv", '-k', 'LOCUS'])
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-gb", "./testdata/Honduras_test.gb", '-k', 'LOCUS'])
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-gb", "./testdata/Honduras_testrun.gb", '-k', 'LOCUS'])
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "MANUP", '-s', 'db_id=TEST099', '-u', 'size=;)'])
 
 
 args = parser.parse_args()
@@ -51,36 +52,30 @@ if args.manual_update:
 
     else:
 
-        mysql_query = gcm.construct_sql_update_query(None, args.update, args.mysql_specs)
+        mysql_query = gcm.construct_sql_update_query(None, args.update_specs, args.mysql_specs)
     #Case where the update and the spec share the same column?
 
+    print(mysql_query)
+
     #Connect to database and execute command
-    gcm.execute_query(mysql_query, args.db_user, args.db_pass)
+    #gcm.execute_query(mysql_query, args.db_user, args.db_pass)
+
+    #gcm.update_master_table(None, None, 'replace')
 
     # Add 1 to version no.?
 #-----------
 else:
 
-    if args.input_genbank:
+    if args.input_genbank and args.input_csv:
 
-        #Create dict from genbank-file
+        # Create dict from genbank-file
         gb_dict = gcm.gb_into_dictionary(args.input_genbank, args.key)
 
-        #Generate ids list
-        ids_list = list(gb_dict.keys())
-
-    if args.input_csv:
-
-        #Create dataframe from csv file
+        # Create dataframe from csv file
         csv_df = pd.read_csv(args.input_csv, quotechar='"')
 
-        #Check if the header in the csv is correct
-        gcm.correct_header(csv_df, 'replace')   #THIS IS A PROBLEM, AS FIRST ROUND OF INGESTION ADDS NEW FIELDS TO EACH ROW THAT DON'T PASS THE CORRECT_HEADER FUNC
-
-        #Generate ids list
-        ids_list = list(csv_df['name'])
-
-    if args.input_genbank and args.input_csv:
+        # Check if the header in the csv is correct
+        gcm.correct_header(csv_df, 'replace')
 
         #Check if the genbank and metadata file have matching entries
         csv_df, gb_dict = gcm.matching_inputids(csv_df, gb_dict, 'replace')
@@ -88,12 +83,41 @@ else:
         #Generate ids list
         ids_list = list(gb_dict.keys())
 
+    else:
+
+        if args.input_genbank:
+
+            csv_df = None
+
+            # Create dict from genbank-file
+            gb_dict = gcm.gb_into_dictionary(args.input_genbank, args.key)
+
+            # Generate ids list
+            ids_list = list(gb_dict.keys())
+
+        if args.input_csv:
+
+            gb_dict = None
+
+            # Create dataframe from csv file
+            csv_df = pd.read_csv(args.input_csv, quotechar='"')
+
+            # Check if the header in the csv is correct
+            gcm.correct_header(csv_df, 'replace')  # THIS IS A PROBLEM, AS FIRST ROUND OF INGESTION ADDS NEW FIELDS TO EACH ROW THAT DON'T PASS THE CORRECT_HEADER FUNC
+
+            # Generate ids list
+            ids_list = list(csv_df['name'])
+
     #Check ids are already present in the database
     gcm.check_ids(args.db_user, args.db_pass, ids_list, 'replace')
 
     gcm.update_data(csv_df, gb_dict)
 
-    gcm.update_master_table(gb_dict, csv_df, 'replace')
+    gcm.update_master_table(gb_dict, csv_df, 'update')
+
+    """
+    BUG: csv_df will throw up an error as if it isn't included it is not just None, it is undefined
+    """
 
     #Add 1 to version_no. of each new data using ids_list??
 

@@ -901,10 +901,10 @@ def sql_cols(table, cols, spec):
     # table, cols, spec = [None, None, ['length>25000', 'country=United Kingdom', 'locomotion=arboreal', 'size=12mm']]
 
     #Reformat inputs
-    #if spec is None:
-    #    spec = []
-    #if cols is None:
-    #    cols = []
+    if spec is None:
+        spec = []
+    if cols is None:
+        cols = []
 
     #spec = [f"{re.split('=|>|<', s)[0]}{re.findall('=|>|<', s)[0]}{re.split('=|>|<', s)[1]}" if re.split('=|>|<', s)[1].isnumeric() else f"{re.split('=|>|<', s)[0]}='{re.split('=|>|<', s)[1]}'" for s in spec]
     #cols = list(cols)
@@ -1123,7 +1123,9 @@ def fetch_recs(names_dict, db_un, db_pw):
     for name, db_id in names_dict.items():
         #record = db.get_Seq_by_ver(f'{db_id}.{version}')
         #recs[name] = record
-        recs[name] = db.lookup(name=db_id)
+        _, bio_version = check_latest_version(db_id)
+        #recs[name] = db.lookup(name=db_id)
+        recs[name] = db.get_Seq_by_ver(f'{db_id}.{bio_version}')
 
     #server.close()
 
