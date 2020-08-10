@@ -1343,7 +1343,7 @@ def update_master_table(gb_dict, metadata, action):
                 cur.execute(sql)
                 metadata_id = cur.fetchone()[0]
                 sql = f"""INSERT INTO master(db_id, bioentry_id, metadata_id) 
-                    VALUES ({db_id}, {bioentry_id}, {metadata_id};"""
+                    VALUES ('{db_id}', {bioentry_id}, {metadata_id};"""
                 cur.execute(sql)
 
     else:
