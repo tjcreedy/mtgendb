@@ -105,6 +105,9 @@ else:
             # Check if the header in the csv is correct
             gcm.correct_header(csv_df, 'replace')  # THIS IS A PROBLEM, AS FIRST ROUND OF INGESTION ADDS NEW FIELDS TO EACH ROW THAT DON'T PASS THE CORRECT_HEADER FUNC
 
+            #Add version column
+            csv_df['version'] = 0
+
             # Generate ids list
             ids_list = list(csv_df['name'])
 

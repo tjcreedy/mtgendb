@@ -91,7 +91,7 @@ def text_to_list(accessions):
 
     if len(duplicates):
         #If there are any duplicates, drop these proceed with unque accessions only.
-        print("WARNING: Duplicates detected in text file: '" + "', '".join(duplicates) + "'. Proceeding with unique accessions only.")
+        print("WARNING: Duplicate accessions detected in text file: '" + "', '".join(duplicates) + "'. Proceeding with unique accessions only.")
         acc_list = list(set(acc_list))
 
     return acc_list
@@ -911,7 +911,7 @@ def sql_cols(table, cols, spec):
     all_cols = list(set(cols + [re.split('=|!=|>|<', s)[0] for s in spec]))
 
     # Unique cols of each table (shared cols assigned to a prioritised table)
-    metadata_cols = ['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'metadata.authors', 'size', 'habitat', 'feeding_behavior', 'locomotion', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
+    metadata_cols = ['metadata_id', 'name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'metadata.authors', 'size', 'habitat', 'feeding_behavior', 'locomotion', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes', 'metadata.version']
     bioentry_cols = ['bioentry_id', 'bioentry.biodatabase_id', 'bioentry.taxon_id', 'bioentry.name', 'bioentry.accession', 'identifier', 'division', 'description', 'version']
     bioentry_dbxref_cols = ['bioentry_dbxref.bioentry_id', 'bioentry_dbxref.dbxref_id', 'bioentry_dbxref.rank']
     bioentry_qualifier_value_cols = ['bioentry_qualifier_value.bioentry_id', 'bioentry_qualifier_value.term_id', 'value', 'bioentry_qualifier_value.rank']
@@ -920,6 +920,7 @@ def sql_cols(table, cols, spec):
     comment_cols = ['comment_id', 'comment.bioentry_id', 'comment_text', 'comment.rank']
     seqfeature_cols = ['seqfeature_id', 'seqfeature.bioentry_id', 'type_term_id', 'source_term_id', 'display_name', 'seqfeature.rank']
     taxon_cols = ['taxon.taxon_id', 'ncbi_taxon_id', 'parent_taxon_id', 'node_rank', 'genetic_code', 'mito_genetic_code', 'left_value', 'right_value']
+    taxon_name_cols = ['taxon_name.taxon_id', 'taxon_name.name', 'name_class']
 
     #Special queries
     taxonomy = ['subspecies', 'species', 'genus', 'tribe', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom', 'taxon']
@@ -1019,14 +1020,16 @@ def sql_table(tables):
         if len(bios) >= 1:
             if 'bioentry' in bios:
                 bios.remove('bioentry')
-            bios_join = table_join(" JOIN bioentry ON metadata.db_id=bioentry.name", bios, 'bioentry', 'bioentry_id')
+            bios_join = table_join(" JOIN bioentry ON metadata.db_id=bioentry.name",
+                                   bios, 'bioentry', 'bioentry_id')
             joins.append(bios_join)
 
         #Taxons
         if len(taxons) >= 1:
             if 'taxon' in taxons:
                 taxons.remove('taxon')
-            taxons_join = table_join(" JOIN taxon ON metadata.taxon_id=taxon.ncbi_taxon_id", taxons, 'taxon', 'taxon_id')
+            taxons_join = table_join(" JOIN taxon ON metadata.taxon_id=taxon.ncbi_taxon_id",
+                                     taxons, 'taxon', 'taxon_id')
             joins.append(taxons_join)
 
         table_string = ''.join(joins)
@@ -1050,11 +1053,33 @@ def sql_spec(tables, cols_dict, spec, spec_type):
         specs = []
         for x in spec:
             s = re.split('=|!=|>|<', x)
-            if s[0] in ['subspecies', 'species', 'genus', 'tribe', 'family', 'order', 'class', 'phylum', 'kingdom', 'superkingdom', 'taxon']:
-                specs.append(f"metadata.taxon_id IN (SELECT DISTINCT include.ncbi_taxon_id FROM taxon INNER JOIN taxon AS include ON (include.left_value BETWEEN taxon.left_value AND taxon.right_value) WHERE taxon.taxon_id IN (SELECT taxon_id FROM taxon_name WHERE name COLLATE LATIN1_GENERAL_CI LIKE '%{s[1][1:-1]}%'))")
+            if s[0] in ['subspecies', 'species', 'genus', 'tribe', 'family', 'order',
+                        'class', 'phylum', 'kingdom', 'superkingdom', 'taxon']:
+                specs.append(f"""metadata.taxon_id IN (SELECT DISTINCT include.ncbi_taxon_id 
+                            FROM taxon INNER JOIN taxon AS include ON 
+                            (include.left_value BETWEEN taxon.left_value AND taxon.right_value) 
+                            WHERE taxon.taxon_id IN (SELECT taxon_id FROM taxon_name WHERE name 
+                            COLLATE LATIN1_GENERAL_CI LIKE '%{s[1][1:-1]}%'))""")
             else:
                 specs.append(re.findall('=|!=|>|<', x)[0].join([cols_dict[s[0]], s[1]]))
 
+        #PULL LATEST VERSION
+        # Lists of tables with bioentry_id field
+        BIOENTRY_ID_TABLES = ['bioentry', 'bioentry_dbxref', 'bioentry_qualifier_value',
+                              'bioentry_reference', 'biosequence', 'comment', 'seqfeature']
+
+        # Determine if any bios tables are being queried
+        bios = list(set(tables) & set(BIOENTRY_ID_TABLES))
+        if bios:
+            current_bio_version = """(bioentry.name,bioentry.version) IN (SELECT bioentry.name, 
+                            MAX(bioentry.version) FROM bioentry GROUP BY bioentry.name)"""
+            specs.append(current_bio_version)
+
+        current_meta_version = """(metadata.db_id,metadata.version) IN (SELECT metadata.db_id, 
+                            MAX(metadata.version) FROM metadata GROUP BY metadata.db_id)"""
+        specs.append(current_meta_version)
+
+        # JOIN SPECS
         if spec_type == "output":
             spec = f" WHERE ({') AND ('.join(specs)})"
 
@@ -1123,8 +1148,8 @@ def fetch_recs(names_dict, db_un, db_pw):
     for name, db_id in names_dict.items():
         #record = db.get_Seq_by_ver(f'{db_id}.{version}')
         #recs[name] = record
-        _, bio_version = check_latest_version(db_id)
         #recs[name] = db.lookup(name=db_id)
+        _, bio_version = check_latest_version(db_id)
         recs[name] = db.get_Seq_by_ver(f'{db_id}.{bio_version}')
 
     #server.close()
@@ -1288,11 +1313,6 @@ def update_data(metadata, gb_dict):
             _, bio_version = check_latest_version(rec.name)
             bio_version += 1
             rec.id = f"{rec.name}.{bio_version}"
-            """
-            accession, version = rec.id.split('.')
-            new_version = int(version) + 1
-            rec.id = f"{accession}.{new_version}"
-            """
             if 'gi' in rec.annotations.keys():
                 del rec.annotations['gi']
 
@@ -1302,7 +1322,6 @@ def update_data(metadata, gb_dict):
     ##UPDATE METADATA
     if metadata is not None:
 
-        metadata['version'] = 0
         metadata.set_index('db_id', inplace=True)
 
         #Update version
@@ -1380,3 +1399,31 @@ def update_master_table(gb_dict, metadata, action):
                     cur.execute(sql)
 
     return
+
+def rollback_bios(versions):
+    """Rolls back to earlier bioentry version
+    """
+    x = input("Would you like to rollback genetic data? Y/N").upper()
+    while not (x == 'Y' or x == 'N'):
+        x = input("""Type 'Y' if you wish to rollback genetic data, or 'N' if
+                  you do not.""").upper()
+    if x == 'Y':
+        min_bio_version = min(
+            [versions[db_id]['bioentry_version'] for db_id in versions.keys()])
+        rollback_no = input(f'How many versions would you like to rollback? Max: {min_bio_version}')
+
+        while rollback_no not in range(min_bio_version):
+            rollback_no = input(f'Please choose how many versions you would like to rollback: {list(range(min_bio_version))}')
+
+        for db_id, rec_version in versions.items():
+            versions[db_id]['bioentry_version'] -= rollback_no
+
+    else:
+        return
+
+    return
+
+
+
+
+
