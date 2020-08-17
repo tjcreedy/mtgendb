@@ -1508,7 +1508,7 @@ def rollback_versions(dict):
     for db_id in dict.keys():
 
         #bioentry_id
-        if dict[db_id]['b']:
+        if dict[db_id]['b'] is not None:
             bioentry_id = adaptor.fetch_seqid_by_version(1, f"{db_id}.{dict[db_id]['b']}")
             update_master = f"""UPDATE master SET bioentry_id={bioentry_id} 
                 WHERE db_id='{db_id}';"""
@@ -1517,7 +1517,7 @@ def rollback_versions(dict):
                 cur.execute(update_master)
 
         #metadata_id
-        if dict[db_id]['m']:
+        if dict[db_id]['m'] is not None:
             fetch_id = f"""SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') 
                 AND (version={dict[db_id]['m']});"""
             with con:

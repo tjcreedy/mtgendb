@@ -26,5 +26,7 @@ else:
 
     versions_dict = gcm.text_to_dict(args.text_file)
 
+print(versions_dict)
+
 #Update master table
-gcm.rollback_versions(versions_dict)
+#gcm.rollback_versions(versions_dict)
