@@ -97,6 +97,37 @@ def text_to_list(accessions):
     return acc_list
 
 
+def text_to_dict(txtfile):
+    """Converts 3-column text-file of IDs and target versions for rollback
+    into a dict.
+    """
+    #Create a comma-delimited list of accession numbers from text file (stripping any blank spaces/empty lines).
+    #txtfile = 'testdata/version_input.txt'
+    with open(txtfile, 'r') as txt:
+        txt_string = txt.read()
+        lines_raw = list(filter(None, txt_string.split('\n')))  # filters out empty lines
+        lines_stripped = [line.strip() for line in lines_raw]  # strips lines
+
+    target_versions = {}
+    for line in lines_stripped:
+        if line.count('\t') not in [1, 2]:
+            sys.exit("""ERROR: your input text file must be a 3-column tab-delimited 
+            list: {db_id} <TAB> {bio_version} <TAB> {meta_version}""")
+        elif line.count('\t') == 1:
+            vals = line.split('\t')
+            target_versions[vals[0]] = {'b': int(vals[1]), 'm': None}
+            #target_versions[vals[0]] = [int(vals[1]), None]
+        else:
+            vals = line.split('\t')
+            if '' in vals:
+                target_versions[vals[0]] = {'b': None, 'm': int(vals[2])}
+            else:
+                target_versions[vals[0]] = {'b': int(vals[1]), 'm': int(vals[2])}
+
+    return target_versions
+
+
+
 def check_acc_format(acc_list):
     """Checks each accession in list satisfies genbank format, dropping any that don't.
     """
@@ -259,12 +290,37 @@ def check_latest_version(db_id):
 
     with con:
         cur = con.cursor()
-        sql = f"""SELECT MAX(metadata.version), MAX(bioentry.version) FROM 
+        sql = f"""SELECT MAX(bioentry.version) , MAX(metadata.version) FROM 
             metadata JOIN bioentry ON metadata.db_id=bioentry.name WHERE 
             metadata.db_id='{db_id}';"""
         cur.execute(sql)
         for row in cur.fetchall():
-            metadata_version, bioentry_version = row
+            bioentry_version, metadata_version = row
+
+    return bioentry_version, metadata_version
+
+def check_current_version(db_id):
+
+    con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
+
+    with con:
+        cur = con.cursor()
+        sql_ids = f"""SELECT bioentry_id, metadata_id FROM master WHERE 
+                metadata.db_id='{db_id}';"""
+        cur.execute(sql_ids)
+        for row in cur.fetchall():
+            bioentry_id, metadata_id = row
+        sql_versions = f"""SELECT bioentry.version, metadata.version FROM 
+            metadata JOIN bioentry ON metadata.db_id=bioentry.name WHERE 
+            metadata.metadata_id={metadata_id} AND bioentry.bioentry_id={bioentry_id};"""
+        cur.execute(sql_versions)
+        for row in cur.fetchall():
+            bio_version, meta_version = row
+
+    return bio_version, meta_version
+
+
+
 
     return metadata_version, bioentry_version
 
@@ -1121,6 +1177,24 @@ def construct_sql_update_query(table, update, spec):
     return mysql_command
 
 
+def construct_sql_delete_query(spec):
+
+    #update = ['locomotion=arboreal', 'size=12mm']
+    #spec = ['length>25000', 'country=United Kingdom']
+
+    tables, _, cols_dict, _ = sql_cols(None, None, spec)
+
+    table_string = sql_table(tables)
+
+    spec_string = sql_spec(tables, cols_dict, spec, "output")
+
+    update_string = sql_spec(tables, cols_dict, update, "update")
+
+    mysql_command = f"UPDATE {table_string} SET {update_string}{spec_string};"
+
+    return mysql_command
+
+
 def fetch_names(mysql_command, db_un, db_pw):
     """Fetch names and corresponding db_id's from database using MySQL command
     """
@@ -1149,7 +1223,7 @@ def fetch_recs(names_dict, db_un, db_pw):
         #record = db.get_Seq_by_ver(f'{db_id}.{version}')
         #recs[name] = record
         #recs[name] = db.lookup(name=db_id)
-        _, bio_version = check_latest_version(db_id)
+        bio_version, _ = check_current_version(db_id)
         recs[name] = db.get_Seq_by_ver(f'{db_id}.{bio_version}')
 
     #server.close()
@@ -1168,41 +1242,6 @@ def execute_query(mysql_query, db_un, db_pw):
 
     return
 
-"""
-def extract_gene(recs, gene_name):
-    Extract specific genes from records
-
-    #gene_name = 'nd1'
-
-    #LOOK THROUGH MANUAL ON OTHER WAYS TO DO THIS (ISN'T THERE A BIOSQL AUTO ALTERNATIVE?)
-    # SOME RECORDS HAVE NO GENE QUALIFIERS
-
-    subrecs = {}
-
-    #Slice down record
-    for idd, record in recs.items():
-        for feature in record.features:
-            if feature.type.upper() == "CDS" and 'gene' in feature.qualifiers and feature.qualifiers['gene'][0].upper() == gene_name.upper():
-                subrec = feature.location.extract(record)
-                subrec.description = re.sub(',|complete genome', '', record.description)
-                subrecs[idd] = subrec
-
-    #Check for missing genes
-    if len(recs) > len(subrecs):
-        print(f"WARNING: There are records satisfying your specification that do not contain the '{gene_name.upper()}' gene.")
-
-    return subrecs
-
-
-def extract_CDS(recs):
-
-    genes = {}
-
-    for x in ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']:
-        genes[x] = extract_gene(recs, x)
-
-    return genes
-"""
 
 def extract_genes(recs, genes):
     """Extracts genes from SeqRecord objects and writes to dict: {gene_name :  list_of_sliced_seqrecords, ...}
@@ -1310,7 +1349,7 @@ def update_data(metadata, gb_dict):
 
         #Update accession, and gi
         for rec in gb_dict.values():
-            _, bio_version = check_latest_version(rec.name)
+            bio_version, _ = check_latest_version(rec.name)
             bio_version += 1
             rec.id = f"{rec.name}.{bio_version}"
             if 'gi' in rec.annotations.keys():
@@ -1326,7 +1365,7 @@ def update_data(metadata, gb_dict):
 
         #Update version
         for db_id in metadata.index:
-            meta_version, _ = check_latest_version(db_id)
+            _, meta_version = check_latest_version(db_id)
             metadata.ix[db_id, 'version'] = meta_version + 1
 
         #Load into db
@@ -1349,6 +1388,8 @@ def update_master_table(gb_dict, metadata, action):
     adaptor = db.adaptor
 
     if action == 'ingest':
+        # If ingest, then just load the primary keys of the record
+        # corresponding to each db_id into the master table
 
         for db_id in metadata['db_id']:
 
@@ -1366,13 +1407,15 @@ def update_master_table(gb_dict, metadata, action):
                 cur.execute(sql)
 
     else:
+        # If update, then load the primary keys of the latest version of each
+        # record into the master table
 
         if gb_dict:
 
             for db_id in [rec.name for rec in gb_dict.values()]:
 
                 #Find bioentry_id for latest version
-                _, bio_version = check_latest_version(db_id)
+                bio_version, _ = check_latest_version(db_id)
                 bioentry_id = adaptor.fetch_seqid_by_version(1, f"{db_id}.{bio_version}")
 
                 #Update master table
@@ -1386,7 +1429,7 @@ def update_master_table(gb_dict, metadata, action):
             for db_id in metadata['db_id']:
 
                 #Find metadata_id for latest version
-                meta_version, _ = check_latest_version(db_id)
+                _, meta_version = check_latest_version(db_id)
                 sql = f"""SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') 
                     AND (version={meta_version});"""
 
@@ -1400,30 +1443,89 @@ def update_master_table(gb_dict, metadata, action):
 
     return
 
-def rollback_bios(versions):
-    """Rolls back to earlier bioentry version
-    """
-    x = input("Would you like to rollback genetic data? Y/N").upper()
+"""
+def rollback_versions_dict(versions):
+    #Rolls back to earlier bioentry version
+    
+    # versions = {'ME12': {'metadata_version': 4, 'bioentry_version': 2 }, 'ME13': {'metadata_version': 8, 'bioentry_version': 10 }}
+    #Bioentry version
+    x = input("Would you like to rollback genetic data for selected records? Y/N").upper()
     while not (x == 'Y' or x == 'N'):
-        x = input("""Type 'Y' if you wish to rollback genetic data, or 'N' if
-                  you do not.""").upper()
+        x = input("Type 'Y' if you wish to rollback genetic data for the specified records, or 'N' if you do not.").upper()
     if x == 'Y':
         min_bio_version = min(
             [versions[db_id]['bioentry_version'] for db_id in versions.keys()])
-        rollback_no = input(f'How many versions would you like to rollback? Max: {min_bio_version}')
+        rollback_no = int(input(f'How many versions would you like to rollback? Max: {min_bio_version}'))
 
-        while rollback_no not in range(min_bio_version):
-            rollback_no = input(f'Please choose how many versions you would like to rollback: {list(range(min_bio_version))}')
+        while rollback_no not in range(min_bio_version + 1):
+            rollback_no = int(input(f'ERROR: you can only rollback a maximum of {min_bio_version} versions.'))
 
-        for db_id, rec_version in versions.items():
+        for db_id in versions.keys():
             versions[db_id]['bioentry_version'] -= rollback_no
 
+        print(versions)
+
     else:
-        return
+        pass
+
+    #Metadata version
+    y = input("Would you like to rollback metadata for selected records? Y/N").upper()
+    while not (x == 'Y' or x == 'N'):
+        x = input("Type 'Y' if you wish to rollback metadata for the specified records, or 'N' if you do not.").upper()
+
+    if y == 'Y':
+        min_meta_version = min(
+            [versions[db_id]['metadata_version'] for db_id in versions.keys()])
+        rollback_no = int(input(f'How many versions would you like to rollback? Max: {min_meta_version}'))
+
+        while rollback_no not in range(min_meta_version + 1):
+            rollback_no = int(input(f'ERROR: You can only rollback a maximum of {min_meta_version} versions'))
+
+        for db_id in versions.keys():
+            versions[db_id]['metadata_version'] -= rollback_no
+
+    else:
+        pass
+
+    if x == 'N' and y == 'N':
+        sys.exit('No rollback selected')
 
     return
+"""
 
+def rollback_versions(dict):
+    """Fetch internal ids for set of record names
+    1. grab primary keys corresponding to <db_id>.<version_no>
+    2. Load into metadata table
+    """
+    con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
+    server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
+                                          passwd=db_passwd, host=db_host,
+                                          db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
+    db = server[namespace]
+    adaptor = db.adaptor
 
+    for db_id in dict.keys():
 
+        #bioentry_id
+        if dict[db_id]['b']:
+            bioentry_id = adaptor.fetch_seqid_by_version(1, f"{db_id}.{dict[db_id]['b']}")
+            update_master = f"""UPDATE master SET bioentry_id={bioentry_id} 
+                WHERE db_id='{db_id}';"""
+            with con:
+                cur = con.cursor()
+                cur.execute(update_master)
 
+        #metadata_id
+        if dict[db_id]['m']:
+            fetch_id = f"""SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') 
+                AND (version={dict[db_id]['m']});"""
+            with con:
+                cur = con.cursor()
+                cur.execute(fetch_id)
+                metadata_id = cur.fetchone()[0]
+                update_master = f"""UPDATE master SET metadata_id={metadata_id} 
+                    WHERE db_id='{db_id}';"""
+                cur.execute(update_master)
 
+    return

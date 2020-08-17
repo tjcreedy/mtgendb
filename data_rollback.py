@@ -7,29 +7,24 @@ import gb_csv_module as gcm
 parser = argparse.ArgumentParser(description="Removing or rolling back records in the database")
 subparsers = parser.add_subparsers(dest='action', description='Choose either data rollback or removal')
 
-rollback = subparsers.add_parser('ROLLBACK', help='dshgksdkjhgds')
-rollback.add_argument('-s', '--specs', dest='mysql_specs', default=[], metavar='{Specification(s)}', nargs='+', help="""Comma-separated list of mysql specifications.\n(e.g. 'subregion=Sabah' 'length>25000' 'order=Coleoptera') REMEMBER: Each individual spec must be enclosed by quotations and separated from the next by a space as above.""")
+single = subparsers.add_parser('SINGLE', help='Rollback data for single record specified on command line')
+single.add_argument('-id', '--db_id', dest='db_id', metavar='{db_id', help='Database ID of record you wish to rollback.')
+single.add_argument('-m', '--met_ver', dest='meta_version', metavar='{meta_version}', type=int, help='Metadata version you wish to rollback to')
+single.add_argument('-b', '--bio_ver', dest='bio_version', metavar='{bio_version}', type=int, help='Bioentry version to be rolled back to')
 
-remove = subparsers.add_parser('REMOVE', help='dskhjfd')
-remove.add_argument('-s', '--specs', dest='mysql_specs', default=[], metavar='{Specification(s)}', nargs='+', help="""Comma-separated list of mysql specifications.\n(e.g. 'subregion=Sabah' 'length>25000' 'order=Coleoptera') REMEMBER: Each individual spec must be enclosed by quotations and separated from the next by a space as above.""")
+multiple = subparsers.add_parser('MULTIPLE', help='Rollback data for multiple records specified in 3-column text file.')
+multiple.add_argument('-t', '--txt', dest='text_file', metavar='{txtfile_path}', help='Path to 3-column text file: DB_ID BIO_VER META_VER')
 
 args = parser.parse_args()
 
-#Constuct command
-sql = gcm.construct_sql_output_query(None, ['name', 'db_id'], args.mysql_specs)
+#Create target versions dict
+if args.action == 'SINGLE':
 
-#Fetch names
-names_dict = gcm.fetch_names(sql, args.db_user, args.db_pass)
+    versions_dict = {args.db_id: {'b': args.bio_version, 'm': args.meta_version}}
 
-#Record current meta and bio versions for each
-versions = {db_id: {'metadata_version': gcm.check_latest_version(db_id)[0],
-                    'bioentry_version': gcm.check_latest_version(db_id)[1]
-                    } for db_id in names_dict.values()}
+else:
 
-#Record minimum meta and bio version
-min_bio_version = min([versions[name]['bioentry_version'] for name in versions.keys()])
-min_meta_version = min([versions[name]['metadata_version'] for name in versions.keys()])
+    versions_dict = gcm.text_to_dict(args.text_file)
 
-#Rollback bioentry
-
-#Rollback metaata
+#Update master table
+gcm.rollback_versions(versions_dict)
