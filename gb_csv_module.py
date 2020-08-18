@@ -8,6 +8,7 @@
 
 
 import sys, time, urllib.request, csv, re
+from ast import literal_eval as make_tuple
 
 ##Import modules for handeling the genbank files:
 from Bio import SeqIO, Entrez, Alphabet                             # Entrez is a molecular biology database system that provides integrated access to NCBI’s databases such as PubMed, GenBank, GEO, and many others.
@@ -1002,7 +1003,12 @@ def sql_cols(table, cols, spec):
 
     for c in all_cols:
 
-        if c == '*':
+        if c.startswith('(') and c.endswith(')'):
+            # for parsing tuples
+            split = [s.strip() for s in c[1:-1].split(',')]
+            for i in range(len(split)):
+                cols_dict[split[i]] = split[i]
+        elif c == '*':
             continue
         elif c == 'count':
             continue
