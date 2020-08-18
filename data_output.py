@@ -14,6 +14,7 @@ parser = argparse.ArgumentParser(description="Extracting data from the database.
 req_group = parser.add_argument_group('Required arguments')
 req_group.add_argument('--db_user', dest='db_user', help="Database username", metavar='{db_username}', required=True)
 req_group.add_argument('--db_pass', dest='db_pass', help="Database password", metavar='{db_password}', required=True)
+parser.add_argument('--all', action='store_true', help='Use this flag if you wish to pull all versions of each record satisfying your query. By default this script will only pull current versions if flag is not used.')
 parser.add_argument('-q', '--query', dest='mysql_query', help="""Custom MySQL query to extract data from database. (e.g. \"SELECT * FROM metadata WHERE country='United Kingdom';\") NOTE: Your custom specification must be enclosed by double quotations, as above.""", metavar='custom_MySQL_query')
 subparsers = parser.add_subparsers(dest="output_format", description='Desired output format:')
 
@@ -44,9 +45,12 @@ parser_gb.add_argument('-s', '--specs', dest='mysql_specs', default=[], metavar=
 parser_gb.add_argument('-x', '--taxonomy', dest='taxonomy_spec', help="""Taxonomic searchterm to run through database""", metavar='{taxonomy}')
 parser_gb.add_argument('-g', '--genes', dest='genes', metavar='{gene_names}', nargs='+', choices=['*', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6'], help='Name of mitochondrial genes you wish to extract.')
 
+
 # args = parser.parse_args(["--db_user", "root", "--db_pass", "mmgdatabase", '-q', "SELECT * FROM metadata WHERE country='China';", 'CSV', "-t", "metadata", '-c', 'name', "-o", "metadateru", "-s", "subregion='Sabah'"])
 # args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-c", "name", "length", "accession", "seq", "-o", "metadateru", "-s", "country='United Kingdon' description='Lucanus sp. BMNH 1425267 mitochondrion, complete genome'", "-f", "csv"])
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'CSV', '-o', 'Honduras_testrun', '-t', 'metadata', '-s', 'country=Honduras', 'length<25000'])
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'CSV', '-o', 'Honduras_testrun', '-t', 'metadata', '-s', 'country=Honduras'])
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'CSV', '-o', 'Honduras_testrun', '-t', 'metadata', '-s', "db_id IN ('TEST001','TEST002')"])
+
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'COUNT', '-x', 'Cucujiformia'])
 
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'FASTA', '-o', 'outksis', '-s',  'country!=Malaysia', '-g' , 'COX2', 'ND3', 'ATP6'])
@@ -65,7 +69,11 @@ if args.mysql_query and (args.taxonomy_spec or args.mysql_specs or args.database
 
 if args.output_format == 'CSV':
 
-    if not args.mysql_query:
+    if args.mysql_query:
+
+        mysql_command = args.mysql_query
+
+    else:
 
         if args.taxonomy_spec:
 
@@ -73,14 +81,33 @@ if args.output_format == 'CSV':
 
             print('Taxonomy searches may take a few minutes...')
 
-        mysql_command = gcm.construct_sql_output_query(args.database_table, args.table_columns, args.mysql_specs)
 
-    else:
+        if args.all:
 
-        mysql_command = args.mysql_query
+            mysql_command = gcm.construct_sql_output_query(args.database_table,
+                                                           args.table_columns,
+                                                           args.mysql_specs)
+
+        else:
+
+            #Fetch names/db_ids
+            query_names = gcm.construct_sql_output_query(None, ['name', 'db_id'], args.mysql_specs)
+
+            names_dict = gcm.fetch_names(query_names, args.db_user, args.db_pass)
+
+            #Fetch primary keys for current versions
+            current_ids = gcm.fetch_current_ids(names_dict)
+
+            # current_ids = {'TEST095': (126, 135), 'TEST055': (125, 132), 'TEST065': (134, 133), 'TEST094': (133, 134), 'TEST005': (131, 124), 'TEST054': (128, 131), 'TEST017': (129, 127), 'TEST037': (127, 129), 'TEST013': (132, 126), 'TEST024': (124, 128), 'TEST053': (135, 130), 'TEST008': (103, 8)}
+
+            #Construct new specification
+            new_spec = [f"(bioentry.bioentry_id, metadata.metadata_id) IN {tuple(current_ids.values())}"]
+
+            #Construct new SQL query
+            mysql_command = gcm.construct_sql_output_query(args.database_table, args.table_columns, new_spec)
 
     #gcm.csv_from_sql(mysql_command, args.output_name, args.db_user, args.db_pass)
-
+"""
 elif args.output_format == 'COUNT':
 
     if not args.mysql_query:
@@ -126,14 +153,26 @@ else:
         records = gcm.extract_genes(records, args.genes)
 
     gcm.seqfile_from_sql(records, args.output_name, args.output_format.lower())
-
+"""
 print(f"QUERY: {mysql_command}")
 
 
 """
 TO-DO
 
-7. Number of file output formats... GENBANK SUBMISSION - .sqn?
+1. Give option to pull either all or just the latest version of each record satisfying spec
+    -> If latest, it must run through the master table at some point every time
+    -> If latest (i.e. if not --all), consult master table, pull primary keys, load into spec: WHERE 
+2. Include ' IN ' in specs?
+3. Make sure every query goes through master table
+
+
+(metadata.metadata_id IN (SELECT master.metadata_id FROM master join metadata on 
+master.metadata_id=metadata.metadata_id where <spec>))
+
+A) retrieve names satisfying spec       A) Add additional spec
+B) retrieve keys from masdter table     B)
+C) replace spec                         C)
 
 USAGE NOTES:
 1. Assumes taxon name provided is the scientific name
