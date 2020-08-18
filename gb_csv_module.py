@@ -299,6 +299,7 @@ def check_latest_version(db_id):
 
     return bioentry_version, metadata_version
 
+
 def check_current_version(db_id):
 
     con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
@@ -320,9 +321,24 @@ def check_current_version(db_id):
     return bio_version, meta_version
 
 
+def fetch_current_ids(names_dict):
+    """Fetch primary keys of current versions fro  master table
+    """
+    con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd,
+                      db=db_name)
+    current_ids = {}
 
+    with con:
+        cur = con.cursor()
+        for db_id in names_dict.values():
+            sql_ids = f"""SELECT bioentry_id, metadata_id FROM master WHERE 
+                        metadata.db_id='{db_id}';"""
+            cur.execute(sql_ids)
+            for row in cur.fetchall():
+                bioentry_id, metadata_id = row
+            current_ids[db_id] = (bioentry_id, metadata_id)
 
-    return metadata_version, bioentry_version
+    return current_ids
 
 
 def fetch_names(mysql_command, db_un, db_pw):
@@ -964,7 +980,7 @@ def sql_cols(table, cols, spec):
 
     #spec = [f"{re.split('=|>|<', s)[0]}{re.findall('=|>|<', s)[0]}{re.split('=|>|<', s)[1]}" if re.split('=|>|<', s)[1].isnumeric() else f"{re.split('=|>|<', s)[0]}='{re.split('=|>|<', s)[1]}'" for s in spec]
     #cols = list(cols)
-    all_cols = list(set(cols + [re.split('=|!=|>|<', s)[0] for s in spec]))
+    all_cols = list(set(cols + [re.split('=|!=| IN |>|<', s)[0] for s in spec]))
 
     # Unique cols of each table (shared cols assigned to a prioritised table)
     metadata_cols = ['metadata_id', 'name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'metadata.authors', 'size', 'habitat', 'feeding_behavior', 'locomotion', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes', 'metadata.version']
@@ -1101,14 +1117,14 @@ def sql_table(tables):
 def sql_spec(tables, cols_dict, spec, spec_type):
     # spec = ['country!=United Kingdom', 'description=Lucanus sp. BMNH 1425267 mitochondrion, complete genome']
     # spec_type='output'
-    spec = [s if re.split('=|!=|>|<', s)[1].isnumeric() else f"{re.split('=|!=|>|<', s)[0]}{re.findall('=|!=|>|<', s)[0]}'{re.split('=|!=|>|<', s)[1]}'" for s in spec]
+    spec = [s if re.split('=|!=| IN |>|<', s)[1].isnumeric() or re.split('=|!=| IN |>|<', s)[1].startswith('(') else f"{re.split('=|!=| IN |>|<', s)[0]}{re.findall('=|!=| IN |>|<', s)[0]}'{re.split('=|!=| IN |>|<', s)[1]}'" for s in spec]
 
     if len(spec) == 0:
         spec = ''
     else:
         specs = []
         for x in spec:
-            s = re.split('=|!=|>|<', x)
+            s = re.split('=|!=| IN |>|<', x)
             if s[0] in ['subspecies', 'species', 'genus', 'tribe', 'family', 'order',
                         'class', 'phylum', 'kingdom', 'superkingdom', 'taxon']:
                 specs.append(f"""metadata.taxon_id IN (SELECT DISTINCT include.ncbi_taxon_id 
@@ -1117,24 +1133,27 @@ def sql_spec(tables, cols_dict, spec, spec_type):
                             WHERE taxon.taxon_id IN (SELECT taxon_id FROM taxon_name WHERE name 
                             COLLATE LATIN1_GENERAL_CI LIKE '%{s[1][1:-1]}%'))""")
             else:
-                specs.append(re.findall('=|!=|>|<', x)[0].join([cols_dict[s[0]], s[1]]))
+                specs.append(re.findall('=|!=| IN |>|<', x)[0].join([cols_dict[s[0]], s[1]]))
 
         #PULL LATEST VERSION
-        # Lists of tables with bioentry_id field
-        BIOENTRY_ID_TABLES = ['bioentry', 'bioentry_dbxref', 'bioentry_qualifier_value',
-                              'bioentry_reference', 'biosequence', 'comment', 'seqfeature']
+        """
+        if not all:
 
-        # Determine if any bios tables are being queried
-        bios = list(set(tables) & set(BIOENTRY_ID_TABLES))
-        if bios:
-            current_bio_version = """(bioentry.name,bioentry.version) IN (SELECT bioentry.name, 
-                            MAX(bioentry.version) FROM bioentry GROUP BY bioentry.name)"""
-            specs.append(current_bio_version)
+            # Lists of tables with bioentry_id field
+            BIOENTRY_ID_TABLES = ['bioentry', 'bioentry_dbxref', 'bioentry_qualifier_value',
+                                  'bioentry_reference', 'biosequence', 'comment', 'seqfeature']
 
-        current_meta_version = """(metadata.db_id,metadata.version) IN (SELECT metadata.db_id, 
-                            MAX(metadata.version) FROM metadata GROUP BY metadata.db_id)"""
-        specs.append(current_meta_version)
+            # Determine if any bios tables are being queried
+            bios = list(set(tables) & set(BIOENTRY_ID_TABLES))
+            if bios:
+                current_bio_version = "(bioentry.name,bioentry.version) IN (SELECT bioentry.name, 
+                                MAX(bioentry.version) FROM bioentry GROUP BY bioentry.name)"
+                specs.append(current_bio_version)
 
+            current_meta_version = "(metadata.db_id,metadata.version) IN (SELECT metadata.db_id, 
+                                MAX(metadata.version) FROM metadata GROUP BY metadata.db_id)"
+            specs.append(current_meta_version)
+            """
         # JOIN SPECS
         if spec_type == "output":
             spec = f" WHERE ({') AND ('.join(specs)})"
@@ -1190,7 +1209,7 @@ def construct_sql_delete_query(spec):
 
     update_string = sql_spec(tables, cols_dict, update, "update")
 
-    mysql_command = f"UPDATE {table_string} SET {update_string}{spec_string};"
+    mysql_command = f"DELETE FROM {table_string}{spec_string};"
 
     return mysql_command
 
