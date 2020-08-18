@@ -1008,6 +1008,7 @@ def sql_cols(table, cols, spec):
             split = [s.strip() for s in c[1:-1].split(',')]
             for i in range(len(split)):
                 cols_dict[split[i]] = split[i]
+            continue
         elif c == '*':
             continue
         elif c == 'count':
