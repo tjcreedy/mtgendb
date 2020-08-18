@@ -98,7 +98,7 @@ def text_to_list(accessions):
     return acc_list
 
 
-def text_to_dict(txtfile):
+def versions_to_dict(txtfile):
     """Converts 3-column text-file of IDs and target versions for rollback
     into a dict.
     """
@@ -981,7 +981,19 @@ def sql_cols(table, cols, spec):
 
     #spec = [f"{re.split('=|>|<', s)[0]}{re.findall('=|>|<', s)[0]}{re.split('=|>|<', s)[1]}" if re.split('=|>|<', s)[1].isnumeric() else f"{re.split('=|>|<', s)[0]}='{re.split('=|>|<', s)[1]}'" for s in spec]
     #cols = list(cols)
-    all_cols = list(set(cols + [re.split('=|!=| IN |>|<', s)[0] for s in spec]))
+
+    #Extract column names from cols and spec provided
+    #all_cols = list(set(cols + [re.split('=|!=| IN |>|<', s)[0] for s in spec]))
+
+    all_cols = []
+    for s in spec:
+        req_data = re.split('=|!=| IN |>|<', s)[0]
+        if req_data.startswith('(') and s.endswith(')'):
+            split = [col.split('.')[1].strip() for col in req_data[1:-1].split(',')]
+            all_cols.extend(split)
+        else:
+            all_cols.append(req_data)
+    all_cols = list(set(all_cols + cols))
 
     # Unique cols of each table (shared cols assigned to a prioritised table)
     metadata_cols = ['metadata_id', 'name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'metadata.authors', 'size', 'habitat', 'feeding_behavior', 'locomotion', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes', 'metadata.version']
@@ -1002,14 +1014,15 @@ def sql_cols(table, cols, spec):
     cols_dict = {}
 
     for c in all_cols:
-
+        """
         if c.startswith('(') and c.endswith(')'):
             # for parsing tuples
             split = [s.strip() for s in c[1:-1].split(',')]
             for i in range(len(split)):
                 cols_dict[split[i]] = split[i]
             continue
-        elif c == '*':
+        """
+        if c == '*':
             continue
         elif c == 'count':
             continue
@@ -1127,7 +1140,7 @@ def sql_spec(tables, cols_dict, spec, spec_type):
     spec = [s if re.split('=|!=| IN |>|<', s)[1].isnumeric() or re.split('=|!=| IN |>|<', s)[1].startswith('(') else f"{re.split('=|!=| IN |>|<', s)[0]}{re.findall('=|!=| IN |>|<', s)[0]}'{re.split('=|!=| IN |>|<', s)[1]}'" for s in spec]
 
     if len(spec) == 0:
-        spec = ''
+        spec_string = ''
     else:
         specs = []
         for x in spec:
@@ -1142,9 +1155,16 @@ def sql_spec(tables, cols_dict, spec, spec_type):
             else:
                 specs.append(re.findall('=|!=| IN |>|<', x)[0].join([cols_dict[s[0]], s[1]]))
 
-        #PULL LATEST VERSION
+        # JOIN SPECS
+        if spec_type == "output":
+            spec_string = f" WHERE ({') AND ('.join(specs)})"
+
+        if spec_type == "update":
+            spec_string = ', '.join(specs)
+
         """
-        if not all:
+        #PULL LATEST VERSION
+        if not _all:
 
             # Lists of tables with bioentry_id field
             BIOENTRY_ID_TABLES = ['bioentry', 'bioentry_dbxref', 'bioentry_qualifier_value',
@@ -1152,23 +1172,22 @@ def sql_spec(tables, cols_dict, spec, spec_type):
 
             # Determine if any bios tables are being queried
             bios = list(set(tables) & set(BIOENTRY_ID_TABLES))
+
             if bios:
-                current_bio_version = "(bioentry.name,bioentry.version) IN (SELECT bioentry.name, 
-                                MAX(bioentry.version) FROM bioentry GROUP BY bioentry.name)"
+                current_bio_version = f"(bioentry.bioentry_id, metadata.metadata_id) 
+                            IN (SELECT master.bioentry_id, master.metadata_id FROM master 
+                            JOIN metadata ON master.metadata_id=metadata.metadata_id 
+                            JOIN bioentry ON master.bioentry_id=bioentry.bioentry_id{spec_string});"
                 specs.append(current_bio_version)
 
-            current_meta_version = "(metadata.db_id,metadata.version) IN (SELECT metadata.db_id, 
-                                MAX(metadata.version) FROM metadata GROUP BY metadata.db_id)"
-            specs.append(current_meta_version)
-            """
-        # JOIN SPECS
-        if spec_type == "output":
-            spec = f" WHERE ({') AND ('.join(specs)})"
+            else:
 
-        if spec_type == "update":
-            spec = ', '.join(specs)
+                current_meta_version = f"metadata.metadata_id IN (SELECT master.metadata_id 
+                            FROM master join metadata on master.metadata_id=metadata.metadata_id{spec_string};)"
+                specs.append(current_meta_version)
+        """
 
-    return spec
+    return spec_string
 
 
 def construct_sql_output_query(table, cols, spec):

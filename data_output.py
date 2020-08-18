@@ -81,7 +81,6 @@ if args.output_format == 'CSV':
 
             print('Taxonomy searches may take a few minutes...')
 
-
         if args.all:
 
             mysql_command = gcm.construct_sql_output_query(args.database_table,
@@ -100,8 +99,21 @@ if args.output_format == 'CSV':
 
             # current_ids = {'TEST095': (126, 135), 'TEST055': (125, 132), 'TEST065': (134, 133), 'TEST094': (133, 134), 'TEST005': (131, 124), 'TEST054': (128, 131), 'TEST017': (129, 127), 'TEST037': (127, 129), 'TEST013': (132, 126), 'TEST024': (124, 128), 'TEST053': (135, 130), 'TEST008': (103, 8)}
 
+            #Check whether any bioentry tables are being queried, as this affects our new specification
+            tables, _, _, _ = gcm.sql_cols(args.database_table, args.table_columns, args.mysql_specs)
+
+            BIOENTRY_ID_TABLES = ['bioentry', 'bioentry_dbxref',
+                                  'bioentry_qualifier_value',
+                                  'bioentry_reference', 'biosequence',
+                                  'comment', 'seqfeature']
+
+            bios = list(set(tables) & set(BIOENTRY_ID_TABLES))
+
             #Construct new specification
-            new_spec = [f"(bioentry.bioentry_id, metadata.metadata_id) IN {tuple(current_ids.values())}"]
+            if bios:
+                new_spec = [f"(bioentry_id, metadata_id) IN {tuple(current_ids.values())}"]
+            else:
+                new_spec = [f"metadata_id IN {tuple([ids[1] for ids in current_ids.values()])}"]
 
             #Construct new SQL query
             mysql_command = gcm.construct_sql_output_query(args.database_table, args.table_columns, new_spec)
@@ -169,6 +181,9 @@ TO-DO
 
 (metadata.metadata_id IN (SELECT master.metadata_id FROM master join metadata on 
 master.metadata_id=metadata.metadata_id where <spec>))
+
+((bioentry.bioentry_id, metadata.metadata_id) IN (SELECT master.bioentry_id, master.metadata_id FROM master JOIN metadata ON 
+master.metadata_id=metadata.metadata_id JOIN bioentry ON master.bioentry_id=bioentry.bioentry_ID WHERE <spec>))
 
 A) retrieve names satisfying spec       A) Add additional spec
 B) retrieve keys from masdter table     B)

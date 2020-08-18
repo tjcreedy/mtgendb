@@ -24,7 +24,7 @@ if args.action == 'SINGLE':
 
 else:
 
-    versions_dict = gcm.text_to_dict(args.text_file)
+    versions_dict = gcm.versions_to_dict(args.text_file)
 
 #Update master table
 gcm.rollback_versions(versions_dict)
