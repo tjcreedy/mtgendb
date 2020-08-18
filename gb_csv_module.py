@@ -332,7 +332,7 @@ def fetch_current_ids(names_dict):
         cur = con.cursor()
         for db_id in names_dict.values():
             sql_ids = f"""SELECT bioentry_id, metadata_id FROM master WHERE 
-                        metadata.db_id='{db_id}';"""
+                db_id='{db_id}';"""
             cur.execute(sql_ids)
             for row in cur.fetchall():
                 bioentry_id, metadata_id = row
