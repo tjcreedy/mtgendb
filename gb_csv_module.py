@@ -985,6 +985,7 @@ def sql_cols(table, cols, spec):
     #Extract column names from cols and spec provided
     #all_cols = list(set(cols + [re.split('=|!=| IN |>|<', s)[0] for s in spec]))
 
+    #Compile columns requested in query (from cols and spec)
     all_cols = []
     for s in spec:
         req_data = re.split('=|!=| IN |>|<', s)[0]
@@ -1149,16 +1150,25 @@ def sql_spec(tables, cols_dict, spec, spec_type):
     else:
         specs = []
         for x in spec:
-            s = re.split('=|!=| IN |>|<', x)
-            if s[0] in ['subspecies', 'species', 'genus', 'tribe', 'family', 'order',
+            split = re.split('=|!=| IN |>|<', x)
+            #If taxonomy query, add additional specification
+            if split[0] in ['subspecies', 'species', 'genus', 'tribe', 'family', 'order',
                         'class', 'phylum', 'kingdom', 'superkingdom', 'taxon']:
                 specs.append(f"""metadata.taxon_id IN (SELECT DISTINCT include.ncbi_taxon_id 
                             FROM taxon INNER JOIN taxon AS include ON 
                             (include.left_value BETWEEN taxon.left_value AND taxon.right_value) 
                             WHERE taxon.taxon_id IN (SELECT taxon_id FROM taxon_name WHERE name 
-                            COLLATE LATIN1_GENERAL_CI LIKE '%{s[1][1:-1]}%'))""")
+                            COLLATE LATIN1_GENERAL_CI LIKE '%{split[1][1:-1]}%'))""")
             else:
-                specs.append(re.findall('=|!=| IN |>|<', x)[0].join([cols_dict[s[0]], s[1]]))
+                #Add table names to column names
+                pattern = re.compile("|".join(cols_dict.keys()))
+                rep_data = []
+                for data in split:
+                    new_data = pattern.sub(lambda m: cols_dict[re.escape(m.group(0))], data)
+                    rep_data.append(new_data)
+
+                #Append modified specification
+                specs.append(re.findall('=|!=| IN |>|<', x)[0].join(rep_data))
 
         # JOIN SPECS
         if spec_type == "output":
