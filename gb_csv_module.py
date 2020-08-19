@@ -989,7 +989,13 @@ def sql_cols(table, cols, spec):
     for s in spec:
         req_data = re.split('=|!=| IN |>|<', s)[0]
         if req_data.startswith('(') and s.endswith(')'):
-            split = [col.split('.')[1].strip() for col in req_data[1:-1].split(',')]
+            split = []
+            for col in req_data[1:-1].split(','):
+                if col.count('.') >= 1:
+                    split.append(col.split('.')[1].strip())
+                else:
+                    split.append(col.strip())
+            #split = [col.split('.')[1].strip() if col.count('.')>=1 else col.strip() for col in req_data[1:-1].split(',')]
             all_cols.extend(split)
         else:
             all_cols.append(req_data)
