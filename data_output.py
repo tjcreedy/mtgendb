@@ -40,7 +40,7 @@ parser_fasta.add_argument('-g', '--genes', dest='genes', metavar='{gene_names}',
 
 #Create the parser for the 'GB' command
 parser_gb = subparsers.add_parser('GB', help="Outputs an annotated .gb file —— For help file see 'data_output.py GB -h'.")
-parser_gb.add_argument('-o', '--out', dest = 'output_name', metavar='{Output filename}', required=True, help="Preferred filename for the output (extension will be added automatically according to your output format choice).")
+parser_gb.add_argument('-o', '--out', dest='output_name', metavar='{Output filename}', required=True, help="Preferred filename for the output (extension will be added automatically according to your output format choice).")
 parser_gb.add_argument('-s', '--specs', dest='mysql_specs', default=[], metavar='{Specification(s)}', nargs='+', help="Comma-separated list of mysql specifications.\n(e.g. 'subregion=Sabah' 'length>25000' 'order=Coleoptera') NOTE: Each individual specification must be enclosed by quotations and separated from the next by a space as above.")
 parser_gb.add_argument('-x', '--taxonomy', dest='taxonomy_spec', help="""Taxonomic searchterm to run through database""", metavar='{taxonomy}')
 parser_gb.add_argument('-g', '--genes', dest='genes', metavar='{gene_names}', nargs='+', choices=['*', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6'], help='Name of mitochondrial genes you wish to extract.')
@@ -49,11 +49,13 @@ parser_gb.add_argument('-g', '--genes', dest='genes', metavar='{gene_names}', na
 # args = parser.parse_args(["--db_user", "root", "--db_pass", "mmgdatabase", '-q', "SELECT * FROM metadata WHERE country='China';", 'CSV', "-t", "metadata", '-c', 'name', "-o", "metadateru", "-s", "subregion='Sabah'"])
 # args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-c", "name", "length", "accession", "seq", "-o", "metadateru", "-s", "country='United Kingdon' description='Lucanus sp. BMNH 1425267 mitochondrion, complete genome'", "-f", "csv"])
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'CSV', '-o', 'Honduras_testrun', '-t', 'metadata', '-s', 'country=Honduras'])
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'CSV', '-o', 'gjhg', '-c', 'name', 'db_id', 'country', 'length', '-s', 'country=Honduras', 'length>4000'])
+
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'CSV', '-o', 'Honduras_testrun', '-t', 'metadata', '-s', "db_id IN ('TEST001','TEST002')"])
 
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'COUNT', '-x', 'Cucujiformia'])
 
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'FASTA', '-o', 'outksis', '-s',  'country!=Malaysia', '-g' , 'COX2', 'ND3', 'ATP6'])
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'FASTA', '-o', 'outksis', '-s', 'country=Honduras', '-g', '*'])
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'FASTA', '-o', 'outksis', '-s',  'country!=Malaysia', '-g' , '*'])
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'FASTA', '-o', 'malays', '-s',  'species=Stenus boops', '-g', 'COX2', 'ND3', 'ATP6'])
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'CSV', '-o', 'Pan', '-t', 'metadata', '-s',  'country=Panama'])
@@ -98,16 +100,17 @@ if args.output_format == 'CSV':
             current_ids = gcm.fetch_current_ids(names_dict)
 
             # current_ids = {'TEST095': (126, 135), 'TEST055': (125, 132), 'TEST065': (134, 133), 'TEST094': (133, 134), 'TEST005': (131, 124), 'TEST054': (128, 131), 'TEST017': (129, 127), 'TEST037': (127, 129), 'TEST013': (132, 126), 'TEST024': (124, 128), 'TEST053': (135, 130), 'TEST008': (103, 8)}
+            # current_ids = {'TEST095': (126, 135), 'TEST008': (103, 8), 'TEST013': (132, 126), 'TEST055': (125, 132), 'TEST054': (128, 131), 'TEST024': (124, 128), 'TEST037': (127, 129), 'TEST094': (133, 134), 'TEST017': (129, 127)}
 
             #Check whether any bioentry tables are being queried, as this affects our new specification
             tables, _, _, _ = gcm.sql_cols(args.database_table, args.table_columns, args.mysql_specs)
 
-            BIOENTRY_ID_TABLES = ['bioentry', 'bioentry_dbxref',
+            BIO_TABLES = ['bioentry', 'bioentry_dbxref',
                                   'bioentry_qualifier_value',
                                   'bioentry_reference', 'biosequence',
                                   'comment', 'seqfeature']
 
-            bios = list(set(tables) & set(BIOENTRY_ID_TABLES))
+            bios = list(set(tables) & set(BIO_TABLES))
 
             #Construct new specification
             if bios:
@@ -118,11 +121,16 @@ if args.output_format == 'CSV':
             #Construct new SQL query
             mysql_command = gcm.construct_sql_output_query(args.database_table, args.table_columns, new_spec)
 
-    #gcm.csv_from_sql(mysql_command, args.output_name, args.db_user, args.db_pass)
-"""
+    gcm.csv_from_sql(mysql_command, args.output_name, args.db_user, args.db_pass)
+
 elif args.output_format == 'COUNT':
 
-    if not args.mysql_query:
+    if args.mysql_query:
+
+        mysql_command = re.sub('SELECT.*?FROM', 'SELECT COUNT(*) FROM',
+                               args.mysql_query, 1)
+
+    else:
 
         if args.taxonomy_spec:
 
@@ -130,17 +138,27 @@ elif args.output_format == 'COUNT':
 
             print('Taxonomy searches may take a few minutes...')
 
-        mysql_command = gcm.construct_sql_output_query(None, ['count'], args.mysql_specs)
+        if args.all:
 
-    else:
+            mysql_command = gcm.construct_sql_output_query(None, ['count'], args.mysql_specs)
 
-        mysql_command = re.sub('SELECT.*?FROM', 'SELECT COUNT(*) FROM', args.mysql_query, 1)
+            gcm.return_count(mysql_command, args.db_user, args.db_pass)
 
-    gcm.return_count(mysql_command, args.db_user, args.db_pass)
+        else:
+
+            query_names = gcm.construct_sql_output_query(None, ['name', 'db_id'], args.mysql_specs)
+
+            names_dict = gcm.fetch_names(query_names, args.db_user, args.db_pass)
+
+            print(len(names_dict))
 
 else:
 
-    if not args.mysql_query:
+    if args.mysql_query:
+
+        mysql_command = args.mysql_query
+
+    else:
 
         if args.taxonomy_spec:
 
@@ -150,13 +168,9 @@ else:
 
         mysql_command = gcm.construct_sql_output_query(None, ['name', 'db_id'], args.mysql_specs)
 
-    else:
-
-        mysql_command = args.mysql_query
-
     names_dict = gcm.fetch_names(mysql_command, args.db_user, args.db_pass)
 
-    records = gcm.fetch_recs(names_dict, args.db_user, args.db_pass)
+    records = gcm.fetch_recs(names_dict, args.db_user, args.db_pass, args.all)
     #names_dict = {'NC_041172': 'GB428'}
     #in_record = gcm.fetch_recs(names_dict, args.db_user, args.db_pass)
 
@@ -165,7 +179,7 @@ else:
         records = gcm.extract_genes(records, args.genes)
 
     gcm.seqfile_from_sql(records, args.output_name, args.output_format.lower())
-"""
+
 print(f"QUERY: {mysql_command}")
 
 

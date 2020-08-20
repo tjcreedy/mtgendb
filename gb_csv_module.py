@@ -8,7 +8,6 @@
 
 
 import sys, time, urllib.request, csv, re
-from ast import literal_eval as make_tuple
 
 ##Import modules for handeling the genbank files:
 from Bio import SeqIO, Entrez, Alphabet                             # Entrez is a molecular biology database system that provides integrated access to NCBI’s databases such as PubMed, GenBank, GEO, and many others.
@@ -273,11 +272,11 @@ def check_ids(db_un, db_pw, ids_list, action):
 
         if action == 'replace':
             if result is None:
-                sys.exit(f"ERROR: The name/id '{idd}' is missing from the database.")
+                sys.exit(f"ERROR: The id '{idd}' is missing from the database.")
 
         elif action == 'ingest':
             if result is not None:
-                sys.exit(f"ERROR: The name/id '{idd}' is already present in the database:\n{str(result)}")
+                sys.exit(f"ERROR: The id '{idd}' is already present in the database:\n{str(result)}")
 
         else:
             sys.exit(f"ERROR: Unrecognized action: '{action}'")
@@ -308,7 +307,7 @@ def check_current_version(db_id):
     with con:
         cur = con.cursor()
         sql_ids = f"""SELECT bioentry_id, metadata_id FROM master WHERE 
-                metadata.db_id='{db_id}';"""
+                db_id='{db_id}';"""
         cur.execute(sql_ids)
         for row in cur.fetchall():
             bioentry_id, metadata_id = row
@@ -1270,7 +1269,7 @@ def fetch_names(mysql_command, db_un, db_pw):
     return names_dict
 
 
-def fetch_recs(names_dict, db_un, db_pw):
+def fetch_recs(names_dict, db_un, db_pw, _all):
     """Fetches a list of SeqRecords from an input dict of record names/db ids
     """
     # names_dict = {'MH404113': 'GB001', 'KT876913': 'GB007', 'KF364622': 'GB008', 'KT876903': 'GB014'}
@@ -1280,11 +1279,17 @@ def fetch_recs(names_dict, db_un, db_pw):
     db = server[namespace]
 
     for name, db_id in names_dict.items():
-        #record = db.get_Seq_by_ver(f'{db_id}.{version}')
-        #recs[name] = record
-        #recs[name] = db.lookup(name=db_id)
-        bio_version, _ = check_current_version(db_id)
-        recs[name] = db.get_Seq_by_ver(f'{db_id}.{bio_version}')
+
+        if _all:
+            seq_recs = db.get_Seqs_by_acc(db_id)
+            for rec in seq_recs:
+                recs[rec.id] = rec
+        else:
+            #record = db.get_Seq_by_ver(f'{db_id}.{version}')
+            #recs[name] = record
+            #recs[name] = db.lookup(name=db_id)
+            bio_version, _ = check_current_version(db_id)
+            recs[name] = db.get_Seq_by_ver(f'{db_id}.{bio_version}')
 
     #server.close()
 
@@ -1309,7 +1314,7 @@ def extract_genes(recs, genes):
     if '*' in genes:
         genes = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
 
-    print(f"Extracting {len(genes)} genes: {', '.join(genes)}")
+    print(f"Extracting {len(genes)} genes: {', '.join(genes)}...")
 
     subrecs = {}
 
