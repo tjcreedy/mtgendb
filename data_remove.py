@@ -11,8 +11,9 @@ import argparse
 import gb_csv_module as gcm
 
 parser = argparse.ArgumentParser(description='Removing records in the database')
-parser.add_argument('--db_user', dest='db_user', metavar='{db_username}', required=True, help="Database username")
-parser.add_argument('--db_pass', dest='db_pass', metavar='{db_password}', required=True, help="Database password")
+req_group = parser.add_argument_group('required arguments')
+req_group.add_argument('--db_user', dest='db_user', metavar='{db_username}', required=True, help="Database username")
+req_group.add_argument('--db_pass', dest='db_pass', metavar='{db_password}', required=True, help="Database password")
 subparsers = parser.add_subparsers(dest='del_versions', description='Choose whether to delete all versions of a record or just one.')
 
 remove_all = subparsers.add_parser('ALL', help='Remove all versions of target record(s) from all tables in database.')

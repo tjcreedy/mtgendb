@@ -10,7 +10,7 @@ import gb_csv_module as gcm
 
 #Arguments to be parsed
 parser = argparse.ArgumentParser(description='Modifying data in the database')
-req_group = parser.add_argument_group('Required arguments')
+req_group = parser.add_argument_group('required arguments')
 req_group.add_argument('--db_user', dest='db_user', metavar='{db_username}', required=True, help="Database username")
 req_group.add_argument('--db_pass', dest='db_pass', metavar='{db_password}', required=True, help="Database password")
 parser.add_argument('-gb', '--genbankfile', dest='input_genbank', help="Name of genbank-file to ingest into the database.")
@@ -33,11 +33,14 @@ parser_manup.add_argument('-q', '--custom_query', dest='custom_query', metavar='
 args = parser.parse_args()
 
 #Define restrictions
-if not (args.manual_update or args.input_genbank or args.input_csv):
-    parser.error("no update option selected.")
-if args.manual_update and (args.input_genbank or args.input_csv):
-    parser.error("the following incompatible options are selected: MANUP, [-gb/-csv]")
+if not args.manual_update:
+    if not (args.input_genbank or args.input_csv):
+        parser.error("no update option selected.")
+    if args.input_genbank and not args.key:
+        parser.error('the following argument is required: -k')
 if args.manual_update:
+    if args.input_genbank or args.input_csv:
+        parser.error("the following incompatible options are selected: MANUP, [-gb/-csv]")
     if args.custom_query and (args.mysql_specs or args.update_specs):
         parser.error("the following incompatible options are selected: -q, [-s/-u]")
     if not args.custom_query and not args.update_specs:

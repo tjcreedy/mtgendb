@@ -11,7 +11,7 @@ import gb_csv_module as gcm
 
 #Create the top-level parser
 parser = argparse.ArgumentParser(description="Extracting data from the database.")
-req_group = parser.add_argument_group('Required arguments')
+req_group = parser.add_argument_group('required arguments')
 req_group.add_argument('--db_user', dest='db_user', help="Database username", metavar='{db_username}', required=True)
 req_group.add_argument('--db_pass', dest='db_pass', help="Database password", metavar='{db_password}', required=True)
 parser.add_argument('--all', action='store_true', help='Use this flag if you wish to pull all versions of each record satisfying your query. By default this script will only pull current versions if flag is omitted.')
