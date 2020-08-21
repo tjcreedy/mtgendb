@@ -1285,9 +1285,6 @@ def fetch_recs(names_dict, db_un, db_pw, _all):
             for rec in seq_recs:
                 recs[rec.id] = rec
         else:
-            #record = db.get_Seq_by_ver(f'{db_id}.{version}')
-            #recs[name] = record
-            #recs[name] = db.lookup(name=db_id)
             bio_version, _ = check_current_version(db_id)
             recs[name] = db.get_Seq_by_ver(f'{db_id}.{bio_version}')
 

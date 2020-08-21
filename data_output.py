@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser(description="Extracting data from the database.
 req_group = parser.add_argument_group('Required arguments')
 req_group.add_argument('--db_user', dest='db_user', help="Database username", metavar='{db_username}', required=True)
 req_group.add_argument('--db_pass', dest='db_pass', help="Database password", metavar='{db_password}', required=True)
-parser.add_argument('--all', action='store_true', help='Use this flag if you wish to pull all versions of each record satisfying your query. By default this script will only pull current versions if flag is not used.')
+parser.add_argument('--all', action='store_true', help='Use this flag if you wish to pull all versions of each record satisfying your query. By default this script will only pull current versions if flag is omitted.')
 parser.add_argument('-q', '--query', dest='mysql_query', help="""Custom MySQL query to extract data from database. (e.g. \"SELECT * FROM metadata WHERE country='United Kingdom';\") NOTE: Your custom specification must be enclosed by double quotations, as above.""", metavar='custom_MySQL_query')
 subparsers = parser.add_subparsers(dest="output_format", description='Desired output format:')
 
@@ -52,6 +52,8 @@ parser_gb.add_argument('-g', '--genes', dest='genes', metavar='{gene_names}', na
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'CSV', '-o', 'gjhg', '-c', 'name', 'db_id', 'country', 'length', '-s', 'country=Honduras', 'length>4000'])
 
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'CSV', '-o', 'Honduras_testrun', '-t', 'metadata', '-s', "db_id IN ('TEST001','TEST002')"])
+
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'GB', '-o', 'finalesz007', '-x', 'Cucujiformia', '-s', 'country!=United Kingdom', '-g', 'COX1'])
 
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'COUNT', '-x', 'Cucujiformia'])
 
