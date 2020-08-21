@@ -33,11 +33,6 @@ parser_manup.add_argument('-q', '--custom_query', dest='custom_query', metavar='
 args = parser.parse_args()
 
 #Define restrictions
-if not args.manual_update:
-    if not (args.input_genbank or args.input_csv):
-        parser.error("no update option selected.")
-    if args.input_genbank and not args.key:
-        parser.error('the following argument is required: -k')
 if args.manual_update:
     if args.input_genbank or args.input_csv:
         parser.error("the following incompatible options are selected: MANUP, [-gb/-csv]")
@@ -45,6 +40,11 @@ if args.manual_update:
         parser.error("the following incompatible options are selected: -q, [-s/-u]")
     if not args.custom_query and not args.update_specs:
         parser.error("the following argument is required: -u")
+else:
+    if not (args.input_genbank or args.input_csv):
+        parser.error("no update option selected.")
+    if args.input_genbank and not args.key:
+        parser.error('the following argument is required: -k')
 
 #Script
 if args.manual_update:
