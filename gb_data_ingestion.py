@@ -57,6 +57,9 @@ gb_df_reformatted = gcm.reformat_df_cols(gb_df_new_ids)
 #Change the features for CDS
 gcm.alter_features(records)
 
+#Load new ids into master table
+gcm.load_ids_to_master(dict_new_ids)
+
 #Push the genbank data into the database
 gcm.load_gb_dict_into_db(records)
 

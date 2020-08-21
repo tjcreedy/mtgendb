@@ -908,6 +908,19 @@ def reformat_df_cols(df):
 
     return df
 
+def load_ids_to_master(new_ids):
+    """Loads new db_ids as primary keys into the master table
+    """
+    con = mdb.connect(host="localhost", user=db_user, passwd=db_passwd, db=db_name)
+    with con:
+        cur = con.cursor()
+        db_ids = "'), ('".join(new_ids.values())
+        sql = f"INSERT INTO master (db_id) VALUES ('{db_ids}');"
+        cur.execute(sql)
+
+    return
+
+
 
 def load_gb_dict_into_db(genbank_data):
     """Load genbank_data as a dictionary into the mysql database.
@@ -1464,8 +1477,10 @@ def update_master_table(gb_dict, metadata, action):
                 cur = con.cursor()
                 cur.execute(sql)
                 metadata_id = cur.fetchone()[0]
-                sql = f"""INSERT INTO master(db_id, bioentry_id, metadata_id) 
-                    VALUES ('{db_id}', {bioentry_id}, {metadata_id});"""
+                #sql = f"""INSERT INTO master(db_id, bioentry_id, metadata_id)
+                #    VALUES ('{db_id}', {bioentry_id}, {metadata_id});"""
+                sql = f"""UPDATE master SET bioentry_id={bioentry_id}, 
+                    metadata_id={metadata_id} WHERE db_id='{db_id}';"""
                 cur.execute(sql)
 
     else:

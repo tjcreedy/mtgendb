@@ -80,6 +80,9 @@ df_with_lineages['version'] = 0
 #Reorder metadata df columns to load to db.
 df_with_lineages = gcm.reformat_df_cols(df_with_lineages)
 
+#Load new ids into master table
+gcm.load_ids_to_master(dict_new_ids)
+
 ##Push the metadata into the database
 gcm.load_df_into_db(df_with_lineages)
 
