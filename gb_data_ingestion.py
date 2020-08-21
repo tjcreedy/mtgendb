@@ -12,7 +12,7 @@ import gb_csv_module as gcm
 # Define arguments to be parsed
 parser = argparse.ArgumentParser(description="Adding GenBank data to the database.")
 
-parser.add_argument('-a', '--accessions', dest='input_accessions', required=True, help="Name of text-file containing accession numbers to search on GenBank.")
+parser.add_argument('-a', '--accessions', dest='input_accessions', required=True, help="Path to text-file containing accession numbers to search on GenBank.")
 parser.add_argument('-e', '--email', dest='users_email', required=True, help="Enter your email address in order to access NCBI.")
 parser.add_argument('-p', '--prefix', dest='prefix', required=True, help="The prefix for the database id names.")
 parser.add_argument('-n', '--number', dest='number', required=True, help="The start number for the database id names")
