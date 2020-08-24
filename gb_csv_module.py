@@ -213,7 +213,7 @@ def matching_inputids(csv_dataframe, gb_dictionary, action):
     if len(shared) != len(unique):
         # If the IDS in the CSV and GenBank files are not identical...
         x = input(
-            "WARNING: Your CSV and GenBank files contain different entries.\nWould you like to ignore these and proceed with shared entries only ('P') or cancel the operation ('C')?\n?>").capitalize()
+            "WARNING: Your CSV and GenBank files contain different entries.\nWould you like to ignore these and proceed with shared entries only or cancel the operation? 'P'/'C'\n?>").capitalize()
         while not (x == 'C' or x == 'P'):
             x = input(
                 "Type 'P' to ignore discrepant entries and proceed, or type 'C' to cancel the operation.\n?>").capitalize()
@@ -643,7 +643,7 @@ def return_ncbi_taxid(entry, searchterm, email_address):
     if len(id_list) == 0:  # if the search found nothing...
         # Give user option to use unsuccessful searchterm as custom lineage info or cancel the operation.
         x = input(
-            f" - No hits found for search term '{searchterm}' in NCBI taxonomy.\n   Would you like to record this as custom lineage information for entry '{entry}' and proceed ('P') or cancel the operation ('C')?\n ?>").capitalize()
+            f" - No hits found for search term '{searchterm}' in NCBI taxonomy.\n   Would you like to record this as custom lineage information for entry '{entry}' and proceed or cancel the operation? 'P'/'C'\n ?>").capitalize()
         while not (x == 'P' or x == 'C'):
             x = input(
                 f"   Type 'P' to record '{searchterm}' as custom lineage information for entry '{entry}' or 'C' to cancel the operation.\n ?>").capitalize()
@@ -1350,6 +1350,7 @@ def sql_spec(tables, cols_dict, spec, spec_type):
                             (include.left_value BETWEEN taxon.left_value AND taxon.right_value) 
                             WHERE taxon.taxon_id IN (SELECT taxon_id FROM taxon_name WHERE name 
                             COLLATE LATIN1_GENERAL_CI LIKE '%{split[1][1:-1]}%'))""")
+                print('Taxonomy searches may take a few minutes...')
             else:
                 # Add table names to column names
                 pattern = re.compile("|".join(cols_dict.keys()))
@@ -1770,7 +1771,7 @@ def rollback_versions(versions_dict):
         target_meta_ver = versions_dict[db_id]['m']
 
         # bioentry_id
-        if target_bio_ver:
+        if target_bio_ver is not None:
             bioentry_id = adaptor.fetch_seqid_by_version(1,
                                                          f"{db_id}.{target_bio_ver}")
             update_master = f"""UPDATE master SET bioentry_id={bioentry_id} 
@@ -1780,7 +1781,7 @@ def rollback_versions(versions_dict):
                 cur.execute(update_master)
 
         # metadata_id
-        if target_meta_ver:
+        if target_meta_ver is not None:
             fetch_id = f"""SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') 
                 AND (version={target_meta_ver});"""
             with con:
