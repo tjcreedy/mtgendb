@@ -70,5 +70,5 @@ else:
     # Delete target records from database
     gcm.remove_versions(versions_dict)
 
-
+print('Done.')
 

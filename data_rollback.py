@@ -34,3 +34,5 @@ gcm.check_ids(args.db_user, args.db_pass, list(versions_dict.keys()), 'rollback'
 
 #Update master table
 gcm.rollback_versions(versions_dict)
+
+print('Done.')

@@ -34,17 +34,13 @@ args = parser.parse_args()
 
 #Define restrictions
 if args.manual_update:
-    if args.input_genbank or args.input_csv:
-        parser.error("the following incompatible options are selected: MANUP, [-gb/-csv]")
     if args.custom_query and (args.mysql_specs or args.update_specs):
         parser.error("the following incompatible options are selected: -q, [-s/-u]")
     if not args.custom_query and not args.update_specs:
         parser.error("the following argument is required: -u")
 else:
     if not (args.input_genbank or args.input_csv):
-        parser.error("no update option selected.")
-    if args.input_genbank and not args.key:
-        parser.error('the following argument is required: -k')
+        parser.error("no update information provided.")
 
 #Script
 if args.manual_update:
@@ -86,6 +82,8 @@ else:
         #Generate ids list
         ids_list = list(gb_dict.keys())
 
+        gb_ids, meta_ids = [ids_list, ids_list]
+
     else:
 
         if args.input_genbank:
@@ -97,6 +95,8 @@ else:
 
             # Generate ids list
             ids_list = list(gb_dict.keys())
+
+            gb_ids, meta_ids = [ids_list, None]
 
         if args.input_csv:
 
@@ -112,18 +112,13 @@ else:
             csv_df['version'] = 0
 
             # Generate ids list
-            ids_list = list(csv_df['name'])
+            ids_list = list(csv_df['db_id'])
+
+            gb_ids, meta_ids = [None, ids_list]
 
     #Check ids are already present in the database
     gcm.check_ids(args.db_user, args.db_pass, ids_list, 'replace')
 
     gcm.update_data(csv_df, gb_dict)
 
-    gcm.update_master_table(gb_dict, csv_df, 'update')
-
-    """
-    BUG: csv_df will throw up an error as if it isn't included it is not just None, it is undefined
-    """
-
-    #Add 1 to version_no. of each new data using ids_list??
-
+    gcm.update_master_table(gb_ids, meta_ids, 'update')

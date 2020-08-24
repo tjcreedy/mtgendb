@@ -10,9 +10,9 @@ import subprocess
 import argparse
 import sys
 
-parser = argparse.ArgumentParser(description = "Summaries and Statistics")
-parser.add_argument('-gb', '--genbankfile', dest = 'input_genbank', required = True, help = "Name of GenBank file to ingest into the database.")
-parser.add_argument('-csv', '--csvfile', dest = 'input_csv', required = True, help = "Name of CSV file to ingest into the databse.")
+parser = argparse.ArgumentParser(description="Summaries and Statistics")
+parser.add_argument('-gb', '--genbankfile', dest='input_genbank', required=True, help="Name of GenBank file to ingest into the database.")
+parser.add_argument('-csv', '--csvfile', dest='input_csv', required=True, help="Name of CSV file to ingest into the databse.")
 args = parser.parse_args()
 
 # args = parser.parse_args(["-gb", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/Testing/test_genbank.gb", "-csv", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/Testing/test_metadata_copy.csv"])
@@ -84,9 +84,8 @@ print("L: family_distribution() done")
 st.country_distribution(csv_df)
 print("L: country_distribution() done")
 
-
 ##Output plots generated in R
-subprocess.call("Rscript EDITED_create_plots.r", shell = True)
+subprocess.call("Rscript EDITED_create_plots.r", shell=True)
 print("L:  done")
 
 ##Print gene sequences to fasta-file

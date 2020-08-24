@@ -90,4 +90,6 @@ gcm.load_df_into_db(df_with_lineages)
 gcm.load_gb_dict_into_db(new_dict)
 
 #Update master table
-gcm.update_master_table(new_dict, df_with_lineages, 'ingest')
+db_ids = list(dict_new_ids.values())
+
+gcm.update_master_table(db_ids, db_ids, 'ingest')

@@ -1634,7 +1634,7 @@ def update_data(metadata, gb_dict):
     return
 
 
-def update_master_table(gb_dict, metadata, action):
+def update_master_table(gb_ids, meta_ids, action):
     # Connect to Database
     con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
     # Connect to BioSQL
@@ -1648,7 +1648,7 @@ def update_master_table(gb_dict, metadata, action):
         # If ingest, then just load the primary keys of the record
         # corresponding to each db_id into the master table
 
-        for db_id in metadata['db_id']:
+        for db_id in gb_ids:
             # Fetch bioentry_id
             bioentry_id = adaptor.fetch_seqid_by_display_id(1, db_id)
 
@@ -1666,11 +1666,12 @@ def update_master_table(gb_dict, metadata, action):
 
     else:
         # If update, then load the primary keys of the latest version of each
+        # if rollback, check current
         # record into the master table
 
-        if gb_dict:
+        if gb_ids:
 
-            for db_id in [rec.name for rec in gb_dict.values()]:
+            for db_id in gb_ids:
                 # Find bioentry_id for latest version
                 bio_version, _ = check_latest_version(db_id)
                 bioentry_id = adaptor.fetch_seqid_by_version(1,
@@ -1682,9 +1683,9 @@ def update_master_table(gb_dict, metadata, action):
                     cur = con.cursor()
                     cur.execute(sql)
 
-        if metadata is not None:
+        if meta_ids:
 
-            for db_id in metadata['db_id']:
+            for db_id in meta_ids:
                 # Find metadata_id for latest version
                 _, meta_version = check_latest_version(db_id)
                 sql = f"""SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') 
@@ -1765,11 +1766,13 @@ def rollback_versions(versions_dict):
     adaptor = db.adaptor
 
     for db_id in versions_dict.keys():
+        target_bio_ver = versions_dict[db_id]['b']
+        target_meta_ver = versions_dict[db_id]['m']
 
         # bioentry_id
-        if versions_dict[db_id]['b'] is not None:
+        if target_bio_ver:
             bioentry_id = adaptor.fetch_seqid_by_version(1,
-                                                         f"{db_id}.{versions_dict[db_id]['b']}")
+                                                         f"{db_id}.{target_bio_ver}")
             update_master = f"""UPDATE master SET bioentry_id={bioentry_id} 
                 WHERE db_id='{db_id}';"""
             with con:
@@ -1777,9 +1780,9 @@ def rollback_versions(versions_dict):
                 cur.execute(update_master)
 
         # metadata_id
-        if versions_dict[db_id]['m'] is not None:
+        if target_meta_ver:
             fetch_id = f"""SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') 
-                AND (version={versions_dict[db_id]['m']});"""
+                AND (version={target_meta_ver});"""
             with con:
                 cur = con.cursor()
                 cur.execute(fetch_id)
@@ -1823,7 +1826,7 @@ def remove_versions(versions_dict):
         target_bio_ver = versions_dict[db_id]['b']
         target_meta_ver = versions_dict[db_id]['m']
 
-        if target_bio_ver is not None:
+        if target_bio_ver:
 
             del_bio_id = adaptor.fetch_seqid_by_version(1, f"{db_id}.{target_bio_ver}")
 
@@ -1842,18 +1845,21 @@ def remove_versions(versions_dict):
                     with con:
                         cur = con.cursor()
                         cur.execute(sql_del)
+                        update_master_table([db_id], None, 'remove')
+                        """
                         latest_bio_ver, _ = check_latest_version(db_id)
                         latest_bio_id = adaptor.fetch_seqid_by_version(1, f"{db_id}.{latest_bio_ver}")
-                        sql_update = f"""UPDATE master SET bioentry_id={latest_bio_id} 
-                            WHERE db_id='{db_id}';"""
+                        sql_update = f"UPDATE master SET bioentry_id={latest_bio_id} 
+                            WHERE db_id='{db_id}';"
                         cur.execute(sql_update)
+                        """
             else:
                 sql_del = f"DELETE FROM bioentry WHERE bioentry_id={del_bio_id};"
                 with con:
                     cur = con.cursor()
                     cur.execute(sql_del)
 
-        if target_meta_ver is not None:
+        if target_meta_ver:
 
             sql = f"""SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') 
                 AND (version={target_meta_ver});"""
@@ -1877,14 +1883,17 @@ def remove_versions(versions_dict):
                     with con:
                         cur = con.cursor()
                         cur.execute(sql_del)
+                        update_master_table(None, [db_id], 'remove')
+                        """
                         _, latest_meta_ver = check_latest_version(db_id)
-                        fetch_id = f"""SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') 
-                            AND (version={latest_meta_ver});"""
+                        fetch_id = f"SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') 
+                            AND (version={latest_meta_ver});"
                         cur.execute(fetch_id)
                         latest_meta_id = cur.fetchone()[0]
-                        sql_update = f"""UPDATE master SET metadata_id={latest_meta_id} 
-                            WHERE db_id='{db_id}';"""
+                        sql_update = f"UPDATE master SET metadata_id={latest_meta_id} 
+                            WHERE db_id='{db_id}';"
                         cur.execute(sql_update)
+                        """
 
             else:
                 sql_del = f"DELETE FROM metadata WHERE metadata_id={del_meta_id};"
