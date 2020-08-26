@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+"""Data rollback in MySQL database. Updates master table to highlight specified
+    versions of records for data output."""
 
 import argparse
 import gb_csv_module as gcm

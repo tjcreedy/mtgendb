@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 
-"""Data removal in MySQL database.
-
--> Remove All data related to record (delete from master table)
--> Remove particular version of particular record (according to spec or commandline/txtfile input?)
-->
-"""
+"""Data removal in MySQL database. Option to remove all records
+    corresponding to input database IDs or just specified versions."""
 
 import argparse
 import gb_csv_module as gcm
@@ -22,9 +18,11 @@ remove_all.add_argument('-id', dest='rec_id', metavar='{db_id}', nargs='+', help
 
 remove_version = subparsers.add_parser('VER', help='Remove single version of target record(s).')
 remove_version.add_argument('-t', '--txtfile', dest='txtfile', metavar='{txtfile_path}',  help='Path to 3-column text file containing IDS and the versions of the records to be deleted from database - db_id <TAB> bio_ver <TAB> meta_ver.')
-remove_version.add_argument('-id', dest='rec_id', metavar='{db_id}', help='Database ID of record to be delted.')
+remove_version.add_argument('-id', dest='rec_id', metavar='{db_id}', help='Database ID of record to be deleted.')
 remove_version.add_argument('-m', '--met_ver', dest='meta_version', metavar='{meta_version}', type=int, help='Metadata version you wish to rollback to')
 remove_version.add_argument('-b', '--bio_ver', dest='bio_version', metavar='{bio_version}', type=int, help='Bioentry version to be rolled back to')
+
+#args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'VER', '-t', 'testdata/removes.txt'])
 
 args = parser.parse_args()
 
@@ -66,6 +64,8 @@ else:
 
         versions_dict[args.rec_id] = {'b': args.bio_version, 'm': args.meta_version}
         #versions_dict = {args.rec_id: {'b': args.bio_version, 'm': args.meta_version}}
+
+    gcm.check_ids(args.db_user, args.db_pass, list(set(versions_dict.keys())), 'remove')
 
     # Delete target records from database
     gcm.remove_versions(versions_dict)

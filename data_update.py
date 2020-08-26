@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
-"""Data replacement in MySQL database.
-"""
+"""Data update in MySQL database. Adds new rows for each record and
+    increments version number."""
 
-#Import modules
+## Import ##
 import argparse
 import pandas as pd
 import gb_csv_module as gcm
 
-#Arguments to be parsed
+## Arguments ##
 parser = argparse.ArgumentParser(description='Modifying data in the database')
 req_group = parser.add_argument_group('required arguments')
 req_group.add_argument('--db_user', dest='db_user', metavar='{db_username}', required=True, help="Database username")
@@ -18,6 +18,7 @@ parser.add_argument('-csv', '--csvfile', dest='input_csv', help="Name of genbank
 parser.add_argument('-k', '--key', dest='key', default='LOCUS', choices=['LOCUS', 'ACCESSION', 'DEFINITION'], help="Field of the genbank-file where the name of the entry can be found.")
 
 #Subparser for optional manual update
+# TODO: Keep this? If so, would we need to duplicate the row before the update then increment version of new row.
 subparsers = parser.add_subparsers(dest="manual_update", description='Manually update records in database.')
 parser_manup = subparsers.add_parser('MANUP', help="Manually update records in database —— For help file see 'data_update.py MANUP -h'.")
 parser_manup.add_argument('-s', '--specs', dest='mysql_specs', metavar='{specifications}', nargs='+', help="Specifications of records to be updated. (E.g. 'length>25000' 'country=United Kingdom') WARNING: IF THIS IS NOT PROVIDED, ALL DATABASE RECORDS WILL BE UPDATED.")
@@ -122,3 +123,10 @@ else:
     gcm.update_data(csv_df, gb_dict)
 
     gcm.update_master_table(gb_ids, meta_ids, 'update')
+
+"""
+---NOTES---
+
+BUG: You can load in duplicate rows. E.g. if I pulled 10 recs where country=Panama and only edit one before pushing back in,
+duplicate rows will be stored for the remainder.
+"""

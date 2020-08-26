@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-"""GenBank data ingestion into MySQL database.
-"""
+"""GenBank data ingestion into MySQL database. Ingests records directly from
+    GenBank via a text file containing a list of accessions."""
 
 import argparse
 

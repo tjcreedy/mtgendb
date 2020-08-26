@@ -43,8 +43,7 @@ def gb_into_dictionary(gb_filename, key):
 
     elif key == "ACCESSION":
 
-        gb_dictionary = SeqIO.to_dict(SeqIO.parse(gb_filename,
-                                                  "genbank"))  # 'id' is used here by default (as it is whenever key_function is omitted)
+        gb_dictionary = SeqIO.to_dict(SeqIO.parse(gb_filename, "genbank"))
 
     elif key == "DEFINITION":
 
@@ -101,8 +100,9 @@ def versions_to_dict(txtfile):
     target_versions = {}
     for line in lines_stripped:
         if line.count('\t') not in [1, 2]:
-            sys.exit("""ERROR: your input text file must be a 3-column tab-delimited 
-            list: {db_id} <TAB> {bio_version} <TAB> {meta_version}""")
+            sys.exit("ERROR: your input text file must be a 3-column "
+                     "tab-delimited list: {db_id} <TAB> {bio_version} <TAB> "
+                     "{meta_version}")
         elif line.count('\t') == 1:
             # Only bio_version column provided
             vals = line.split('\t')
@@ -203,8 +203,8 @@ def matching_inputids(csv_df, gb_dict, action):
             # Return new gb_dict with discrepant entries deleted
             for gb_record in gb_dict:
                 if gb_record in discrepant_ids:
-                    print(f" - Skipping entry '{gb_record}' as it appears in the"
-                          f" GenBank file but not the CSV file.")
+                    print(f" - Skipping entry '{gb_record}' as it appears in "
+                          f"the GenBank file but not the CSV file.")
 
             new_gb_dict = {key: gb_dict[key] for key in gb_dict if
                            key not in discrepant_ids}
@@ -710,21 +710,16 @@ def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
             csv_df.drop([record], inplace=True)
 
     if len(rejected):
-        # Create new DataFrame of rejected entries and drop them from returned DataFrame
+        # Create new DataFrame of rejected entries and drop them from returned
+        # DataFrame
         print("\nPrinting rejected entries to CSV file...")
-        new_dataframe = pd.DataFrame(new_entries,
-                                     columns=['name', 'db_id', 'specimen',
-                                              'morphospecies', 'species',
-                                              'subfamily', 'family', 'order',
-                                              'taxid', 'collectionmethod',
-                                              'lifestage', 'site', 'locality',
-                                              'subregion', 'country',
-                                              'latitude', 'longitude', 'size',
-                                              'habitat', 'feeding_behaviour',
-                                              'locomotion', 'authors',
-                                              'library', 'datasubmitter',
-                                              'projectname', 'accession', 'uin',
-                                              'notes'])
+        cols = ['name', 'db_id', 'specimen', 'morphospecies', 'species',
+                'subfamily', 'family', 'order', 'taxid', 'collectionmethod',
+                'lifestage', 'site', 'locality', 'subregion', 'country',
+                'latitude', 'longitude', 'size', 'habitat', 'feeding_behaviour',
+                'locomotion', 'authors', 'library', 'datasubmitter',
+                'projectname', 'accession', 'uin', 'notes']
+        new_dataframe = pd.DataFrame(new_entries, columns=cols)
         del new_dataframe['db_id']
         new_dataframe.to_csv('rejected_metadata.csv', index=False)
 
@@ -842,48 +837,43 @@ def alter_features(genbank_dict):
                     if key not in ["gene", "location", "codon_start",
                                    "transl_table", "label",
                                    "product"]:
-                        # WHY JUST THESE^? WHY NOT 'translation', 'protein_id' etc.?
+                        # TODO: WHY JUST THESE^? WHY NOT 'translation', 'protein_id' etc.?
                         del_features.append(key)
 
                 for f in del_features:
                     del feature.qualifiers[f]
 
                 nametags = ['gene', 'product', 'label', 'standard_name']
-                # HOW COULD THERE POSSIBLY BE 'standard_name' WHEN IT WAS DROPPED IN THE LAST STEP?
+                # TODO: HOW COULD THERE POSSIBLY BE 'standard_name' WHEN IT WAS DROPPED IN THE LAST STEP?
 
-                if any(t in feature.qualifiers.keys() for t in
-                       nametags):  # if there are any CDS qualifier keys left that are also in nametags...
+                if any(t in feature.qualifiers.keys() for t in nametags):
                     name = 0
-                    for t in nametags:  # then for those t's that are in nametags and also qualifier keys
+                    for t in nametags:
                         if t in feature.qualifiers.keys():
-                            name = feature.qualifiers[t][
-                                0].upper()  # set name = the value for that qualifier key in uppercase. e.g. for key="gene", name = "NAD6"
+                            name = feature.qualifiers[t][0].upper()
                             break
 
-                    if name in variants.keys():  # if it (name) is a key in the different_names dict
+                    if name in variants.keys():
+                        # Standardise names
+                        new_name = variants[name]
 
-                        new_name = variants[
-                            name]  # set new_name = the value for that key    e.g. if name=nad1 or ND1, new_name = ND1
+                        feature.qualifiers["gene"] = [new_name]
+                        feature.qualifiers["label"] = [f"{new_name} "
+                                                       f"{types[new_name]}"]
+                        feature.qualifiers["product"] = [products[new_name]]
 
-                        feature.qualifiers["gene"] = [
-                            new_name]  # then set it as the value for "gene" in  feature.qualifiers dict    e.g. "gene": "ND1", ..
-                        feature.qualifiers["label"] = [
-                            f"{new_name} {types[new_name]}"]  # then set the second element of its value in default_qualifier_names as the value for "label" in  feature.qualifiers dict   e.g. "label": "ND1 CDS"
-                        feature.qualifiers["product"] = [products[
-                                                             new_name]]  # then set the third element of its value in default_qualifier_names as the value for "product" in  feature.qualifiers dict   e.g. "product": "NADH dehydrogenase subunit 2"
-
-                    else:  # if name is not a key in the different_names dict
-                        sys.exit(
-                            f"ERROR: Unknown gene name for '{str(gb_record)}' in CDS features: '{str(name)}'")
-
+                    else:
+                        sys.exit(f"ERROR: Unknown gene name for "
+                                 f"'{str(gb_record)}' in CDS features: "
+                                 f"'{str(name)}'")
                 else:
                     unidentifiable_features.add((feature.type,
                                                  feature.location.start,
                                                  feature.location.end))
 
         if len(unidentifiable_features):
-            sys.stderr.write(
-                "\nWARNING: The following sequence entries had unidentifiable annotations:\n")
+            sys.stderr.write("\nWARNING: The following sequence entries had "
+                             "unidentifiable annotations:\n")
             for unidfeats in unidentifiable_features:
                 sys.stderr.write(gb_record + ": " + ', '.join(
                     [f + " " + str(s) + "-" + str(e) for f, s, e in
@@ -891,32 +881,22 @@ def alter_features(genbank_dict):
 
     return genbank_dict
 
-
 def add_lineage_df(csv_dataframe, combined_lineage):
     """Add columns with tax_id, custom_ and ncbi_lineage to metadata dataframe.
     """
-    # csv_dataframe, combined_lineage = [df_accepted, lineages]
-
-    df_add = pd.DataFrame.from_dict(combined_lineage,
-                                    orient='index')  # write combined_lineage dict into dataframe called 'df_add' with keys as the index
-    df_add.columns = ["taxon_id",
-                      "custom_lineage"]  # change column headers to "taxid", "ncbi_lineage", and "custom_lineage"
+    df_add = pd.DataFrame.from_dict(combined_lineage, orient='index')
+    df_add.columns = ["taxon_id", "custom_lineage"]
     csv_dataframe.drop(['species', 'subfamily', 'family', 'order', 'taxid'],
-                       axis=1,
-                       inplace=True)  # delete "taxid" column/row from input csv_dataframe
-    df = pd.merge(df_add, csv_dataframe, left_index=True,
-                  right_index=True)  # merge 'df_add' with 'csv_dataframe', using the index from df_add (keys of combined_lineage dict) and csv_dataframe as the join key(s), calling the resulting dataframe 'df'.
-    df.reset_index(level=0,
-                   inplace=True)  # Remove the level 0 from the index, modifying the dataframe in place.
-    df.rename(columns={"index": "name"},
-              inplace=True)  # Rename "index" column to "name", modifying the dataframe in place.
+                       axis=1, inplace=True)
+    df = pd.merge(df_add, csv_dataframe, left_index=True, right_index=True)
+    df.reset_index(level=0, inplace=True)
+    df.rename(columns={"index": "name"}, inplace=True)
 
     return df
 
-
 def reformat_df_cols(df):
-    # df.rename(columns={'name': 'old_name', 'db_id': 'name'}, inplace=True)
-
+    """Reorder DataFrame columns for ingestion into MySQL database.
+    """
     df = df[['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage',
              'specimen', 'collectionmethod', 'lifestage', 'site', 'locality',
              'subregion', 'country', 'latitude', 'longitude', 'authors', 'size',
@@ -925,7 +905,6 @@ def reformat_df_cols(df):
              'version']]
 
     return df
-
 
 def load_ids_to_master(new_ids):
     """Loads new db_ids as primary keys into the master table
@@ -940,89 +919,54 @@ def load_ids_to_master(new_ids):
 
     return
 
-
 def load_gb_dict_into_db(genbank_data):
     """Load genbank_data as a dictionary into the mysql database.
-
-    db_driver = "MySQLdb"
-    db_passwd = "mmgdatabase"
-    db_host = "localhost"
-    db_user = "root"
-    db_name = "mmg_test"
-    db_name = 'testeru'
-    mysql_engine = "mysql+mysqldb://root:mmgdatabase@localhost/mmg_test"
-    namespace = "mmg"
     """
-    # genbank_data = records
-
     print("\nLoading genbank entries into the database...")
 
     server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
                                           passwd=db_passwd, host=db_host,
-                                          db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
+                                          db=db_name)
     db = server[namespace]
     count = db.load(genbank_data.values())
-    server.commit()  # Commit to memory/save
+    server.commit()
 
     print(" - %i sequences loaded." % count)
 
     return
 
-
 def load_df_into_db(csv_dataframe):
     """Loading pandas dataframe with metadata into the database.
-
-    mysql_engine = "mysql+mysqldb://root:mmgdatabase@localhost/mmg_test"
-        mysql_engine = "mysql+mysqldb://root:mmgdatabase@localhost/testeru"
-
     """
-    # csv_dataframe = gb_df_new_ids
-
     print("\nLoading metadata into the database...")
 
-    engine = create_engine(mysql_engine,
-                           echo=False)  # Create an engine object based on URL: "mysql+mysqldb://root:mmgdatabase@localhost/mmg_test", NOT logging the statements as well as a repr() of their parameter lists to the default log handler.
+    engine = create_engine(mysql_engine, echo=False)
     csv_dataframe.to_sql(name='metadata', if_exists='append', index=False,
-                         con=engine)  # write csv_dataframe to an sql database called 'metadata', inserting values to the existing table if it already exists, NOT writing DataFrame index as a column. CON??
+                         con=engine)
 
     print(" - %i entries loaded." % len(csv_dataframe.index))
 
-    return ()
-
-
-# --------------------
-
+    return
 
 def sql_cols(table, cols, spec):
-    # cols = ['taxon_name.name', 'length', 'node_rank']
-    # cols = '*'
-    # table = 'biosequence'
-    # spec = None
-    # table, cols, spec = [None, ['count'], ['country=United Kingdom', 'length<25000']]
-    # table, cols, spec = [None, ['name', 'db_id'], ['species=cucujiformia', 'length<25000', 'country=United Kingdom']]
-    # table, cols, spec = [None, ['*'], ['species=Stenus boops', 'length<25000', 'country!=United Kingdom']]
-    # table, cols, spec = [None, ['count'], ['species=Stenus boops']]
-    # 'length<25000', 'country!=United Kingdom']]
-
-    # table, cols, spec = [None, None, ['length>25000', 'country=United Kingdom', 'locomotion=arboreal', 'size=12mm']]
-
+    """Determine required tables and columns for MySQL query. Construct columns
+    string.
+    """
     # Reformat inputs
     if spec is None:
         spec = []
     if cols is None:
         cols = []
 
-    # spec = [f"{re.split('=|>|<', s)[0]}{re.findall('=|>|<', s)[0]}{re.split('=|>|<', s)[1]}" if re.split('=|>|<', s)[1].isnumeric() else f"{re.split('=|>|<', s)[0]}='{re.split('=|>|<', s)[1]}'" for s in spec]
-    # cols = list(cols)
-
-    # Extract column names from cols and spec provided
-    # all_cols = list(set(cols + [re.split('=|!=| IN |>|<', s)[0] for s in spec]))
-
     # Compile columns requested in query (from cols and spec)
     all_cols = []
     for s in spec:
         req_data = re.split('=|!=| IN |>|<', s)[0]
         if req_data.startswith('(') and req_data.endswith(')'):
+            # If a tuple consiting of multiple columns is requested, split it
+            # into its constituent columns and add them to the list.
+            # E.g. '(bioentry_id, metadata_id) IN ((1, 1), (2, 2))'
+            # --> all_cols = [..., bioentry_id, metadata_id]
             split = []
             for col in req_data[1:-1].split(','):
                 if col.count('.') >= 1:
@@ -1035,6 +979,7 @@ def sql_cols(table, cols, spec):
     all_cols = list(set(all_cols + cols))
 
     # Unique cols of each table (shared cols assigned to a prioritised table)
+    # WHICH OF THESE ARE RELEVANT?
     metadata_cols = ['metadata_id', 'name', 'db_id', 'morphospecies',
                      'taxon_id', 'custom_lineage', 'specimen',
                      'collectionmethod', 'lifestage', 'site', 'locality',
@@ -1071,17 +1016,10 @@ def sql_cols(table, cols, spec):
                 'class', 'phylum', 'kingdom', 'superkingdom', 'taxon']
 
     # Construct columns dictionary (adding prefixes for table joins)
+    # E.g. country -> metadata.country
     cols_dict = {}
 
     for c in all_cols:
-        """
-        if c.startswith('(') and c.endswith(')'):
-            # for parsing tuples
-            split = [s.strip() for s in c[1:-1].split(',')]
-            for i in range(len(split)):
-                cols_dict[split[i]] = split[i]
-            continue
-        """
         if c == '*':
             continue
         elif c == 'count':
@@ -1136,61 +1074,65 @@ def sql_cols(table, cols, spec):
 
     return tables, cols_string, cols_dict, spec
 
-
 def table_join(start, table_list, main_table, shared_col):
-    """Consructs MySQL command
+    """Consructs string for MySQL table joins
+
+    Arguments:
+        - start - starting table/string. E.g. 'bioentry'
+        - table_list - list of tables to be joined to starting table/string
+                       e.g. ['biosequence']
+        - main_table - parent table of all in list. E.g. 'bioentry'
+        - shared_col - column shared by all tables in list on which the join
+                       is to be performed. E.g. 'bioentry_id'
     """
     n = 0
     table_string = start
     while n < len(table_list):
-        new_join = f" JOIN {table_list[n]} ON {main_table}.{shared_col}={table_list[n]}.{shared_col}"
+        new_join = f" JOIN {table_list[n]} ON {main_table}.{shared_col}=" \
+                   f"{table_list[n]}.{shared_col}"
         table_string += new_join
         n += 1
 
     return table_string
 
-
 def sql_table(tables):
+    """Construct table string for MySQL query
+    """
     if len(tables) == 1:
-
         table_string = tables[0]
 
     elif len(tables) > 1:
-
-        # Lists of tables sharing linking columns (For duplicates it must be decided which table the column shouls be assigned to).
+        # Lists of tables sharing columns (For duplicates it must be
+        # decided which table the column should be assigned to).
         BIOENTRY_ID = ['bioentry', 'bioentry_dbxref',
                        'bioentry_qualifier_value', 'bioentry_reference',
                        'biosequence', 'comment', 'seqfeature']
         TAXON_ID = ['taxon', 'taxon_name']
 
-        # Split provided tables into groups according to shared columns
+        # Split required tables into groups according to shared columns
         bios = list(set(tables) & set(BIOENTRY_ID))
         taxons = list(set(tables) & set(TAXON_ID))
 
         ##JOIN TABLES
         joins = ["metadata"]
 
-        # Bios
         if len(bios) >= 1:
+            # Join bios
             if 'bioentry' in bios:
                 bios.remove('bioentry')
-            bios_join = table_join(
-                " JOIN bioentry ON metadata.db_id=bioentry.name",
-                bios, 'bioentry', 'bioentry_id')
+            start = " JOIN bioentry ON metadata.db_id=bioentry.name"
+            bios_join = table_join(start, bios, 'bioentry', 'bioentry_id')
             joins.append(bios_join)
 
-        # Taxons
         if len(taxons) >= 1:
+            # Join taxons
             if 'taxon' in taxons:
                 taxons.remove('taxon')
-            taxons_join = table_join(
-                " JOIN taxon ON metadata.taxon_id=taxon.ncbi_taxon_id",
-                taxons, 'taxon', 'taxon_id')
+            start = " JOIN taxon ON metadata.taxon_id=taxon.ncbi_taxon_id"
+            taxons_join = table_join(start, taxons, 'taxon', 'taxon_id')
             joins.append(taxons_join)
 
         table_string = ''.join(joins)
-
-        # COMPLETE_TABLE_STRING = 'metadata JOIN bioentry ON metadata.db_id=bioentry.name JOIN bioentry_dbxref ON bioentry.bioentry_id=bioentry_dbxref.bioentry_id JOIN bioentry_qualifier_value ON bioentry_qualifier_value.bioentry_id=bioentry.bioentry_id JOIN bioentry_reference ON bioentry_reference.bioentry_id=bioentry.bioentry_id JOIN biosequence ON biosequence.bioentry_id=bioentry.bioentry_id JOIN comment ON comment.bioentry_id=bioentry.bioentry_id JOIN seqfeature ON seqfeature.bioentry_id=bioentry.bioentry_id JOIN seqfeature_dbxref ON seqfeature_dbxref.seqfeature_id=seqfeature.seqfeature_id JOIN seqfeature_qualifier_value ON seqfeature_qualifier_value.seqfeature_id=seqfeature.seqfeature_id JOIN taxon ON metadata.taxon_id=taxon.ncbi_taxon_id JOIN taxon_name ON taxon.taxon_id=taxon_name.taxon_id' \
 
     else:
         sys.exit("ERROR: Cannot construct table. Invalid information provided.")

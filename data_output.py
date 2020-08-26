@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
-"""Data retreival from MySQL database.
-"""
+"""Data retreival from MySQL database. Outputs data in specified format
+    according to SQL specifications."""
+
 import argparse
 import re
 
@@ -83,8 +84,6 @@ if args.output_format == 'CSV':
 
             args.mysql_specs.append(f'taxon={args.taxonomy_spec}')
 
-            print('Taxonomy searches may take a few minutes...')
-
         if args.all:
 
             mysql_command = gcm.construct_sql_output_query(args.database_table,
@@ -138,8 +137,6 @@ elif args.output_format == 'COUNT':
 
             args.mysql_specs.append(f'taxon={args.taxonomy_spec}')
 
-            print('Taxonomy searches may take a few minutes...')
-
         if args.all:
 
             mysql_command = gcm.construct_sql_output_query(None, ['count'], args.mysql_specs)
@@ -165,8 +162,6 @@ else:
         if args.taxonomy_spec:
 
             args.mysql_specs.append(f'taxon={args.taxonomy_spec}')
-
-            print('Taxonomy searches may take a few minutes...')
 
         mysql_command = gcm.construct_sql_output_query(None, ['name', 'db_id'], args.mysql_specs)
 
