@@ -58,9 +58,9 @@ if args.manual_update:
     print(mysql_query)
 
     #Connect to database and execute command
-    #gcm.execute_query(mysql_query, args.db_user, args.db_pass)
+    gcm.execute_query(mysql_query, args.db_user, args.db_pass)
 
-    #gcm.update_master_table(None, None, 'replace')
+    gcm.update_master_table(None, None, 'replace')
 
     # Add 1 to version no.?
 #-----------
