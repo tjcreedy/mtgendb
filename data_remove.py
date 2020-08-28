@@ -26,6 +26,9 @@ remove_version.add_argument('-b', '--bio_ver', dest='bio_version', metavar='{bio
 
 args = parser.parse_args()
 
+#Check login details
+gcm.check_login_details(args.db_user, args.db_pass)
+
 if args.del_versions == 'ALL':
     #Define restrictions
     if not (args.txtfile or args.rec_id):
@@ -41,16 +44,18 @@ if args.del_versions == 'ALL':
 
         db_ids.append(args.rec_id)
 
-    gcm.check_ids(args.db_user, args.db_pass, list(set(db_ids)), 'remove')
+    gcm.check_ids(list(set(db_ids)), 'remove')
 
     gcm.remove_recs(db_ids)
 
 else:
     #Define restrictions
     if not (args.txtfile or args.rec_id or args.version_no):
-        parser.error("one of the following arguments must be provided: -t or -id/-b/-m")
+        parser.error("one of the following arguments must be provided: -t or "
+                     "-id/-b/-m")
     if args.rec_id and not (args.bio_version or args.meta_version):
-        parser.error('at least one of the following arguments is required: -b/-m')
+        parser.error('at least one of the following arguments is required: '
+                     '-b/-m')
     if (args.bio_version or args.meta_version) and not args.rec_id:
         parser.error('the following argument is required: -id')
 
@@ -62,10 +67,11 @@ else:
 
     if args.rec_id:
 
-        versions_dict[args.rec_id] = {'b': args.bio_version, 'm': args.meta_version}
+        versions_dict[args.rec_id] = {'b': args.bio_version,
+                                      'm': args.meta_version}
         #versions_dict = {args.rec_id: {'b': args.bio_version, 'm': args.meta_version}}
 
-    gcm.check_ids(args.db_user, args.db_pass, list(set(versions_dict.keys())), 'remove')
+    gcm.check_ids(list(set(versions_dict.keys())), 'remove')
 
     # Delete target records from database
     gcm.remove_versions(versions_dict)

@@ -48,6 +48,9 @@ args = parser.parse_args()
 
 ## Functions ##
 
+#Check login details
+gcm.check_login_details(args.db_user, args.db_pass)
+
 #Create dict from genbank-file and dataframe from csv-file
 gb_dict = gcm.gb_into_dictionary(args.input_genbank, args.key)
 
@@ -63,12 +66,12 @@ new_csv_df, new_gb_dict = gcm.matching_inputids(csv_df, gb_dict, 'ingest')
 dict_new_ids = gcm.new_ids(new_gb_dict, args.prefix, args.number, args.padding)
 
 #Check new ids are not already present in the database
-gcm.check_ids(args.db_user, args.db_pass, list(dict_new_ids.values()), 'ingest')
+gcm.check_ids(list(dict_new_ids.values()), 'ingest')
 
 #In dataframe insert column with new database ids
 df_new_ids = gcm.change_names_csv(new_csv_df, dict_new_ids)
 
-##Search for ncbi lineage with tax id, save custom lineages if not found on ncbi
+#Search for ncbi lineage with tax id, save custom lineages if not found on ncbi
 lineages = gcm.get_ncbi_lineage(df_new_ids, args.users_email, args.searchterm)
 
 #User decides whether to reject entries with custom lineage information or not
@@ -94,7 +97,7 @@ df_with_lineages['version'] = 0
 df_with_lineages = gcm.reformat_df_cols(df_with_lineages)
 
 #Load new ids into master table
-gcm.load_ids_to_master(dict_new_ids)
+gcm.load_ids_to_master(list(dict_new_ids.values()))
 
 ##Push the metadata into the database
 gcm.load_df_into_db(df_with_lineages)
@@ -106,3 +109,9 @@ gcm.load_gb_dict_into_db(new_dict)
 db_ids = list(dict_new_ids.values())
 
 gcm.update_master_table(db_ids, db_ids, 'ingest')
+
+"""
+NOTES:
+
+- Requires both csv and gb files together, with matching entries.
+"""

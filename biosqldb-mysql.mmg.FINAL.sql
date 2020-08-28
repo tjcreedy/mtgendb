@@ -39,7 +39,7 @@
 -- may be changed to best suit your requirements. Search for the tag
 -- CONFIG and read the documentation you find there.
 --
-
+-- TODO: check what happnens if I try to push a string into the latitude/longitude cols. Is the error intelligible?
 -- database have bioentries. That is about it.
 -- we do not store different versions of a database as different dbids
 -- (there is no concept of versions of database). There is a concept of
@@ -320,7 +320,7 @@ CREATE TABLE biosequence (
 -- ALTER TABLE biosequence ADD COLUMN ( perc_gc DOUBLE PRECISION );
 
 -- HERE THE SCRIPT IS ALTERED!
--- Adding new table "csv_information"!
+-- Adding new tables 'metadata', 'master', and 'rejected'.
 
 CREATE TABLE metadata (
 	metadata_id	    INT(10) UNSIGNED NOT NULL auto_increment,
@@ -353,13 +353,17 @@ CREATE TABLE metadata (
     PRIMARY KEY (metadata_id)
 ) ENGINE=INNODB;
 
-
 CREATE TABLE master (
   	db_id			CHAR(16) NOT NULL,
   	bioentry_id 	INT(10) DEFAULT NULL,
 	metadata_id	    INT(10) DEFAULT NULL,
 	PRIMARY KEY (db_id), 
 	UNIQUE (bioentry_id, metadata_id)
+) ENGINE=INNODB;
+
+CREATE TABLE rejected (
+    accession   VARCHAR(23),
+    PRIMARY KEY (accession)
 ) ENGINE=INNODB;
 
 -- database cross-references (e.g., GenBank:AC123456.1)

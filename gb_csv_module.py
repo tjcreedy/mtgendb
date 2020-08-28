@@ -2,8 +2,10 @@
 
 """Functions to interact with data files and MySQL database."""
 
+
 ## Imports ##
 import sys, time, urllib.request, csv, re
+from collections import defaultdict
 from Bio import SeqIO, Entrez
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 
@@ -15,6 +17,7 @@ from BioSQL import BioSeqDatabase
 from sqlalchemy import create_engine, update
 
 ## Variables ##
+# TODO: Should these begin with a trailing underscore to denote they are for internal use?
 db_driver = "MySQLdb"
 db_passwd = "mmgdatabase"
 db_host = "localhost"
@@ -24,6 +27,14 @@ mysql_engine = "mysql+mysqldb://root:mmgdatabase@localhost/mmg_test"
 namespace = "mmg"
 
 ## Functions ##
+
+def check_login_details(db_un, dp_pw):
+    """Checks database login details are correct.
+    """
+    if db_un != db_user or db_pw != db_passwd:
+        sys.exit("ERROR: Incorrect login details.")
+
+    return
 
 def gb_into_dictionary(gb_filename, key):
     """Take a file in genbank-format and load it into a dictionary, define
@@ -260,14 +271,14 @@ def new_ids(genbank_dict, prefix, startvalue, padding):
 
     return dict_new_ids
 
-def check_ids(db_un, db_pw, ids_list, action):
+def check_ids(ids_list, action):
     """Check if the database ids already exist in the database.
     """
+    con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
+
     for idd in ids_list:
         mysql_command = f"SELECT * FROM metadata WHERE (name='{idd}') OR " \
                         f"(db_id='{idd}');"
-        con = mdb.connect(host=db_host, user=db_un, passwd=db_pw, db=db_name)
-
         with con:
             cur = con.cursor()
             cur.execute(mysql_command)
@@ -279,11 +290,140 @@ def check_ids(db_un, db_pw, ids_list, action):
 
         elif action == 'ingest':
             if result is not None:
-                sys.exit(f"ERROR: The id '{idd}' is already present in the "
+                sys.exit(f"ERROR: The id '{idd}' already exists in the "
                          f"database:\n{str(result)}")
 
         else:
             sys.exit(f"ERROR: Unrecognized action: '{action}'")
+
+    return
+
+def check_accs_in_db(accs_list):
+    """Checks accessions haven't already been pulled from GenBank by checking
+    them against the 'name' column in the metadata table.
+    """
+    con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
+
+    duplicates = set()
+    for acc in accs_list:
+        sql_1 = f"SELECT * FROM metadata WHERE name='{acc}';"
+        sql_2 = f"SELECT * FROM rejected WHERE accession='{acc}';"
+        with con:
+            cur = con.cursor()
+            cur.execute(sql_1)
+            if cur.fetchone():
+                duplicates.add(acc)
+            cur.execute(sql_2)
+            if cur.fetchone():
+                duplicates.add(acc)
+
+    if duplicates:
+        x = input(f"WARNING: There are accessions in your input file that have"
+                  f" previously been rejected or already exist in the database:"
+                  f" {', '.join(list(duplicates))}\nWould you like to drop"
+                  f" these and proceed or cancel the operation? 'P'/'C'").upper()
+        while not (x == 'P' or x == 'C'):
+            x = input(f"Type 'P' to drop duplicate accessions and"
+                      f" proceed or 'C' to cancel the operation.").upper()
+        if x == 'C':
+            sys.exit('Operation cancelled.')
+        else:
+            accs_list = [a for a in accs_list if a not in duplicates]
+
+    return accs_list
+
+def check_recs_for_dups(records):
+    """Checks a list of records for duplicates by referring to the comment
+    section and comparing seqs.
+    """
+    recs = list(records.values())
+    dupgroups = dict()
+    nrecs = len(recs)
+    grpn = 0
+
+    for i, seqr in enumerate(recs):
+        if seqr.name in dupgroups:
+            continue
+        dup = {seqr.name}
+        if seqr.name.startswith('NC_'):
+            # Checks annotation section to see if it's copy of anything.
+            # If it is, then it adds its counterpart to dup
+            origreg = 'The reference sequence is identical to ([A-Z]+[0-9]+)\.'
+            origsearch = re.search(origreg, seqr.annotations['comment'])
+            if origsearch:
+                # .group(1) grabs parentheses-enclosed regex in above string
+                dup.add(origsearch.group(1))
+        if i < nrecs:
+            for comprec in recs[i + 1:]:
+                # Search remaining recs for names in dups, and check
+                # for duplicate seqs
+                if comprec.name in dup:
+                    continue
+                if str(seqr.seq) == str(comprec.seq):
+                    dup.add(comprec.name)
+        for n in dup:
+            dupgroups[n] = grpn
+            # {NC_001: 0, MX432: 0, ... }
+        grpn += 1
+
+    groupdups = defaultdict(list)
+    for name, group in dupgroups.items():
+        groupdups[group].append(name)
+        # dups = {1: ['NC_001', 'MX432'], 2: ['NC_008', 'SDJHDFDSJ', 'DHS543']}
+
+    use, reject = [[], []]
+    for names in groupdups.values():
+        if len(names) == 1:
+            use.append(names[0])
+        else:
+            # If any begin with 'NC_' then use the first of those, otherwise
+            # use any
+            nc_i = [n for n in names if n.startswith('NC_')]
+            if len(nc_i) > 0:
+                use.append(nc_i[0])
+                rej = [n for n in names if n != nc_i[0]]
+            else:
+                use.append(names[0])
+                rej = names[1:]
+
+            reject.extend(rej)
+
+    if reject:
+        print(f"WARNING: The following duplicates have been dropped from your"
+              f" GenBank records:\n{', '.join(reject)}")
+
+    use_recs = {acc: rec for acc, rec in records.items() if acc in use}
+
+    return use_recs, reject
+
+def check_seqs_in_db(records):
+    """Checks whether sequences already exist in the database.
+    """
+    con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
+    reject = []
+    for acc, rec in records.items():
+        sql = f"SELECT * FROM biosequence WHERE seq='{str(rec.seq)}';"
+        with con:
+            cur = con.cursor()
+            cur.execute(sql)
+            if cur.fetchone():
+                reject.append(acc)
+
+    if reject:
+        print(f"WARNING: The following sequences already exist in the database:"
+              f"\n{', '.join(reject)}")
+
+    new_recs = {name: rec for name, rec in records.items() if name not in reject}
+
+    return new_recs, reject
+
+def load_reject_table(rejected):
+    """Loads a list of rejected accession numbers into the rejected_accs SQL
+    table.
+    """
+    rej_df = pd.DataFrame({'accession': rejected})
+    engine = create_engine(mysql_engine, echo=False)
+    rej_df.to_sql(name='rejected', if_exists='append', index=False, con=engine)
 
     return
 
@@ -383,7 +523,7 @@ def change_ids_genbank(genbank_dict, dict_new_ids, key):
     return
 
 def change_names_csv(csv_df, dict_new_ids):
-    """Create dictionary with new database ids and old input names to df.
+    """Adds column containing new db_ids to df.
     """
     dict_df = pd.DataFrame(list(dict_new_ids.items()), columns=["name", "db_id"])
     new_csv_df = pd.merge(dict_df, csv_df, on='name')
@@ -913,7 +1053,7 @@ def load_ids_to_master(new_ids):
                       db=db_name)
     with con:
         cur = con.cursor()
-        db_ids = "'), ('".join(new_ids.values())
+        db_ids = "'), ('".join(new_ids)
         sql = f"INSERT INTO master (db_id) VALUES ('{db_ids}');"
         cur.execute(sql)
 
@@ -1139,14 +1279,16 @@ def sql_table(tables):
 
     return table_string
 
-
 def sql_spec(tables, cols_dict, spec, spec_type):
-    # spec = ['country!=United Kingdom', 'description=Lucanus sp. BMNH 1425267 mitochondrion, complete genome']
-    # spec_type='output'
-    spec = [s if re.split('=|!=| IN |>|<', s)[1].isnumeric() or
-                 re.split('=|!=| IN |>|<', s)[1].startswith(
-                     '(') else f"{re.split('=|!=| IN |>|<', s)[0]}{re.findall('=|!=| IN |>|<', s)[0]}'{re.split('=|!=| IN |>|<', s)[1]}'"
-            for s in spec]
+    """Construct specification string for MySQL query
+    """
+    """"
+    new_spec = []
+    for s in spec:
+        split = re.split('=|!=| IN |>|<', s)
+        if split[1].isnumeric() or split[1].startswith('('):
+    """
+    spec = [s if re.split('=|!=| IN |>|<', s)[1].isnumeric() or re.split('=|!=| IN |>|<', s)[1].startswith('(') else f"{re.split('=|!=| IN |>|<', s)[0]}{re.findall('=|!=| IN |>|<', s)[0]}'{re.split('=|!=| IN |>|<', s)[1]}'" for s in spec]
 
     if len(spec) == 0:
         spec_string = ''

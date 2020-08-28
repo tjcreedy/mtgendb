@@ -72,6 +72,9 @@ if args.mysql_query and (args.taxonomy_spec or args.mysql_specs or args.database
 
 #gcm.csv_from_sql(args.sql_user, args.sql_password, args.db_name, args.database_table, args.table_columns, args.mysql_specs, args.output_name)
 
+#Check login details
+gcm.check_login_details(args.db_user, args.db_pass)
+
 if args.output_format == 'CSV':
 
     if args.mysql_query:
@@ -204,6 +207,7 @@ USAGE NOTES:
 1. Assumes taxon name provided is the scientific name
 2. GENES: can it be made such that if flag is not given, full genome assumed, if it is given with no argument, all 13 genes are assumes, and if genes specified, then only those genes assumed?
 3. Any command entered after -q will be parsed. So be cautious.
-4. Outputs most recent
+4. Outputs most recent by default
+5. Assumes user knows table cols
 """
 

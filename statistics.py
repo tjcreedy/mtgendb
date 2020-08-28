@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""Functions to analyze genbank-files and csv-files.
-"""
+"""Functions to analyze genbank-files and csv-files."""
 
 import sys
 import pandas as pd
@@ -44,13 +43,10 @@ def gb_topology(genbank_dict):
 
     return topologies
 
-
-
 def gb_features(genbank_dict):
     """Get the features count (gene, cds, trna, rrna) for each entry.
     Returns a dict containing key value pairs - ID: [gene_count, cds_count, trna_count, rrna_count]
     """
-
     features = {}
 
     for gb_record, record in genbank_dict.items():
@@ -247,15 +243,14 @@ def contig_length(genbank_dict):
 
         record = genbank_dict[gb_record]
         name = record.name
-
         feature_length = {}
 
         for (index, feature) in enumerate(record.features):
 
-            if feature.type == "CDS" or feature.type == "cds":
+            if feature.type.upper() == "CDS":
 
                 if "gene" in feature.qualifiers:
-                    gene_name = feature.qualifiers["gene"]
+                    gene_name = feature.qualifiers["gene"][0]
                     cds_len = len(feature.location.extract(record).seq)
                     feature_length[gene_name] = int(cds_len)
 
@@ -319,7 +314,7 @@ def gene_order(genbank_dict):
             position = []
 
             if feature.type == "CDS" or feature.type == "cds":
-                gene = feature.qualifiers["gene"]
+                gene = feature.qualifiers["gene"][0]
                 start = feature.location._start.position
                 end = feature.location._end.position
                 position.append(start)
@@ -339,14 +334,14 @@ def isexactsubset(query, subject):
     """Check if the query is part of the subject.
     """
 
-    if(set(query).issubset(set(subject))):
+    if set(query).issubset(set(subject)):
 
         issubset = [subject[i:i + len(query)] == query or subject[i:i - len(query):-1] == query for i, x in enumerate(subject) if x == query[0]]
-        return(any(issubset))
+        return any(issubset)
 
     else:
 
-        return(False)
+        return False
 
 
 def extract_order(genbank_dict):
@@ -369,7 +364,7 @@ def extract_order(genbank_dict):
 
         gene_order[name] = tuple(genes)
 
-    return(gene_order)
+    return gene_order
 
 
 def analyze_order(order):

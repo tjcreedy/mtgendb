@@ -323,7 +323,7 @@ CREATE TABLE metadata (
 	taxon_id	VARCHAR(15),
 	custom_lineage	VARCHAR(120),
 	specimen	VARCHAR(20),
-	collectionmethod	VARCHAR(55),
+	collectionmethod	VARCHAR(100),
 	lifestage	VARCHAR(25),
 	site	VARCHAR(30),
 	locality	VARCHAR(30),

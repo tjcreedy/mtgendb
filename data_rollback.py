@@ -22,6 +22,9 @@ multiple.add_argument('-t', '--txt', dest='text_file', metavar='{txtfile_path}',
 
 args = parser.parse_args()
 
+#Check login details
+gcm.check_login_details(args.db_user, args.db_pass)
+
 #Create target versions dict
 if args.action == 'SINGLE':
 
@@ -32,7 +35,7 @@ else:
     versions_dict = gcm.versions_to_dict(args.text_file)
 
 #Check ids
-gcm.check_ids(args.db_user, args.db_pass, list(versions_dict.keys()), 'rollback')
+gcm.check_ids(list(versions_dict.keys()), 'rollback')
 
 #Update master table
 gcm.rollback_versions(versions_dict)

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""Summary and statistics for genbank-files.
-"""
+"""Summary and statistics for genbank-files."""
 
 import gb_csv_module as gcm
 import statistics as st
@@ -15,17 +14,16 @@ parser.add_argument('-gb', '--genbankfile', dest='input_genbank', required=True,
 parser.add_argument('-csv', '--csvfile', dest='input_csv', required=True, help="Name of CSV file to ingest into the databse.")
 args = parser.parse_args()
 
-# args = parser.parse_args(["-gb", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/Testing/test_genbank.gb", "-csv", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/Testing/test_metadata_copy.csv"])
+# args = parser.parse_args(["-gb", "testdata/test_genbank.gb", "-csv", "testdata/test_metadata.csv"])
 
 ##Input gebank file as dict
 
 gb_dict = gcm.gb_into_dictionary(args.input_genbank, key="LOCUS")
 print("L: gb_into_dictionary() done")
 
-
 ##Input csv-file as dataframe
 
-csv_df = pd.read_csv(args.input_csv, quotechar = '"')
+csv_df = pd.read_csv(args.input_csv, quotechar='"')
 print("L: read_csv() done")
 
 ##Extract features, topologies and sequence lengths for each entry

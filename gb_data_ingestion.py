@@ -12,6 +12,10 @@ import gb_csv_module as gcm
 # Define arguments to be parsed
 parser = argparse.ArgumentParser(description="Adding GenBank data to the database.")
 
+parser.add_argument('--db_user', help="Database username", dest='db_user',
+                    metavar='db_username', required=True)
+parser.add_argument('--db_pass', help="Database password", dest='db_pass',
+                    metavar='db_password', required=True)
 parser.add_argument('-a', '--accessions', dest='input_accessions', required=True, help="Path to text-file containing accession numbers to search on GenBank.")
 parser.add_argument('-e', '--email', dest='users_email', required=True, help="Enter your email address in order to access NCBI.")
 parser.add_argument('-p', '--prefix', dest='prefix', required=True, help="The prefix for the database id names.")
@@ -21,11 +25,21 @@ parser.add_argument('-k', '--key', dest='key', default='LOCUS', choices=['LOCUS'
 
 args = parser.parse_args()
 
+"""
+1. Check doesn't exist in metadata 'name' column
+2. Check doesn't exist in rejected_accs table (drop, if so)
+3. Download recs from GenBank
+4. Check
+
+"""
 #LOCAL: args = parser.parse_args(["-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/subset.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "3", "-k", "LOCUS"])
 # Long: args = parser.parse_args(["-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/500accessions.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "4", "-k", "LOCUS"])
 
 #SERVER: args = parser.parse_args(["-a", "/home/luke/Testing/subset.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "3", "-k", "LOCUS"])
 #COM: python3 gb_data_ingestion.py -a testdata/500accessions.txt -e luke.swaby@ngm.ac.uk -p GB -n 1 -z 3 -k LOCUS
+
+# Check login details
+gcm.check_login_details(args.db_user, args.db_pass)
 
 #Convert text-file of accessions to a list.
 acc_list = gcm.text_to_list(args.input_accessions)
@@ -33,20 +47,37 @@ acc_list = gcm.text_to_list(args.input_accessions)
 #Check the provided accessions are formatted correctly.
 new_acc_list = gcm.check_acc_format(acc_list)
 
+#Check accessions in list don't already exist in 'name' column of metadata db table, dropping any that do.
+filtered_accs = gcm.check_accs_in_db(new_acc_list)
+
 #Take list of of IDs/accessions and return dict of corresponding GenBank records.
-records = gcm.return_gb_data(new_acc_list, args.users_email)
+records = gcm.return_gb_data(filtered_accs, args.users_email)
+
+#Check records for duplicates
+filt_recs_1, reject_r1 = gcm.check_recs_for_dups(records)
+
+# Check seqs don't already exist in the database
+filt_recs_2, reject_r2 = gcm.check_seqs_in_db(filt_recs_1)
+
+#Load rejected accessions into rejected_accs table
+reject = reject_r1 + reject_r2
+if reject:
+    gcm.load_reject_table(reject)
 
 #Create dict with old input ids (keys) and new database ids (values).
-dict_new_ids = gcm.new_ids(records, args.prefix, args.number, args.padding)
+dict_new_ids = gcm.new_ids(filt_recs_2, args.prefix, args.number, args.padding)
+
+#Check new ids are not already present in the database
+gcm.check_ids(list(dict_new_ids.values()), 'ingest')
 
 #Extract metadata from gb_records_dict and write to DataFrame.
-gb_met_df = gcm.extract_metadata(records)
+gb_met_df = gcm.extract_metadata(filt_recs_2)
 
 #In dataframe insert column with new database ids
 gb_df_new_ids = gcm.change_names_csv(gb_met_df, dict_new_ids)
 
 #Replace old input ID with new database ID in genbank file
-gcm.change_ids_genbank(records, dict_new_ids, args.key)
+gcm.change_ids_genbank(filt_recs_2, dict_new_ids, args.key)
 
 #Add column with version number
 gb_df_new_ids['version'] = 0
@@ -55,13 +86,13 @@ gb_df_new_ids['version'] = 0
 gb_df_reformatted = gcm.reformat_df_cols(gb_df_new_ids)
 
 #Change the features for CDS
-gcm.alter_features(records)
+gcm.alter_features(filt_recs_2)
 
 #Load new ids into master table
-gcm.load_ids_to_master(dict_new_ids)
+gcm.load_ids_to_master(list(dict_new_ids.values()))
 
 #Push the genbank data into the database
-gcm.load_gb_dict_into_db(records)
+gcm.load_gb_dict_into_db(filt_recs_2)
 
 #Push the metadata into the database
 gcm.load_df_into_db(gb_df_reformatted)
