@@ -59,6 +59,9 @@ csv_df = pd.read_csv(args.input_csv, quotechar='"')
 #Check if the header in the csv is correct
 gcm.correct_header(csv_df, 'ingest')
 
+# Check if latitude and longitude are formatted correctly
+gcm.lat_long(csv_df)
+
 #Check if the genbank and metadata file have matching entries
 new_csv_df, new_gb_dict = gcm.matching_inputids(csv_df, gb_dict, 'ingest')
 

@@ -28,7 +28,7 @@ namespace = "mmg"
 
 ## Functions ##
 
-def check_login_details(db_un, dp_pw):
+def check_login_details(db_un, db_pw):
     """Checks database login details are correct.
     """
     if db_un != db_user or db_pw != db_passwd:
@@ -175,6 +175,22 @@ def correct_header(csv_dataframe, action):
         print("Incorrect header in CSV file.\n")
         sys.exit("Current header is: " + str(csv_header) +
                  "\n\nIt must be as follows: " + str(expected_header))
+
+    return
+
+def lat_long(df):
+    """Checks the latitude and longitude columns of the DataFrame are correctly
+    formatted.
+    """
+    vals = list(zip(df['name'], df['latitude'], df['longitude']))
+
+    for (name, lat, long) in vals:
+        if not isinstance(lat, float):
+            sys.exit(f"ERROR: latitude for entry '{name}' not of type 'float':"
+                     f" '{lat}'")
+        if not isinstance(long, float):
+            sys.exit(f"ERROR: longitude for entry '{name}' not of type 'float':"
+                     f" '{long}'")
 
     return
 

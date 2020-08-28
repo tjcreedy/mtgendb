@@ -81,6 +81,9 @@ if args.input_genbank and args.input_csv:
     # Check if the header in the csv is correct
     gcm.correct_header(csv_df, 'replace')
 
+    # Check if latitude and longitude are formatted correctly
+    gcm.lat_long(csv_df)
+
     #Check if the genbank and metadata file have matching entries
     csv_df, gb_dict = gcm.matching_inputids(csv_df, gb_dict, 'replace')
 
@@ -111,7 +114,10 @@ else:
         csv_df = pd.read_csv(args.input_csv, quotechar='"')
 
         # Check if the header in the csv is correct
-        gcm.correct_header(csv_df, 'replace')  # THIS IS A PROBLEM, AS FIRST ROUND OF INGESTION ADDS NEW FIELDS TO EACH ROW THAT DON'T PASS THE CORRECT_HEADER FUNC
+        gcm.correct_header(csv_df, 'replace')
+
+        # Check if latitude and longitude are formatted correctly
+        gcm.lat_long(csv_df)
 
         #Add version column
         csv_df['version'] = 0

@@ -32,10 +32,10 @@ args = parser.parse_args()
 4. Check
 
 """
-#LOCAL: args = parser.parse_args(["-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/subset.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "3", "-k", "LOCUS"])
-# Long: args = parser.parse_args(["-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/500accessions.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "4", "-k", "LOCUS"])
+#LOCAL: args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/subset.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "3", "-k", "LOCUS"])
+# Long: args = parser.parse_args(['--db_user', 'root', 'db_pass', 'mmgdatabase', "-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/500accessions.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "4", "-k", "LOCUS"])
 
-#SERVER: args = parser.parse_args(["-a", "/home/luke/Testing/subset.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "3", "-k", "LOCUS"])
+#SERVER: args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-a", "/home/luke/Testing/subset.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "3", "-k", "LOCUS"])
 #COM: python3 gb_data_ingestion.py -a testdata/500accessions.txt -e luke.swaby@ngm.ac.uk -p GB -n 1 -z 3 -k LOCUS
 
 # Check login details
