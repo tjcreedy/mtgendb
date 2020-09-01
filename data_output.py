@@ -269,8 +269,6 @@ else:
     gcm.seqfile_from_sql(records, args.output_name, args.output_format.lower())
 
 print('Done.')
-
-print(query_names)
 """
 TO-DO
 
