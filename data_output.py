@@ -181,7 +181,7 @@ if args.output_format == 'CSV':
                                                          ['name', 'db_id'],
                                                          args.mysql_specs)
 
-            names_dict = gcm.fetch_names(query_names, args.db_user, args.db_pass)
+            names_dict = gcm.fetch_names(query_names)
 
             #Fetch primary keys for current versions
             current_ids = gcm.fetch_current_ids(names_dict)
@@ -239,8 +239,7 @@ elif args.output_format == 'COUNT':
                                                          ['name', 'db_id'],
                                                          args.mysql_specs)
 
-            names_dict = gcm.fetch_names(query_names, args.db_user,
-                                         args.db_pass)
+            names_dict = gcm.fetch_names(query_names)
 
             print(len(names_dict))
 
@@ -270,6 +269,8 @@ else:
     gcm.seqfile_from_sql(records, args.output_name, args.output_format.lower())
 
 print('Done.')
+
+print(query_names)
 """
 TO-DO
 
