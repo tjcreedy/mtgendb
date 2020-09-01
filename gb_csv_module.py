@@ -16,6 +16,13 @@ import MySQLdb as mdb
 from BioSQL import BioSeqDatabase
 from sqlalchemy import create_engine, update
 
+# TODO: TEST FOLLOWING COMMANDS:
+# 1. Create database, load schema
+# 2. gb/csv ingest
+# 3. gb ingest
+# 4. output chinas. Output chinas and honduras'. output chinas with length > 17000
+#    ouptput using own command
+
 ## Variables ##
 # TODO: Should these begin with a trailing underscore to denote they are for internal use?
 db_driver = "MySQLdb"
@@ -1295,37 +1302,41 @@ def sql_table(tables):
 
     return table_string
 
-def sql_spec(tables, cols_dict, spec, spec_type):
+def sql_spec(cols_dict, spec, spec_type):
     """Construct specification string for MySQL query
     """
-    """"
-    new_spec = []
+    # Reformat specifications
     for s in spec:
         split = re.split('=|!=| IN |>|<', s)
         if split[1].isnumeric() or split[1].startswith('('):
-    """
-    spec = [s if re.split('=|!=| IN |>|<', s)[1].isnumeric() or re.split('=|!=| IN |>|<', s)[1].startswith('(') else f"{re.split('=|!=| IN |>|<', s)[0]}{re.findall('=|!=| IN |>|<', s)[0]}'{re.split('=|!=| IN |>|<', s)[1]}'" for s in spec]
+            continue
+        else:
+            ind = spec.index(s)
+            op = re.findall('=|!=| IN |>|<', s)[0]
+            spec[ind] = f"{split[0]}{op}'{split[1]}'"
 
+    # Condstruct specifications string
     if len(spec) == 0:
         spec_string = ''
     else:
         specs = []
         for x in spec:
             split = re.split('=|!=| IN |>|<', x)
-            # If taxonomy query, add additional specification
+            # If taxonomy query, then add an additional specification
+            # containing searchterm.
             if split[0] in ['subspecies', 'species', 'genus', 'tribe', 'family',
-                            'order',
-                            'class', 'phylum', 'kingdom', 'superkingdom',
-                            'taxon']:
-                specs.append(
-                    f"""metadata.taxon_id IN (SELECT DISTINCT include.ncbi_taxon_id 
-                            FROM taxon INNER JOIN taxon AS include ON 
-                            (include.left_value BETWEEN taxon.left_value AND taxon.right_value) 
-                            WHERE taxon.taxon_id IN (SELECT taxon_id FROM taxon_name WHERE name 
-                            COLLATE LATIN1_GENERAL_CI LIKE '%{split[1][1:-1]}%'))""")
+                            'order', 'class', 'phylum', 'kingdom',
+                            'superkingdom','taxon']:
+                specs.append(f"metadata.taxon_id IN (SELECT DISTINCT "
+                             f"include.ncbi_taxon_id FROM taxon INNER JOIN taxon"
+                             f" AS include ON (include.left_value BETWEEN "
+                             f"taxon.left_value AND taxon.right_value) WHERE "
+                             f"taxon.taxon_id IN (SELECT taxon_id FROM "
+                             f"taxon_name WHERE name COLLATE LATIN1_GENERAL_CI "
+                             f"LIKE '%{split[1][1:-1]}%'))")
                 print('Taxonomy searches may take a few minutes...')
             else:
-                # Add table names to column names
+                # Append table names to column names
                 pattern = re.compile("|".join(cols_dict.keys()))
                 rep_data = []
                 for data in split:
@@ -1336,93 +1347,63 @@ def sql_spec(tables, cols_dict, spec, spec_type):
                 # Append modified specification
                 specs.append(re.findall('=|!=| IN |>|<', x)[0].join(rep_data))
 
-        # JOIN SPECS
+        # Join specifications
         if spec_type == "output":
             spec_string = f" WHERE ({') AND ('.join(specs)})"
 
         if spec_type == "update":
             spec_string = ', '.join(specs)
 
-        """
-        #PULL LATEST VERSION
-        if not _all:
-
-            # Lists of tables with bioentry_id field
-            BIOENTRY_ID_TABLES = ['bioentry', 'bioentry_dbxref', 'bioentry_qualifier_value',
-                                  'bioentry_reference', 'biosequence', 'comment', 'seqfeature']
-
-            # Determine if any bios tables are being queried
-            bios = list(set(tables) & set(BIOENTRY_ID_TABLES))
-
-            if bios:
-                current_bio_version = f"(bioentry.bioentry_id, metadata.metadata_id) 
-                            IN (SELECT master.bioentry_id, master.metadata_id FROM master 
-                            JOIN metadata ON master.metadata_id=metadata.metadata_id 
-                            JOIN bioentry ON master.bioentry_id=bioentry.bioentry_id{spec_string});"
-                specs.append(current_bio_version)
-
-            else:
-
-                current_meta_version = f"metadata.metadata_id IN (SELECT master.metadata_id 
-                            FROM master join metadata on master.metadata_id=metadata.metadata_id{spec_string};)"
-                specs.append(current_meta_version)
-        """
-
     return spec_string
 
-
 def construct_sql_output_query(table, cols, spec):
-    # table, cols, spec
-
+    """Builds MySQL SELECT statement from table, column, and specification
+    strings.
+    """
     tables, cols_string, cols_dict, spec = sql_cols(table, cols, spec)
 
     table_string = sql_table(tables)
 
-    spec_string = sql_spec(tables, cols_dict, spec, "output")
+    spec_string = sql_spec(cols_dict, spec, "output")
 
     mysql_command = f"SELECT {cols_string} FROM {table_string}{spec_string};"
 
     return mysql_command
 
-
 def construct_sql_update_query(table, update, spec):
-    # update = ['locomotion=arboreal', 'size=12mm']
-    # spec = ['length>25000', 'country=United Kingdom']
-
+    """Builds MySQL UPDATE statement from table, column, and specification
+    strings.
+    """
     tables, _, cols_dict, _ = sql_cols(None, None, spec + update)
 
     table_string = sql_table(tables)
 
-    spec_string = sql_spec(tables, cols_dict, spec, "output")
+    spec_string = sql_spec(cols_dict, spec, "output")
 
-    update_string = sql_spec(tables, cols_dict, update, "update")
+    update_string = sql_spec(cols_dict, update, "update")
 
     mysql_command = f"UPDATE {table_string} SET {update_string}{spec_string};"
 
     return mysql_command
 
-
 def construct_sql_delete_query(spec):
-    # update = ['locomotion=arboreal', 'size=12mm']
-    # spec = ['length>25000', 'country=United Kingdom']
-
+    """Builds MySQL DELETE statement from table, column, and specification
+    strings.
+    """
     tables, _, cols_dict, _ = sql_cols(None, None, spec)
 
     table_string = sql_table(tables)
 
-    spec_string = sql_spec(tables, cols_dict, spec, "output")
-
-    update_string = sql_spec(tables, cols_dict, update, "update")
+    spec_string = sql_spec(cols_dict, spec, "output")
 
     mysql_command = f"DELETE FROM {table_string}{spec_string};"
 
     return mysql_command
 
-
-def fetch_names(mysql_command, db_un, db_pw):
-    """Fetch names and corresponding db_id's from database using MySQL command
+def fetch_names(mysql_command):
+    """Fetch names and corresponding db_id's from database using MySQL query.
     """
-    con = mdb.connect(host=db_host, user=db_un, passwd=db_pw, db=db_name)
+    con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
 
     with con:
         cur = con.cursor()
@@ -1433,20 +1414,15 @@ def fetch_names(mysql_command, db_un, db_pw):
 
     return names_dict
 
-
-def fetch_recs(names_dict, db_un, db_pw, _all):
+def fetch_recs(names_dict, _all):
     """Fetches a list of SeqRecords from an input dict of record names/db ids
     """
-    # names_dict = {'MH404113': 'GB001', 'KT876913': 'GB007', 'KF364622': 'GB008', 'KT876903': 'GB014'}
     recs = {}
-
-    server = BioSeqDatabase.open_database(driver=db_driver, user=db_un,
-                                          passwd=db_pw, host=db_host,
-                                          db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
+    server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
+                                          passwd=db_passwd, host=db_host,
+                                          db=db_name)
     db = server[namespace]
-
     for name, db_id in names_dict.items():
-
         if _all:
             seq_recs = db.get_Seqs_by_acc(db_id)
             for rec in seq_recs:
@@ -1455,15 +1431,12 @@ def fetch_recs(names_dict, db_un, db_pw, _all):
             bio_version, _ = check_current_version(db_id)
             recs[name] = db.get_Seq_by_ver(f'{db_id}.{bio_version}')
 
-    # server.close()
-
     return recs
 
-
-def execute_query(mysql_query, db_un, db_pw):
+def execute_query(mysql_query):
     """Connect to db and execute mysql query
     """
-    con = mdb.connect(host=db_host, user=db_un, passwd=db_pw, db=db_name)
+    con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
 
     with con:
         cur = con.cursor()
@@ -1471,9 +1444,9 @@ def execute_query(mysql_query, db_un, db_pw):
 
     return
 
-
 def extract_genes(recs, genes):
-    """Extracts genes from SeqRecord objects and writes to dict: {gene_name :  list_of_sliced_seqrecords, ...}
+    """Extracts genes from SeqRecord objects and writes to dict:
+    {gene_name :  list_of_sliced_seqrecords, ...}
     """
     if '*' in genes:
         genes = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2',
@@ -1487,27 +1460,24 @@ def extract_genes(recs, genes):
         extracted_genes = []
         for idd, record in recs.items():
             for feature in record.features:
-                if feature.type.upper() == "CDS" and 'gene' in feature.qualifiers and \
-                        feature.qualifiers['gene'][
-                            0].upper() == gene.upper():  # .upper() not relevant, as alter_features means all in db would be upper, and choice in argparse means all in genes will be upper
+                if feature.type.upper() == "CDS" \
+                        and 'gene' in feature.qualifiers \
+                        and feature.qualifiers['gene'][0].upper() == gene.upper():
                     subrec = feature.location.extract(record)
                     subrec.description = re.sub(', [a-z]+ genome$', '',
                                                 record.description)
                     subrec.id = record.id
                     subrec.name = record.name
                     extracted_genes.append(subrec)
+
         subrecs[gene] = extracted_genes
 
     return subrecs
 
-
-def csv_from_sql(mysql_command, csv_name, db_un, db_pw):
-    # cols, tablename, csv_name, specs = [None, "metadata", "metadata_output", "subregion='Sabah', collectionmethod='BEATING'"]
-
-    # cur = ((1, 'BIOD00197', 'TEST001', 'Mord33', '219430', '', '1426729', 'YPT', 'Adult', 'Santa Fe', 'PNA', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE2', None, 'Biodiversity Initiative NHM', None, None, '753'), (7, 'BIOD02033', 'TEST007', 'Chrys151', '27439', '', '1721528', 'MALAISE1', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE10', None, 'Biodiversity Initiative NHM', None, None, '766'), (10, 'BIOD01983', 'TEST010', 'Lyc14', '71195', '', '1426866', 'MALAISE1', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE9', None, 'Biodiversity Initiative NHM', None, None, '754'), (25, 'BIOD01740', 'TEST025', 'Ero9', '196992', '', '1721743', 'MALAISE2', 'Adult', 'Cerro Hoya', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE8', None, 'Biodiversity Initiative NHM', None, None, '768'), (26, 'BIOD00733', 'TEST026', 'Lyc6', '71195', '', '1721173', 'MALAISE1', 'Adult', 'Cerro Hoya', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE4', None, 'Biodiversity Initiative NHM', None, None, '762'), (30, 'BIOD01826', 'TEST030', 'Elat5', '30009', '', '1426416', 'FIT2', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE9', None, 'Biodiversity Initiative NHM', None, None, '749'), (31, 'BIOD00778', 'TEST031', 'Curc88', '7042', '', '1426395', 'FIT1', 'Adult', 'Santa Fe', 'P6', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE4', None, 'Biodiversity Initiative NHM', None, None, '749'), (32, 'BIOD00050', 'TEST032', 'Curc36', '7042', '', '1427174', 'FIT2', 'Adult', 'Cerro Hoya', 'P7', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE1', None, 'Biodiversity Initiative NHM', None, None, '757'), (34, 'BIOD00437', 'TEST034', 'Phen3', '94777', '', '1427229', 'FIT1', 'Adult', 'Cerro Hoya', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'H3', None, 'Biodiversity Initiative NHM', None, None, '758'), (35, 'BIOD01314', 'TEST035', 'Mord34', '219430', '', '1426731', 'YPT', 'Adult', 'Santa Fe', 'PNA', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE7', None, 'Biodiversity Initiative NHM', None, None, '753'), (39, 'BIOD02163', 'TEST039', 'Staph127', '29026', '', '1426980', 'MALAISE1', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE10', None, 'Biodiversity Initiative NHM', None, None, '755'), (41, 'BIOD01004', 'TEST041', 'Curc225', '7042', '', '1427202', 'LL1', 'Adult', 'Santa Fe', 'P6', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE5', None, 'Biodiversity Initiative NHM', None, None, '758'), (45, 'BIOD00369', 'TEST045', 'Scar8', '7055', '', '1426136', 'FIT1', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'H3', None, 'Biodiversity Initiative NHM', None, None, '746'), (48, 'BIOD00662', 'TEST048', 'Scar11', '7055', '', '1426272', 'FIT2', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE4', None, 'Biodiversity Initiative NHM', None, None, '748'), (50, 'BIOD01754', 'TEST050', 'Hist17', '110043', '', '1427082', 'FIT2', 'Adult', 'Cerro Hoya', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE8', None, 'Biodiversity Initiative NHM', None, None, '756'), (58, 'BIOD01798', 'TEST058', 'UNK139', '32644', '', '1721589', 'MALAISE1', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE9', None, 'Biodiversity Initiative NHM', None, None, '767'), (59, 'BIOD00057', 'TEST059', 'Elat18', '30009', '', '1721640', 'SLAM1', 'Adult', 'Cerro Hoya', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE1', None, 'Biodiversity Initiative NHM', None, None, '767'), (62, 'BIOD01588', 'TEST062', 'Curc201', '7042', '', '1426914', 'MALAISE2', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE8', None, 'Biodiversity Initiative NHM', None, None, '755'), (63, 'BIOD00890', 'TEST063', 'Chrys74', '27439', '', '1426725', 'YPT', 'Adult', 'Santa Fe', 'PNA', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE5', None, 'Biodiversity Initiative NHM', None, None, '753'), (70, 'BIOD01106', 'TEST070', 'Mel2', '219420', '', '1426972', 'SLAM2', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE6', None, 'Biodiversity Initiative NHM', None, None, '755'), (71, 'BIOD01529', 'TEST071', 'Ero11', '196992', '', '1721537', 'MALAISE2', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE7', None, 'Biodiversity Initiative NHM', None, None, '766'), (73, 'BIOD00313', 'TEST073', 'Elat3', '30009', '', '1426393', 'FIT1', 'Adult', 'Santa Fe', 'P6', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE2', None, 'Biodiversity Initiative NHM', None, None, '749'), (74, 'BIOD00416', 'TEST074', 'Curc312', '7042', '', '1721593', 'MALAISE1', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'H3', None, 'Biodiversity Initiative NHM', None, None, '767'), (77, 'BIOD00870', 'TEST077', 'Chrys102', '27439', '', '1426796', 'MALAISE1', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE5', None, 'Biodiversity Initiative NHM', None, None, '753'), (82, 'BIOD01056', 'TEST082', 'Curc84', '7042', '', '1426375', 'FIT1', 'Adult', 'Santa Fe', 'P5', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE5', None, 'Biodiversity Initiative NHM', None, None, '749'), (85, 'BIOD00217', 'TEST085', 'Curc121', '55867', '', '1721122', 'LL', 'Adult', 'Cerro Hoya', 'P5', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE2', None, 'Biodiversity Initiative NHM', None, None, '762'), (86, 'BIOD01503', 'TEST086', 'Mord26', '219430', '', '1721701', 'MALAISE2', 'Adult', 'Cerro Hoya', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE7', None, 'Biodiversity Initiative NHM', None, None, '768'), (89, 'BIOD01663', 'TEST089', 'Mord63', '219430', '', '1721314', 'SLAM2', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE8', None, 'Biodiversity Initiative NHM', None, None, '764'), (91, 'BIOD02186', 'TEST091', 'Scaph2', '7041', 'Scaphidiidae', '1427161', 'FIT2', 'Adult', 'Cerro Hoya', 'P7', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE10', None, 'Biodiversity Initiative NHM', None, None, '757'), (98, 'BIOD00013', 'TEST098', 'Staph74', '29026', '', '1426424', 'FIT2', 'Adult', 'Santa Fe', 'P1', None, 'Panama', None, None, None, None, None, None, 'D Yeo', 'HE1', None, 'Biodiversity Initiative NHM', None, None, '749'), (104, 'MG193532', 'GB005', None, '2219472', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (113, 'MG193336', 'GB014', None, '2219391', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (115, 'MG193436', 'GB016', None, '2219477', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (116, 'MG193444', 'GB017', None, '2219413', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (125, 'MG193456', 'GB026', None, '2219404', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (145, 'MG193427', 'GB046', None, '2219380', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (149, 'KX035174', 'GB050', None, '1903775', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040002', None, None), (152, 'MG193450', 'GB053', None, '2219467', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (159, 'KX035193', 'GB060', None, '1903793', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040351', None, None), (161, 'KX035187', 'GB062', None, '1903788', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040265', None, None), (164, 'MG193379', 'GB065', None, '2219400', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (169, 'MG193453', 'GB070', None, '2219459', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (174, 'MG193457', 'GB075', None, '2219299', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (181, 'KX035185', 'GB082', None, '1903786', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040174', None, None), (182, 'MG193433', 'GB083', None, '2219360', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (198, 'MG193374', 'GB099', None, '2219449', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (200, 'MG193458', 'GB101', None, '2219406', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (202, 'MG193447', 'GB103', None, '2219465', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (211, 'KX035170', 'GB112', None, '1903771', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1039965', None, None), (216, 'KX035176', 'GB117', None, '1903777', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040049', None, None), (220, 'KX035179', 'GB121', None, '1903780', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040067', None, None), (225, 'MG193439', 'GB126', None, '2219359', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (228, 'MG193530', 'GB129', None, '2219441', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (229, 'KX035186', 'GB130', None, '1903787', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040235', None, None), (237, 'KX035183', 'GB138', None, '1903784', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040118', None, None), (281, 'MG193443', 'GB182', None, '206507', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (282, 'MG193322', 'GB183', None, '2219643', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (283, 'MG193441', 'GB184', None, '2219409', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (288, 'MG193383', 'GB189', None, '2219434', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (295, 'MG193380', 'GB196', None, '2219279', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (298, 'NC_036284', 'GB199', None, '124033', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1043087', None, None), (306, 'KX035184', 'GB207', None, '1903785', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040146', None, None), (310, 'KX035190', 'GB211', None, '1903791', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040331', None, None), (314, 'MG193348', 'GB215', None, '2219369', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (323, 'MG193529', 'GB224', None, '2219280', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (326, 'MG193528', 'GB227', None, '2219405', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (334, 'MG193437', 'GB235', None, '2219461', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (339, 'MG193327', 'GB240', None, '2219347', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (343, 'MG193460', 'GB244', None, '2219418', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (346, 'MG193452', 'GB247', None, '2219476', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (349, 'KX035163', 'GB250', None, '1903764', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1039837', None, None), (354, 'MG193459', 'GB255', None, '2219419', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (355, 'KX035180', 'GB256', None, '1903781', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040069', None, None), (357, 'KX035199', 'GB258', None, '1903798', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1043133', None, None), (368, 'MG193454', 'GB269', None, '2219402', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (369, 'MG193442', 'GB270', None, '2219455', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (374, 'KX035192', 'GB275', None, '1903792', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040341', None, None), (375, 'MG193455', 'GB276', None, '2219446', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (381, 'MG193461', 'GB282', None, '2219374', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (393, 'MG193421', 'GB294', None, '2219372', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (409, 'KX035167', 'GB310', None, '1903768', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1039896', None, None), (425, 'KX035177', 'GB326', None, '1903778', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040052', None, None), (432, 'MG193352', 'GB333', None, '2219398', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (438, 'MG193451', 'GB339', None, '2219470', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (443, 'MG193434', 'GB344', None, '2219462', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (447, 'MG193378', 'GB348', None, '2219401', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (458, 'MG193337', 'GB359', None, '2219441', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (459, 'KX035194', 'GB360', None, '1903794', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1043001', None, None), (461, 'MG193536', 'GB362', None, '2219384', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (465, 'MG193346', 'GB366', None, '2219378', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (466, 'MG193438', 'GB367', None, '2219417', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (467, 'MG193382', 'GB368', None, '2219291', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (479, 'MG193410', 'GB380', None, '2219396', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (482, 'MG193408', 'GB383', None, '2219444', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (487, 'MG193406', 'GB388', None, '2219368', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (488, 'KX035189', 'GB389', None, '1903790', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1040327', None, None), (489, 'MG193446', 'GB390', None, '2219352', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (496, 'MG193445', 'GB397', None, '2219436', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (502, 'MG193531', 'GB403', None, '2219487', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (505, 'MG193448', 'GB406', None, '2219466', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (514, 'KX035195', 'GB415', None, '1903795', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1043031', None, None), (517, 'MG193440', 'GB418', None, '2219393', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (522, 'MG193329', 'GB423', None, '2219350', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (524, 'KX035171', 'GB425', None, '1903772', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1039990', None, None), (528, 'KX035165', 'GB429', None, '1903766', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1039866', None, None), (550, 'MG193426', 'GB451', None, '2219361', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (551, 'KX035172', 'GB452', None, '1903773', None, None, 'Field capture', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, 'BMNH1039994', None, None), (553, 'MG193345', 'GB454', None, '2219373', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (554, 'MG193435', 'GB455', None, '2219453', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (557, 'MG193429', 'GB458', None, '2219451', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (561, 'MG193431', 'GB462', None, '2219392', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (570, 'MG193328', 'GB471', None, '2219452', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None), (576, 'MG193381', 'GB477', None, '2219375', None, None, 'Field trap', None, None, None, None, 'Panama', None, None, None, None, None, None, None, None, None, None, None, None, None))
-    # headers = ['metadata_id', 'name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage', 'specimen', 'collectionmethod', 'lifestage', 'site', 'locality', 'subregion', 'country', 'latitude', 'longitude', 'size', 'habitat', 'feeding_behaviour', 'locomotion', 'authors', 'library', 'datasubmitter', 'projectname', 'accession', 'uin', 'notes']
-    # Connect to database and execute command
-    con = mdb.connect(host="localhost", user=db_un, passwd=db_pw, db=db_name)
+def csv_from_sql(mysql_command, csv_name):
+    """Extract csv file from SQL database.
+    """
+    con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
     cur = con.cursor()
     cur.execute(mysql_command)
 
@@ -1531,17 +1501,16 @@ def csv_from_sql(mysql_command, csv_name, db_un, db_pw):
                 for row in rows:
                     del row[index]
 
-        csv_writer.writerow(headers)  # Write headers
+        csv_writer.writerow(headers)
         csv_writer.writerows(rows)
 
     cur.close()
 
     return
 
-
 def seqfile_from_sql(recs_dict, file_name, frmat):
-    # Writes list of SeqRecords to a file of chosen format
-
+    """Writes list of SeqRecords to a file of chosen format.
+    """
     # Specific genes
     if any(isinstance(x, list) for x in recs_dict.values()):
         for gene in recs_dict.keys():
@@ -1553,34 +1522,27 @@ def seqfile_from_sql(recs_dict, file_name, frmat):
 
     return
 
-
-def return_count(mysql_command, db_un, db_pw):
-    # mysql_command = "SELECT COUNT(*) FROM biosequence WHERE (length<25000);"
-
-    con = mdb.connect(host="localhost", user=db_un, passwd=db_pw, db=db_name)
-    cur = con.cursor()
-    cur.execute(mysql_command)
-
-    for row in cur:
-        print(row[0])
-
-    cur.close()
+def return_count(mysql_command):
+    """Return number of records in the database satisfying a user-supplied
+    specification.
+    """
+    con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
+    with con:
+        cur = con.cursor()
+        cur.execute(mysql_command)
+        for row in cur:
+            print(row[0])
 
     return
 
-
 def update_data(metadata, gb_dict):
-    """Overwrite records in the database
+    """Load updated records into the database.
     """
-    # 2 cases:
-    # 1) Something pulled from db (under db_id), edited, and reingested.
-    # 2) A new version of a record (under name) needs to be pushed in - ?????
-
     ##UPDATE GENETIC DATA
     if gb_dict:
 
-        # Update accession, and gi
         for rec in gb_dict.values():
+            # Update accession and gi
             bio_version, _ = check_latest_version(rec.name)
             bio_version += 1
             rec.id = f"{rec.name}.{bio_version}"
@@ -1595,8 +1557,8 @@ def update_data(metadata, gb_dict):
 
         metadata.set_index('db_id', inplace=True)
 
-        # Update version
         for db_id in metadata.index:
+            # Update version
             _, meta_version = check_latest_version(db_id)
             metadata.ix[db_id, 'version'] = meta_version + 1
 
@@ -1607,52 +1569,46 @@ def update_data(metadata, gb_dict):
 
     return
 
-
 def update_master_table(gb_ids, meta_ids, action):
-    # Connect to Database
+    """Load primary keys (bioentry_id, metadata_id) of most up-to-date versions
+    of each record into master table.
+    """
     con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
-    # Connect to BioSQL
     server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
                                           passwd=db_passwd, host=db_host,
-                                          db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
+                                          db=db_name)
     db = server[namespace]
     adaptor = db.adaptor
 
     if action == 'ingest':
-        # If ingest, then just load the primary keys of the record
-        # corresponding to each db_id into the master table
-
+        # If the action being performed is data ingestion, then there will only
+        # be a single record corresponding to each db_id, so we can just load
+        # its primary keys into the master table.
         for db_id in gb_ids:
-            # Fetch bioentry_id
-            bioentry_id = adaptor.fetch_seqid_by_display_id(1, db_id)
-
-            # Fetch metadata_id and update master table
+            bio_id = adaptor.fetch_seqid_by_display_id(1, db_id)
             sql = f"SELECT metadata_id FROM metadata WHERE db_id='{db_id}';"
             with con:
                 cur = con.cursor()
                 cur.execute(sql)
-                metadata_id = cur.fetchone()[0]
-                # sql = f"""INSERT INTO master(db_id, bioentry_id, metadata_id)
-                #    VALUES ('{db_id}', {bioentry_id}, {metadata_id});"""
-                sql = f"""UPDATE master SET bioentry_id={bioentry_id}, 
-                    metadata_id={metadata_id} WHERE db_id='{db_id}';"""
+                meta_id = cur.fetchone()[0]
+                sql = f"UPDATE master SET bioentry_id={bio_id}, " \
+                      f"metadata_id={meta_id} WHERE db_id='{db_id}';"
                 cur.execute(sql)
 
     else:
-        # If update, then load the primary keys of the latest version of each
-        # if rollback, check current
-        # record into the master table
-
+        # If the action being performed is an update to records already existing
+        # in the database, then load the primary keys of the *latest* version of
+        # each into the master table.
         if gb_ids:
 
             for db_id in gb_ids:
                 # Find bioentry_id for latest version
-                bio_version, _ = check_latest_version(db_id)
-                bioentry_id = adaptor.fetch_seqid_by_version(1,
-                                                             f"{db_id}.{bio_version}")
+                bio_ver, _ = check_latest_version(db_id)
+                bio_id = adaptor.fetch_seqid_by_version(1, f"{db_id}.{bio_ver}")
 
                 # Update master table
-                sql = f"UPDATE master SET bioentry_id={bioentry_id} WHERE db_id='{db_id}';"
+                sql = f"UPDATE master SET bioentry_id={bio_id} WHERE " \
+                      f"db_id='{db_id}';"
                 with con:
                     cur = con.cursor()
                     cur.execute(sql)
@@ -1661,81 +1617,28 @@ def update_master_table(gb_ids, meta_ids, action):
 
             for db_id in meta_ids:
                 # Find metadata_id for latest version
-                _, meta_version = check_latest_version(db_id)
-                sql = f"""SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') 
-                    AND (version={meta_version});"""
+                _, meta_ver = check_latest_version(db_id)
+                sql = f"SELECT metadata_id FROM metadata WHERE " \
+                      f"(db_id='{db_id}') AND (version={meta_ver});"
 
                 with con:
                     cur = con.cursor()
                     cur.execute(sql)
-                    metadata_id = cur.fetchone()[0]
-                    sql = f"""UPDATE master SET metadata_id={metadata_id} WHERE 
+                    meta_id = cur.fetchone()[0]
+                    sql = f"""UPDATE master SET metadata_id={meta_id} WHERE 
                         db_id='{db_id}';"""
                     cur.execute(sql)
 
     return
 
-
-"""
-def rollback_versions_dict(versions):
-    #Rolls back to earlier bioentry version
-    
-    # versions = {'ME12': {'metadata_version': 4, 'bioentry_version': 2 }, 'ME13': {'metadata_version': 8, 'bioentry_version': 10 }}
-    #Bioentry version
-    x = input("Would you like to rollback genetic data for selected records? Y/N").upper()
-    while not (x == 'Y' or x == 'N'):
-        x = input("Type 'Y' if you wish to rollback genetic data for the specified records, or 'N' if you do not.").upper()
-    if x == 'Y':
-        min_bio_version = min(
-            [versions[db_id]['bioentry_version'] for db_id in versions.keys()])
-        rollback_no = int(input(f'How many versions would you like to rollback? Max: {min_bio_version}'))
-
-        while rollback_no not in range(min_bio_version + 1):
-            rollback_no = int(input(f'ERROR: you can only rollback a maximum of {min_bio_version} versions.'))
-
-        for db_id in versions.keys():
-            versions[db_id]['bioentry_version'] -= rollback_no
-
-        print(versions)
-
-    else:
-        pass
-
-    #Metadata version
-    y = input("Would you like to rollback metadata for selected records? Y/N").upper()
-    while not (x == 'Y' or x == 'N'):
-        x = input("Type 'Y' if you wish to rollback metadata for the specified records, or 'N' if you do not.").upper()
-
-    if y == 'Y':
-        min_meta_version = min(
-            [versions[db_id]['metadata_version'] for db_id in versions.keys()])
-        rollback_no = int(input(f'How many versions would you like to rollback? Max: {min_meta_version}'))
-
-        while rollback_no not in range(min_meta_version + 1):
-            rollback_no = int(input(f'ERROR: You can only rollback a maximum of {min_meta_version} versions'))
-
-        for db_id in versions.keys():
-            versions[db_id]['metadata_version'] -= rollback_no
-
-    else:
-        pass
-
-    if x == 'N' and y == 'N':
-        sys.exit('No rollback selected')
-
-    return
-"""
-
-
 def rollback_versions(versions_dict):
-    """Fetch internal ids for set of record names
-    1. grab primary keys corresponding to <db_id>.<version_no>
-    2. Load into metadata table
+    """Rollback current version of selected records highlighted in master
+    table to a previous version of the users choice.
     """
     con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
     server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
                                           passwd=db_passwd, host=db_host,
-                                          db=db_name)  # driver = "MySQLdb", user = "root", passwd = "mmgdatabase", host = "localhost", db = "mmg_test"
+                                          db=db_name)
     db = server[namespace]
     adaptor = db.adaptor
 
@@ -1745,9 +1648,9 @@ def rollback_versions(versions_dict):
 
         # bioentry_id
         if target_bio_ver is not None:
-            bioentry_id = adaptor.fetch_seqid_by_version(1,
-                                                         f"{db_id}.{target_bio_ver}")
-            update_master = f"""UPDATE master SET bioentry_id={bioentry_id} 
+            bio_id = adaptor.fetch_seqid_by_version(1,
+                                                    f"{db_id}.{target_bio_ver}")
+            update_master = f"""UPDATE master SET bioentry_id={bio_id} 
                 WHERE db_id='{db_id}';"""
             with con:
                 cur = con.cursor()
@@ -1760,21 +1663,21 @@ def rollback_versions(versions_dict):
             with con:
                 cur = con.cursor()
                 cur.execute(fetch_id)
-                metadata_id = cur.fetchone()[0]
-                update_master = f"""UPDATE master SET metadata_id={metadata_id} 
+                meta_id = cur.fetchone()[0]
+                update_master = f"""UPDATE master SET metadata_id={meta_id} 
                     WHERE db_id='{db_id}';"""
                 cur.execute(update_master)
 
     return
 
-
 def remove_recs(db_ids):
-    """
-    Removes all data corresponding to each id in provided ids list from
+    """Removes all data corresponding to each id in provided ids list from
     database.
     """
     con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
     sql = f"DELETE FROM master WHERE db_id IN {tuple(db_ids)};"
+    # Deletion from master table automatically cascades to all other tables, as
+    # per constraints written into SQL database schema.
 
     with con:
         cur = con.cursor()
@@ -1782,11 +1685,9 @@ def remove_recs(db_ids):
 
     return
 
-
 def remove_versions(versions_dict):
-    """
-    Removes selected versions of records corresponding to provided ids from
-    database.
+    """Removes selected versions of records corresponding to user-supplied ids
+    from database.
     """
     con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
     server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
@@ -1801,32 +1702,32 @@ def remove_versions(versions_dict):
         target_meta_ver = versions_dict[db_id]['m']
 
         if target_bio_ver:
-
-            del_bio_id = adaptor.fetch_seqid_by_version(1, f"{db_id}.{target_bio_ver}")
+            # If user has specified a bioentry record they wish to delete...
+            del_bio_id = adaptor.fetch_seqid_by_version(1,
+                                                        f"{db_id}.{target_bio_ver}")
 
             if target_bio_ver == current_bio_ver:
-                x = input(f"""Version {target_bio_ver} is the current version
-                    of bioentry '{db_id}'. If removed, the current version will be 
-                    assumed to be the latest in the database. Do you wish to 
-                    continue? 'Y'/'N'""").upper()
+                # If the target bioentry record is the current for that
+                # particular db_id, notify the user that deletion will
+                # automatically rollback current version to the *latest*
+                # ingested.
+                x = input(f"Version {target_bio_ver} is the current version of "
+                          f"bioentry '{db_id}'. If removed, the current "
+                          f"version will be assumed to be the latest in the "
+                          f"database. Do you wish to continue? 'Y'/'N'").upper()
                 while not (x == 'Y' or x == 'N'):
-                    x = input(f"""Would you like to delete the current version
-                        of bioentry '{db_id}' ('Y') or cancel the operation ('N')?""").upper()
+                    x = input(f"Would you like to delete the current version "
+                              f"of bioentry '{db_id}' ('Y') or cancel the "
+                              f"operation ('N')?").upper()
                 if x == 'N':
                     sys.exit('Operation cancelled.')
                 else:
-                    sql_del = f"DELETE FROM bioentry WHERE bioentry_id={del_bio_id};"
+                    sql_del = f"DELETE FROM bioentry WHERE " \
+                              f"bioentry_id={del_bio_id};"
                     with con:
                         cur = con.cursor()
                         cur.execute(sql_del)
                         update_master_table([db_id], None, 'remove')
-                        """
-                        latest_bio_ver, _ = check_latest_version(db_id)
-                        latest_bio_id = adaptor.fetch_seqid_by_version(1, f"{db_id}.{latest_bio_ver}")
-                        sql_update = f"UPDATE master SET bioentry_id={latest_bio_id} 
-                            WHERE db_id='{db_id}';"
-                        cur.execute(sql_update)
-                        """
             else:
                 sql_del = f"DELETE FROM bioentry WHERE bioentry_id={del_bio_id};"
                 with con:
@@ -1834,43 +1735,39 @@ def remove_versions(versions_dict):
                     cur.execute(sql_del)
 
         if target_meta_ver:
-
-            sql = f"""SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') 
-                AND (version={target_meta_ver});"""
+            # If user has specified a metadata record they wish to delete...
+            sql = f"SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') " \
+                  f"AND (version={target_meta_ver});"
             with con:
                 cur = con.cursor()
                 cur.execute(sql)
                 del_meta_id = cur.fetchone()[0]
 
             if target_meta_ver == current_meta_ver:
-                x = input(f"""Version {target_meta_ver} is the current version
-                    of meta-entry '{db_id}'. If removed, the current version will be 
-                    assumed to be the latest in the database. Do you wish to 
-                    continue? 'Y'/'N'""").upper()
+                # If the target metadata record is the current for that
+                # particular db_id, notify the user that deletion will
+                # automatically rollback current version to the *latest*
+                # ingested.
+                x = input(f"Version {target_meta_ver} is the current version "
+                          f"of meta-entry '{db_id}'. If removed, the current "
+                          f"version will be assumed to be the latest in the "
+                          f"database. Do you wish to continue? 'Y'/'N'").upper()
                 while not (x == 'Y' or x == 'N'):
-                    x = input(f"""Would you like to delete the current version
-                        of meta-entry '{db_id}' ('Y') or cancel the operation ('N')?""").upper()
+                    x = input(f"Would you like to delete the current version "
+                              f"of meta-entry '{db_id}' ('Y') or cancel the "
+                              f"operation ('N')?").upper()
                 if x == 'N':
                     sys.exit('Operation cancelled.')
                 else:
-                    sql_del = f"DELETE FROM metadata WHERE metadata_id={del_meta_id};"
+                    sql_del = f"DELETE FROM metadata WHERE " \
+                              f"metadata_id={del_meta_id};"
                     with con:
                         cur = con.cursor()
                         cur.execute(sql_del)
                         update_master_table(None, [db_id], 'remove')
-                        """
-                        _, latest_meta_ver = check_latest_version(db_id)
-                        fetch_id = f"SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') 
-                            AND (version={latest_meta_ver});"
-                        cur.execute(fetch_id)
-                        latest_meta_id = cur.fetchone()[0]
-                        sql_update = f"UPDATE master SET metadata_id={latest_meta_id} 
-                            WHERE db_id='{db_id}';"
-                        cur.execute(sql_update)
-                        """
-
             else:
-                sql_del = f"DELETE FROM metadata WHERE metadata_id={del_meta_id};"
+                sql_del = f"DELETE FROM metadata WHERE " \
+                          f"metadata_id={del_meta_id};"
                 with con:
                     cur = con.cursor()
                     cur.execute(sql_del)

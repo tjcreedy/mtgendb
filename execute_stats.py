@@ -2,19 +2,21 @@
 
 """Summary and statistics for genbank-files."""
 
+## Imports ##
 import gb_csv_module as gcm
 import statistics as st
 import pandas as pd
 import subprocess
 import argparse
-import sys
 
+## Arguments ##
 parser = argparse.ArgumentParser(description="Summaries and Statistics")
-parser.add_argument('-gb', '--genbankfile', dest='input_genbank', required=True, help="Name of GenBank file to ingest into the database.")
-parser.add_argument('-csv', '--csvfile', dest='input_csv', required=True, help="Name of CSV file to ingest into the databse.")
+parser.add_argument('-gb', '--genbankfile', help="""Name of GenBank file to 
+                    ingest into the database.""", dest='input_genbank',
+                    required=True)
+parser.add_argument('-csv', '--csvfile', help="""Name of CSV file to ingest 
+                    into the databse.""", dest='input_csv', required=True)
 args = parser.parse_args()
-
-# args = parser.parse_args(["-gb", "testdata/test_genbank.gb", "-csv", "testdata/test_metadata.csv"])
 
 ##Input gebank file as dict
 

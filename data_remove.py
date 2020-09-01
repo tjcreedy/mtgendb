@@ -3,28 +3,54 @@
 """Data removal in MySQL database. Option to remove all records
     corresponding to input database IDs or just specified versions."""
 
+## Imports ##
 import argparse
 import gb_csv_module as gcm
 
+## Arguments ##
 parser = argparse.ArgumentParser(description='Removing records in the database')
 req_group = parser.add_argument_group('required arguments')
-req_group.add_argument('--db_user', dest='db_user', metavar='{db_username}', required=True, help="Database username")
-req_group.add_argument('--db_pass', dest='db_pass', metavar='{db_password}', required=True, help="Database password")
-subparsers = parser.add_subparsers(dest='del_versions', description='Choose whether to delete all versions of a record or just one.')
+req_group.add_argument('--db_user', help="Database username", dest='db_user',
+                       metavar='{db_username}', required=True)
+req_group.add_argument('--db_pass', help="Database password", dest='db_pass',
+                       metavar='{db_password}', required=True)
 
-remove_all = subparsers.add_parser('ALL', help='Remove all versions of target record(s) from all tables in database.')
-remove_all.add_argument('-t', '--txtfile', dest='txtfile', metavar='{txtfile_path}', help='Path to 1-column text file containing IDS of records to be deleted from database.')
-remove_all.add_argument('-id', dest='rec_id', metavar='{db_id}', nargs='+', help='Database ID(s) of record(s) to be deleted.')
+subparsers = parser.add_subparsers(dest='del_versions', description="""Choose 
+                                    whether to delete all versions of a record 
+                                    or just one.""")
 
-remove_version = subparsers.add_parser('VER', help='Remove single version of target record(s).')
-remove_version.add_argument('-t', '--txtfile', dest='txtfile', metavar='{txtfile_path}',  help='Path to 3-column text file containing IDS and the versions of the records to be deleted from database - db_id <TAB> bio_ver <TAB> meta_ver.')
-remove_version.add_argument('-id', dest='rec_id', metavar='{db_id}', help='Database ID of record to be deleted.')
-remove_version.add_argument('-m', '--met_ver', dest='meta_version', metavar='{meta_version}', type=int, help='Metadata version you wish to rollback to')
-remove_version.add_argument('-b', '--bio_ver', dest='bio_version', metavar='{bio_version}', type=int, help='Bioentry version to be rolled back to')
+# Parser for removal of all versions of target record(s)
+remove_all = subparsers.add_parser('ALL', help="""Remove all versions of target 
+                                    record(s) from all tables in database.""")
+remove_all.add_argument('-t', '--txtfile', help="""Path to 1-column text file 
+                        containing IDS of records to be deleted from 
+                        database.""", dest='txtfile', metavar='{txtfile_path}')
+remove_all.add_argument('-id', help="""Database ID(s) of record(s) to be 
+                        deleted.""", dest='rec_id', metavar='{db_id}',
+                        nargs='+')
+
+# Parser for removal of single version of target record(s)
+remove_version = subparsers.add_parser('VER', help="""Remove single version of 
+                                        target record(s).""")
+remove_version.add_argument('-t', '--txtfile', help="""Path to 3-column text 
+                            file containing IDS and the versions of the records 
+                            to be deleted from database - db_id <TAB> bio_ver 
+                            <TAB> meta_ver.""", dest='txtfile',
+                            metavar='{txtfile_path}')
+remove_version.add_argument('-id', help="""Database ID of record to be 
+                            deleted.""", dest='rec_id', metavar='{db_id}')
+remove_version.add_argument('-m', '--met_ver', help="""Metadata version you wish 
+                            to rollback to""", dest='meta_version',
+                            metavar='{meta_version}', type=int)
+remove_version.add_argument('-b', '--bio_ver', help="""Bioentry version to be 
+                            rolled back to""", dest='bio_version',
+                            metavar='{bio_version}', type=int)
 
 #args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'VER', '-t', 'testdata/removes.txt'])
 
 args = parser.parse_args()
+
+## Functions ##
 
 #Check login details
 gcm.check_login_details(args.db_user, args.db_pass)
@@ -69,7 +95,6 @@ else:
 
         versions_dict[args.rec_id] = {'b': args.bio_version,
                                       'm': args.meta_version}
-        #versions_dict = {args.rec_id: {'b': args.bio_version, 'm': args.meta_version}}
 
     gcm.check_ids(list(set(versions_dict.keys())), 'remove')
 

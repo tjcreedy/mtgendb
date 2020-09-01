@@ -3,40 +3,43 @@
 """GenBank data ingestion into MySQL database. Ingests records directly from
     GenBank via a text file containing a list of accessions."""
 
+## Imports ##
 import argparse
-
-# Import the module:
 import gb_csv_module as gcm
 
-
-# Define arguments to be parsed
-parser = argparse.ArgumentParser(description="Adding GenBank data to the database.")
+## Arguments ##
+parser = argparse.ArgumentParser(
+    description="Adding GenBank data to the database.")
 
 parser.add_argument('--db_user', help="Database username", dest='db_user',
                     metavar='db_username', required=True)
 parser.add_argument('--db_pass', help="Database password", dest='db_pass',
                     metavar='db_password', required=True)
-parser.add_argument('-a', '--accessions', dest='input_accessions', required=True, help="Path to text-file containing accession numbers to search on GenBank.")
-parser.add_argument('-e', '--email', dest='users_email', required=True, help="Enter your email address in order to access NCBI.")
-parser.add_argument('-p', '--prefix', dest='prefix', required=True, help="The prefix for the database id names.")
-parser.add_argument('-n', '--number', dest='number', required=True, help="The start number for the database id names")
-parser.add_argument('-z', '--zeros', dest='padding', required=True, help="By how many zeros the number should be 0-padded.")
-parser.add_argument('-k', '--key', dest='key', default='LOCUS', choices=['LOCUS', 'ACCESSION', 'DEFINITION'], help="Field of the genbank-file where the name of the entry can be found.")
+parser.add_argument('-a', '--accessions', help="""Path to text-file containing 
+                    accession numbers to search on GenBank.""",
+                    dest='input_accessions', required=True)
+parser.add_argument('-e', '--email', help="""Enter your email address in order 
+                    to access NCBI.""", dest='users_email', required=True)
+parser.add_argument('-p', '--prefix', help="""The prefix for the database id 
+                    names.""", dest='prefix', required=True)
+parser.add_argument('-n', '--number', help="""The start number for the database 
+                    id names""", dest='number', required=True)
+parser.add_argument('-z', '--zeros', help="""By how many zeros the number 
+                    should be 0-padded.""", dest='padding', required=True)
+parser.add_argument('-k', '--key', help="""Field of the genbank-file where the 
+                    name of the entry can be found.""", dest='key',
+                    default='LOCUS', choices=['LOCUS', 'ACCESSION',
+                                              'DEFINITION'])
 
 args = parser.parse_args()
 
-"""
-1. Check doesn't exist in metadata 'name' column
-2. Check doesn't exist in rejected_accs table (drop, if so)
-3. Download recs from GenBank
-4. Check
-
-"""
 #LOCAL: args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/subset.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "3", "-k", "LOCUS"])
 # Long: args = parser.parse_args(['--db_user', 'root', 'db_pass', 'mmgdatabase', "-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/500accessions.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "4", "-k", "LOCUS"])
 
 #SERVER: args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-a", "/home/luke/Testing/subset.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "3", "-k", "LOCUS"])
 #COM: python3 gb_data_ingestion.py -a testdata/500accessions.txt -e luke.swaby@ngm.ac.uk -p GB -n 1 -z 3 -k LOCUS
+
+## Functions ##
 
 # Check login details
 gcm.check_login_details(args.db_user, args.db_pass)
@@ -47,10 +50,12 @@ acc_list = gcm.text_to_list(args.input_accessions)
 #Check the provided accessions are formatted correctly.
 new_acc_list = gcm.check_acc_format(acc_list)
 
-#Check accessions in list don't already exist in 'name' column of metadata db table, dropping any that do.
+#Check accessions in list don't already exist in 'name' column of metadata
+# db table, dropping any that do.
 filtered_accs = gcm.check_accs_in_db(new_acc_list)
 
-#Take list of of IDs/accessions and return dict of corresponding GenBank records.
+#Take list of of IDs/accessions and return dict of corresponding GenBank
+# records.
 records = gcm.return_gb_data(filtered_accs, args.users_email)
 
 #Check records for duplicates
