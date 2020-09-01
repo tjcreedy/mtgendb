@@ -730,7 +730,7 @@ def return_ncbi_taxid(entry, searchterm, email_address):
     """
     Entrez.email = email_address
     handle = Entrez.esearch(db="taxonomy", retmax=2, term=searchterm)
-    record = handle.read()  # or equivalently: 'record = handle.read()'?
+    record = Entrez.read(handle)
     handle.close()
 
     id_list = record["IdList"]
@@ -770,7 +770,7 @@ def return_ncbi_lineage(searchterm, email_address):
     """
     Entrez.email = email_address
     handle = Entrez.efetch(db="taxonomy", id=searchterm)
-    record = handle.read()
+    record = Entrez.read(handle)
     handle.close()
 
     if len(record) == 0:
