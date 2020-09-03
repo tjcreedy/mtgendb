@@ -170,9 +170,11 @@ if args.output_format == 'CSV':
 
         if args.all:
 
-            mysql_command = gcm.construct_sql_output_query(args.database_table,
+            sql = gcm.construct_sql_output_query(args.database_table,
                                                            args.table_columns,
                                                            args.mysql_specs)
+
+            mysql_command = re.sub('SELECT', 'SELECT DISTINCT', sql, 1)
 
         else:
 
@@ -212,13 +214,17 @@ if args.output_format == 'CSV':
                                                            new_spec)
 
     gcm.csv_from_sql(mysql_command, args.output_name)
+    print(mysql_command)
 
 elif args.output_format == 'COUNT':
 
     if args.mysql_query:
 
+        #One would have to do a normal SELECT command here
         mysql_command = re.sub('SELECT.*?FROM', 'SELECT COUNT(*) FROM',
                                args.mysql_query, 1)
+
+        gcm.return_count(mysql_command)
 
     else:
 
@@ -228,8 +234,10 @@ elif args.output_format == 'COUNT':
 
         if args.all:
 
-            mysql_command = gcm.construct_sql_output_query(None, ['count'],
-                                                           args.mysql_specs)
+            sql = gcm.construct_sql_output_query(None, ['count'],
+                                                 args.mysql_specs)
+
+            mysql_command = re.sub('SELECT', 'SELECT DISTINCT', sql, 1)
 
             gcm.return_count(mysql_command)
 
