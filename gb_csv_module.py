@@ -162,21 +162,23 @@ def correct_header(csv_dataframe, action):
     csv_header = csv_dataframe.columns.values.tolist()
 
     if action == 'ingest':
-        expected_header = ['name', 'specimen', 'morphospecies', 'species',
-                           'subfamily', 'family', 'order', 'taxid',
-                           'collectionmethod', 'lifestage', 'site', 'locality',
-                           'subregion', 'country', 'latitude', 'longitude',
-                           'size', 'habitat', 'feeding_behaviour', 'locomotion',
-                           'authors', 'library', 'datasubmitter', 'projectname',
-                           'accession', 'uin', 'notes']
-    else:
-        expected_header = ['name', 'db_id', 'morphospecies', 'taxon_id',
-                           'custom_lineage', 'specimen', 'collectionmethod',
-                           'lifestage', 'site', 'locality', 'subregion',
+        expected_header = ['contigname', 'institution_code', 'collection_code',
+                           'specimen_id', 'morphospecies', 'species', 'genus',
+                           'subfamily', 'family', 'order', 'traptype',
+                           'dev_stage', 'site', 'locality', 'subregion',
                            'country', 'latitude', 'longitude', 'size',
-                           'habitat', 'feeding_behaviour', 'locomotion',
+                           'feeding_behaviour', 'habitat', 'habitat_stratum',
                            'authors', 'library', 'datasubmitter', 'projectname',
-                           'accession', 'uin', 'notes']
+                           'genbank_accession', 'notes']
+    else:
+        expected_header = ['contigname', 'db_id', 'institution_code',
+                           'collection_code', 'specimen_id', 'morphospecies',
+                           'ncbi_taxon_id', 'custom_lineage', 'traptype',
+                           'dev_stage', 'site', 'locality', 'subregion',
+                           'country', 'latitude', 'longitude', 'size',
+                           'feeding_behaviour', 'habitat', 'habitat_stratum',
+                           'authors', 'library', 'datasubmitter', 'projectname',
+                           'genbank_accession', 'notes']
 
     if expected_header != csv_header:
         print("Incorrect header in CSV file.\n")
@@ -189,7 +191,7 @@ def lat_long(df):
     """Checks the latitude and longitude columns of the DataFrame are correctly
     formatted.
     """
-    vals = list(zip(df['name'], df['latitude'], df['longitude']))
+    vals = list(zip(df['contigname'], df['latitude'], df['longitude']))
 
     for (name, lat, long) in vals:
         if not isinstance(lat, float):
@@ -209,7 +211,7 @@ def matching_inputids(csv_df, gb_dict, action):
     new_gb_dict, new_csv_df = [gb_dict, csv_df]
 
     if action == 'ingest':
-        ids_csv = csv_df['name'].values.tolist()
+        ids_csv = csv_df['contigname'].values.tolist()
     else:
         ids_csv = csv_df['db_id'].values.tolist()
 
@@ -250,7 +252,7 @@ def matching_inputids(csv_df, gb_dict, action):
                           f"the CSV file but not the GenBank file.")
 
             df_missing_ids = [b for b in discrepant_ids if b not in gb_dict]
-            new_csv_df.set_index('name', inplace=True)
+            new_csv_df.set_index('contigname', inplace=True)
             new_csv_df.drop(df_missing_ids, inplace=True)
             new_csv_df.reset_index(inplace=True)
 
@@ -300,8 +302,8 @@ def check_ids(ids_list, action):
     con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
 
     for idd in ids_list:
-        mysql_command = f"SELECT * FROM metadata WHERE (name='{idd}') OR " \
-                        f"(db_id='{idd}');"
+        mysql_command = f"SELECT * FROM metadata WHERE (contigname='{idd}') " \
+                        f"OR (db_id='{idd}');"
         with con:
             cur = con.cursor()
             cur.execute(mysql_command)
@@ -329,7 +331,7 @@ def check_accs_in_db(accs_list):
 
     duplicates = set()
     for acc in accs_list:
-        sql_1 = f"SELECT * FROM metadata WHERE name='{acc}';"
+        sql_1 = f"SELECT * FROM metadata WHERE contigname='{acc}';"
         sql_2 = f"SELECT * FROM rejected WHERE accession='{acc}';"
         with con:
             cur = con.cursor()
@@ -386,13 +388,11 @@ def check_recs_for_dups(records):
                     dup.add(comprec.name)
         for n in dup:
             dupgroups[n] = grpn
-            # {NC_001: 0, MX432: 0, ... }
         grpn += 1
 
     groupdups = defaultdict(list)
     for name, group in dupgroups.items():
         groupdups[group].append(name)
-        # dups = {1: ['NC_001', 'MX432'], 2: ['NC_008', 'SDJHDFDSJ', 'DHS543']}
 
     use, reject = [[], []]
     for names in groupdups.values():
@@ -400,7 +400,7 @@ def check_recs_for_dups(records):
             use.append(names[0])
         else:
             # If any begin with 'NC_' then use the first of those, otherwise
-            # use any
+            # use any.
             nc_i = [n for n in names if n.startswith('NC_')]
             if len(nc_i) > 0:
                 use.append(nc_i[0])
@@ -412,7 +412,8 @@ def check_recs_for_dups(records):
             reject.extend(rej)
 
     if reject:
-        print(f"WARNING: The following duplicates have been dropped from your"
+        print(f"WARNING: The following records were found to be duplicates of "
+              f"other records have been dropped from your"
               f" GenBank records:\n{', '.join(reject)}")
 
     use_recs = {acc: rec for acc, rec in records.items() if acc in use}
@@ -433,7 +434,8 @@ def check_seqs_in_db(records):
                 reject.append(acc)
 
     if reject:
-        print(f"WARNING: The following sequences already exist in the database:"
+        print(f"WARNING: The following sequences have been dropped as they "
+              f"already exist in the database:"
               f"\n{', '.join(reject)}")
 
     new_recs = {name: rec for name, rec in records.items() if name not in reject}
@@ -441,7 +443,7 @@ def check_seqs_in_db(records):
     return new_recs, reject
 
 def load_reject_table(rejected):
-    """Loads a list of rejected accession numbers into the rejected_accs SQL
+    """Loads a list of rejected accession numbers into the 'rejected' SQL
     table.
     """
     rej_df = pd.DataFrame({'accession': rejected})
@@ -516,7 +518,7 @@ def fetch_names(sql, db_un, db_pw):
     """Fetch names and corresponding db_id's from database using MySQL command
 
     Argument:
-     - sql - SQL query: "SELECT metadata.name, metadata.db_id FROM... ;"
+     - sql - SQL query: "SELECT metadata.contigname, metadata.db_id FROM... ;"
     """
     con = mdb.connect(host=db_host, user=db_un, passwd=db_pw, db=db_name)
 
@@ -548,8 +550,9 @@ def change_ids_genbank(genbank_dict, dict_new_ids, key):
 def change_names_csv(csv_df, dict_new_ids):
     """Adds column containing new db_ids to df.
     """
-    dict_df = pd.DataFrame(list(dict_new_ids.items()), columns=["name", "db_id"])
-    new_csv_df = pd.merge(dict_df, csv_df, on='name')
+    dict_df = pd.DataFrame(list(dict_new_ids.items()),
+                           columns=["contigname", "db_id"])
+    new_csv_df = pd.merge(dict_df, csv_df, on='contigname')
 
     return new_csv_df
 
@@ -558,8 +561,8 @@ def taxonomy_metadata(csv_df):
     each id from metadata ([] if no info given).
     """
     csv_taxa = {}
-    ids_csv = csv_df['name'].values.tolist()
-    df = csv_df.set_index("name")
+    ids_csv = csv_df['contigname'].values.tolist()
+    df = csv_df.set_index("contigname")
 
     for id_ in ids_csv:
 
@@ -666,15 +669,16 @@ def extract_metadata(records):
     # Write to DataFrame
     gb_met_df = pd.DataFrame.from_dict(gb_metadata, orient='index')
     gb_met_df.reset_index(inplace=True)
-    gb_met_df.columns = ["name", "taxon_id", "country", "subregion",
-                         "collectionmethod", "accession"]
+    gb_met_df.columns = ["contigname", "ncbi_taxon_id", "country", "subregion",
+                         "traptype", "genbank_accession"]
 
     # Add other metadata columns required by database and fill them with blanks
     # (None/NaN objects)
-    for label in ['morphospecies', 'custom_lineage', 'specimen', 'lifestage',
-                  'site', 'locality', 'authors', 'size', 'habitat',
-                  'feeding_behaviour', 'locomotion', 'library', 'datasubmitter',
-                  'projectname', 'uin', 'notes']:
+    for label in ['institution_code', 'collection_code', 'specimen_id',
+                  'morphospecies', 'custom_lineage', 'dev_stage', 'site',
+                  'locality', 'authors', 'size', 'habitat', 'feeding_behaviour',
+                  'locomotion', 'library', 'datasubmitter',
+                  'projectname', 'notes']:
         gb_met_df[label] = None
 
     for header in ['latitude', 'longitude']:
@@ -710,8 +714,8 @@ def taxid_metadata(csv_dataframe):
     ("" if not given).
     """
     csv_taxids = {}
-    ids_csv = csv_dataframe['name'].values.tolist()
-    df = csv_dataframe.set_index("name")
+    ids_csv = csv_dataframe['contigname'].values.tolist()
+    df = csv_dataframe.set_index("contigname")
 
     for id_ in ids_csv:  # for each id in ids_csv...
 
@@ -861,7 +865,7 @@ def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
     """
     rejected = []
     new_entries = []
-    csv_df.set_index("name", inplace=True)
+    csv_df.set_index("contigname", inplace=True)
 
     # Drop rejected rows from DataFrame
     for record, ncbi_info in ncbi_lineage.items():
@@ -876,12 +880,13 @@ def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
         # Create new DataFrame of rejected entries and drop them from returned
         # DataFrame
         print("\nPrinting rejected entries to CSV file...")
-        cols = ['name', 'db_id', 'specimen', 'morphospecies', 'species',
-                'subfamily', 'family', 'order', 'taxid', 'collectionmethod',
-                'lifestage', 'site', 'locality', 'subregion', 'country',
-                'latitude', 'longitude', 'size', 'habitat', 'feeding_behaviour',
-                'locomotion', 'authors', 'library', 'datasubmitter',
-                'projectname', 'accession', 'uin', 'notes']
+        cols = ['contigname', 'db_id', 'institution_code', 'collection_code',
+                'specimen_id', 'morphospecies', 'species', 'genus', 'subfamily',
+                'order', 'traptype', 'dev_stage', 'site', 'locality',
+                'subregion', 'country', 'latitude', 'longitude', 'size',
+                'feeding_behaviour', 'habitat', 'habitat_stratum', 'authors',
+                'library', 'datasubmitter', 'projectname', 'genbank_accession',
+                'notes']
         new_dataframe = pd.DataFrame(new_entries, columns=cols)
         del new_dataframe['db_id']
         new_dataframe.to_csv('rejected_metadata.csv', index=False)
@@ -1000,14 +1005,12 @@ def alter_features(genbank_dict):
                     if key not in ["gene", "location", "codon_start",
                                    "transl_table", "label",
                                    "product"]:
-                        # TODO: WHY JUST THESE^? WHY NOT 'translation', 'protein_id' etc.?
                         del_features.append(key)
 
                 for f in del_features:
                     del feature.qualifiers[f]
 
                 nametags = ['gene', 'product', 'label', 'standard_name']
-                # TODO: HOW COULD THERE POSSIBLY BE 'standard_name' WHEN IT WAS DROPPED IN THE LAST STEP?
 
                 if any(t in feature.qualifiers.keys() for t in nametags):
                     name = 0
@@ -1048,23 +1051,24 @@ def add_lineage_df(csv_dataframe, combined_lineage):
     """Add columns with tax_id, custom_ and ncbi_lineage to metadata dataframe.
     """
     df_add = pd.DataFrame.from_dict(combined_lineage, orient='index')
-    df_add.columns = ["taxon_id", "custom_lineage"]
-    csv_dataframe.drop(['species', 'subfamily', 'family', 'order', 'taxid'],
-                       axis=1, inplace=True)
+    df_add.columns = ["ncbi_taxon_id", "custom_lineage"]
+    csv_dataframe.drop(['species', 'genus', 'subfamily', 'family', 'order',
+                        'taxid'], axis=1, inplace=True)
     df = pd.merge(df_add, csv_dataframe, left_index=True, right_index=True)
     df.reset_index(level=0, inplace=True)
-    df.rename(columns={"index": "name"}, inplace=True)
+    df.rename(columns={"index": "contigname"}, inplace=True)
 
     return df
 
 def reformat_df_cols(df):
     """Reorder DataFrame columns for ingestion into MySQL database.
     """
-    df = df[['name', 'db_id', 'morphospecies', 'taxon_id', 'custom_lineage',
-             'specimen', 'collectionmethod', 'lifestage', 'site', 'locality',
-             'subregion', 'country', 'latitude', 'longitude', 'authors', 'size',
-             'habitat', 'feeding_behaviour', 'locomotion', 'library',
-             'datasubmitter', 'projectname', 'accession', 'uin', 'notes',
+    df = df[['contigname', 'db_id', 'institution_code', 'collection_code',
+             'specimen_id', 'morphospecies', 'ncbi_taxon_id', 'custom_lineage',
+             'traptype', 'dev_stage', 'site', 'locality', 'subregion',
+             'country', 'latitude', 'longitude', 'size', 'feeding_behaviour',
+             'habitat', 'habitat_stratum', 'authors', 'library',
+             'datasubmitter', 'projectname', 'genbank_accession', 'notes',
              'version']]
 
     return df
@@ -1124,7 +1128,7 @@ def sql_cols(table, cols, spec):
     # Compile columns requested in query (from cols and spec)
     all_cols = []
     for s in spec:
-        req_data = re.split('=|!=| IN |>|<', s)[0]
+        req_data = re.split('!=|>=|<=| IN |=|>|<', s)[0]
         if req_data.startswith('(') and req_data.endswith(')'):
             # If a tuple consiting of multiple columns is requested, split it
             # into its constituent columns and add them to the list.
@@ -1142,39 +1146,26 @@ def sql_cols(table, cols, spec):
     all_cols = list(set(all_cols + cols))
 
     # Unique cols of each table (shared cols assigned to a prioritised table)
-    # WHICH OF THESE ARE RELEVANT?
-    metadata_cols = ['metadata_id', 'name', 'db_id', 'morphospecies',
-                     'taxon_id', 'custom_lineage', 'specimen',
-                     'collectionmethod', 'lifestage', 'site', 'locality',
-                     'subregion', 'country', 'latitude', 'longitude',
-                     'metadata.authors', 'size', 'habitat', 'feeding_behavior',
-                     'locomotion', 'library', 'datasubmitter', 'projectname',
-                     'accession', 'uin', 'notes', 'metadata.version']
-    bioentry_cols = ['bioentry_id', 'bioentry.biodatabase_id',
-                     'bioentry.taxon_id', 'bioentry.name', 'bioentry.accession',
-                     'identifier', 'division', 'description', 'version']
-    bioentry_dbxref_cols = ['bioentry_dbxref.bioentry_id',
-                            'bioentry_dbxref.dbxref_id', 'bioentry_dbxref.rank']
-    bioentry_qualifier_value_cols = ['bioentry_qualifier_value.bioentry_id',
-                                     'bioentry_qualifier_value.term_id',
-                                     'value', 'bioentry_qualifier_value.rank']
-    bioentry_reference_cols = ['bioentry_reference.bioentry_id',
-                               'bioentry_reference.reference_id',
-                               'bioentry_reference.start_pos',
-                               'bioentry_reference.end_pos',
-                               'bioentry_reference.rank']
+    metadata_cols = ['metadata_id', 'contigname', 'db_id', 'institution_code',
+                     'collection_code', 'specimen_id', 'morphospecies',
+                     'ncbi_taxon_id', 'custom_lineage', 'traptype', 'dev_stage',
+                     'site', 'locality', 'subregion', 'country', 'latitude',
+                     'longitude', 'size', 'feeding_behaviour', 'habitat',
+                     'habitat_stratum', 'metadata.authors', 'library',
+                     'datasubmitter', 'projectname', 'genbank_accession',
+                     'notes', 'metadata.version']
+    bioentry_cols = ['bioentry_id', 'bioentry.biodatabase_id', 'taxon_id',
+                     'name', 'accession', 'identifier', 'division',
+                     'description', 'version']
     biosequence_cols = ['biosequence.version', 'length', 'alphabet', 'seq']
     comment_cols = ['comment_id', 'comment.bioentry_id', 'comment_text',
                     'comment.rank']
-    seqfeature_cols = ['seqfeature_id', 'seqfeature.bioentry_id',
-                       'type_term_id', 'source_term_id', 'display_name',
-                       'seqfeature.rank']
-    taxon_cols = ['taxon.taxon_id', 'ncbi_taxon_id', 'parent_taxon_id',
+    taxon_cols = ['taxon.taxon_id', 'taxon.ncbi_taxon_id', 'parent_taxon_id',
                   'node_rank', 'genetic_code', 'mito_genetic_code',
                   'left_value', 'right_value']
     taxon_name_cols = ['taxon_name.taxon_id', 'taxon_name.name', 'name_class']
 
-    # Special queries
+    # Taxonomic queries
     taxonomy = ['subspecies', 'species', 'genus', 'tribe', 'family', 'order',
                 'class', 'phylum', 'kingdom', 'superkingdom', 'taxon']
 
@@ -1191,20 +1182,12 @@ def sql_cols(table, cols, spec):
             mysql_com = f'metadata.TAXON'
         elif c in metadata_cols:
             mysql_com = f'metadata.{c}'
-        elif c in bioentry_cols:  # -name  -taxon_id
+        elif c in bioentry_cols:
             mysql_com = f'bioentry.{c}'
-        elif c in bioentry_dbxref_cols:
-            mysql_com = f'bioentry_dbxref.{c}'
-        elif c in bioentry_qualifier_value_cols:
-            mysql_com = f'bioentry_qualifier_value.{c}'
-        elif c in bioentry_reference_cols:
-            mysql_com = f'bioentry_reference.{c}'
         elif c in biosequence_cols:
             mysql_com = f'biosequence.{c}'
         elif c in comment_cols:
             mysql_com = f'comment.{c}'
-        elif c in seqfeature_cols:
-            mysql_com = f'seqfeature.{c}'
         elif c in taxon_cols:
             mysql_com = f'taxon.{c}'
         elif c in taxon_name_cols:
@@ -1291,7 +1274,7 @@ def sql_table(tables):
             # Join taxons
             if 'taxon' in taxons:
                 taxons.remove('taxon')
-            start = " JOIN taxon ON metadata.taxon_id=taxon.ncbi_taxon_id"
+            start = " JOIN taxon ON metadata.ncbi_taxon_id=taxon.ncbi_taxon_id"
             taxons_join = table_join(start, taxons, 'taxon', 'taxon_id')
             joins.append(taxons_join)
 
@@ -1307,12 +1290,12 @@ def sql_spec(cols_dict, spec, spec_type):
     """
     # Reformat specifications
     for s in spec:
-        split = re.split('=|!=| IN |>|<', s)
+        split = re.split('!=|>=|<=| IN |=|>|<', s)
         if split[1].isnumeric() or split[1].startswith('('):
             continue
         else:
             ind = spec.index(s)
-            op = re.findall('=|!=| IN |>|<', s)[0]
+            op = re.findall('!=|>=|<=| IN |=|>|<', s)[0]
             spec[ind] = f"{split[0]}{op}'{split[1]}'"
 
     # Condstruct specifications string
@@ -1321,13 +1304,13 @@ def sql_spec(cols_dict, spec, spec_type):
     else:
         specs = []
         for x in spec:
-            split = re.split('=|!=| IN |>|<', x)
+            split = re.split('!=|>=|<=| IN |=|>|<', x)
             # If taxonomy query, then add an additional specification
             # containing searchterm.
             if split[0] in ['subspecies', 'species', 'genus', 'tribe', 'family',
                             'order', 'class', 'phylum', 'kingdom',
-                            'superkingdom','taxon']:
-                specs.append(f"metadata.taxon_id IN (SELECT DISTINCT "
+                            'superkingdom', 'taxon']:
+                specs.append(f"metadata.ncbi_taxon_id IN (SELECT DISTINCT "
                              f"include.ncbi_taxon_id FROM taxon INNER JOIN taxon"
                              f" AS include ON (include.left_value BETWEEN "
                              f"taxon.left_value AND taxon.right_value) WHERE "
@@ -1345,7 +1328,8 @@ def sql_spec(cols_dict, spec, spec_type):
                     rep_data.append(new_data)
 
                 # Append modified specification
-                specs.append(re.findall('=|!=| IN |>|<', x)[0].join(rep_data))
+                specs.append(
+                    re.findall('!=|>=|<=| IN |=|>|<', x)[0].join(rep_data))
 
         # Join specifications
         if spec_type == "output":

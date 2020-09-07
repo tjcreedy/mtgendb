@@ -7,37 +7,95 @@
 import argparse
 import re
 import gb_csv_module as gcm
-
+from argparse_formatter import FlexiFormatter
 
 ## Arguments ##
 parser = argparse.ArgumentParser(
-    description="Extracting data from the database.")
+    description="Extracting data from the database.",
+    epilog="""
+        This script provides 4 output format options, each corresponding \
+        to a different subparser: COUNT, CSV, FASTA, GB.
+        
+        Each subparser contains its own set of arguments and help file. (To \
+        see these, simply add the ‘-h’ flag immediately after the parser you \
+        want information on — e.g. ‘python3 data_output.py CSV -h’.)
+        
+        Data is selected according to specifications provided by the user on \
+        the command line. Each specification should consist of a field, followed \
+        by a comparison operator, followed by the value/parameters the user \
+        wishes the output records to satisfy in that field. (e.g. \
+        ‘country=Honduras’, ‘length<14000’, 'bioentry IN (1,2,3)'.) 
+        
+        In order to do this, some knowledge of the fields in \
+        the database tables is obviously required. The following fields are \
+        recognised by this script, and can therefore be used in your \
+        specifications:
+        
+          metadata:\t'metadata_id', 'contigname', 'db_id', 'institution_code', 
+                    'collection_code', 'specimen_id', 'morphospecies', \
+        'ncbi_taxon_id', 'custom_lineage', 'traptype', 'dev_stage', 'site', \
+        'locality', 'subregion', 'country', 'latitude', 'longitude', 'size', \
+        'feeding_behaviour', 'habitat', 'habitat_stratum', 'metadata.authors', \
+        'library', 'datasubmitter', 'projectname', 'genbank_accession', \
+        'notes', 'metadata.version'
+        
+          bioentry:\t'bioentry_id', 'bioentry.biodatabase_id', 'taxon_id',
+                    'name', 'accession', 'identifier', 'division', \
+                    'description', 'version'
+        
+          biosequence:\t'biosequence.version', 'length', 'alphabet', 'seq'
+        
+          comment:\t'comment_id', 'comment.bioentry_id', 'comment_text',
+                   'comment.rank'
+                 
+          taxon:\t'taxon.taxon_id', 'taxon.ncbi_taxon_id', 'parent_taxon_id',
+                 'node_rank', 'genetic_code', 'mito_genetic_code', \
+                 'left_value', 'right_value'
+               
+          taxon_name: 'taxon_name.taxon_id', 'taxon_name.name', 'name_class'
+        
+        The operators currently recognised by this script are the following: 
+        
+          =  : Equal to
+          != : Not equal to
+          <  : Less than
+          >  : Greater than
+          <= : Less than or equal to
+          >= : Greater than or equal to
+          IN : TRUE if the operand is equal to one of a list of expressions
+
+        Once parsed, your specifications will be converted into a MySQL \
+        'SELECT' query to be executed in the database, returning the result \
+        set in your chosen format.
+        """,
+    formatter_class=FlexiFormatter)
 req_group = parser.add_argument_group('required arguments')
 req_group.add_argument('--db_user', dest='db_user', help="Database username",
-                       metavar='{db_username}', required=True)
+                       required=True)
 req_group.add_argument('--db_pass', dest='db_pass', help="Database password",
-                       metavar='{db_password}', required=True)
-parser.add_argument('--all', help="""Use this flag if you wish to pull all 
-                    versions of each record satisfying your query. By default 
-                    this script will only pull current versions if flag is 
+                       required=True)
+parser.add_argument('--all', help="""Use this flag if you wish to pull all \
+                    versions of each record satisfying your query. By default \
+                    this script will only pull current versions if flag is \
                     omitted.""", action='store_true')
-parser.add_argument('-q', '--query', help="""Custom MySQL query to extract data 
-                    from database. (e.g. \"SELECT * FROM metadata WHERE 
-                    country='United Kingdom';\") NOTE: Your custom specification 
-                    must be enclosed by double quotations, as above.""",
-                    dest='mysql_query', metavar='custom_MySQL_query')
+parser.add_argument('-q', help="""Custom MySQL query to extract \
+                    data from database. (e.g. \"SELECT * FROM metadata WHERE \
+                    country='United Kingdom';\") NOTE: Your custom \
+                    specification must be enclosed by double quotations, \
+                    as above.""",
+                    dest='mysql_query')
 
 subparsers = parser.add_subparsers(dest="output_format",
                                    description='Desired output format:')
 
 #Create the parser for the 'COUNT' command
-parser_count = subparsers.add_parser('COUNT', help="""Prints an integer on the 
-                                    command line —— For help file see 
+parser_count = subparsers.add_parser('COUNT', help="""Prints an integer on the \
+                                    command line —— For help file see \
                                     'data_output.py COUNT -h'.""")
-parser_count.add_argument('-s', '--specs', help="""Comma-separated list of mysql
-                            specifications.\n(e.g. 'subregion=Sabah' 
-                            'length>25000' 'order=Coleoptera') REMEMBER: Each 
-                            individual spec must be enclosed by quotations and 
+parser_count.add_argument('-s', '--specs', help="""Comma-separated list of \
+                            mysql specifications.\n(e.g. 'subregion=Sabah' \
+                            'length>25000' 'order=Coleoptera') REMEMBER: Each \
+                            individual spec must be enclosed by quotations and \
                             separated from the next by a space as above.""",
                           dest='mysql_specs', default=[],
                           metavar='{Specification(s)}', nargs='+')
@@ -46,7 +104,7 @@ parser_count.add_argument('-x', '--taxonomy', help="""Taxonomic searchterm to
                           metavar='{taxonomy}')
 
 #Create the parser for the 'CSV' command
-parser_csv = subparsers.add_parser('CSV', help="""Ouputs a .csv file —— For 
+parser_csv = subparsers.add_parser('CSV', help="""Ouputs a .csv file —— For \
                                     help file see 'data_output.py CSV -h'.""")
 parser_csv.add_argument('-o', '--out', help="""Preferred filename for the output
                         (extension will be added automatically according to 
@@ -78,8 +136,8 @@ parser_csv.add_argument('-x', '--taxonomy', help="""Taxonomic searchterm to run
                         metavar='{taxonomy}')
 
 #Create the parser for the 'FASTA' command
-parser_fasta = subparsers.add_parser('FASTA', help="""Ouputs a .fasta file —— 
-                                    For help file see 'data_output.py FASTA 
+parser_fasta = subparsers.add_parser('FASTA', help="""Ouputs a .fasta file —— \
+                                    For help file see 'data_output.py FASTA \
                                     -h'.""")
 parser_fasta.add_argument('-o', '--out', help="""Preferred filename for the
                             output (extension will be added automatically 
@@ -104,7 +162,7 @@ parser_fasta.add_argument('-g', '--genes',  help="""Name of mitochondrial genes
                                    'ND5', 'ND6'])
 
 #Create the parser for the 'GB' command
-parser_gb = subparsers.add_parser('GB', help="""Outputs an annotated .gb file 
+parser_gb = subparsers.add_parser('GB', help="""Outputs an annotated .gb file \
                                 —— For help file see 'data_output.py GB -h'.""")
 parser_gb.add_argument('-o', '--out', help="""Preferred filename for the output 
                         (extension will be added automatically according to your 
@@ -126,6 +184,7 @@ parser_gb.add_argument('-g', '--genes', help="""Name of mitochondrial genes you
                                 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L',
                                 'ND5', 'ND6'])
 
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', '--all', 'CSV', '-o', 'dkasj', '-t', 'metadata', '-s', 'length<=2140'])
 
 # args = parser.parse_args(["--db_user", "root", "--db_pass", "mmgdatabase", '-q', "SELECT * FROM metadata WHERE country='China';", 'CSV', "-t", "metadata", '-c', 'name', "-o", "metadateru", "-s", "subregion='Sabah'"])
 # args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-c", "name", "length", "accession", "seq", "-o", "metadateru", "-s", "country='United Kingdon' description='Lucanus sp. BMNH 1425267 mitochondrion, complete genome'", "-f", "csv"])
@@ -213,7 +272,7 @@ if args.output_format == 'CSV':
                                                            args.table_columns,
                                                            new_spec)
 
-    gcm.csv_from_sql(mysql_command, args.output_name)
+    #gcm.csv_from_sql(mysql_command, args.output_name)
     print(mysql_command)
 
 elif args.output_format == 'COUNT':
