@@ -76,14 +76,50 @@ req_group.add_argument('--db_pass', dest='db_pass', help="Database password",
                        required=True)
 parser.add_argument('--all', help="""Use this flag if you wish to pull all \
                     versions of each record satisfying your query. By default \
-                    this script will only pull current versions if flag is \
-                    omitted.""", action='store_true')
-parser.add_argument('-q', help="""Custom MySQL query to extract \
-                    data from database. (e.g. \"SELECT * FROM metadata WHERE \
-                    country='United Kingdom';\") NOTE: Your custom \
-                    specification must be enclosed by double quotations, \
-                    as above.""",
+                    this script will only pull current versions if this flag \
+                    is omitted.""", action='store_true')
+#TODO: Does the custom query simply execute whatever is put in? What happens here? Furnish notes here
+parser.add_argument('-q',
+                    help="""
+                    Custom MySQL 'SELECT' query to extract data from database. 
+                    
+                    NOTE:
+                      1. This must be a correctly-syntaxed MySQL 'SELECT' \
+                         statement.
+                      2. Your custom specification must be enclosed by double \
+                      quotations.
+                    
+                    EXAMPLE:
+                      \"SELECT * FROM metadata WHERE country='United Kingdom';\"
+                    """,
                     dest='mysql_query')
+parser.add_argument('-s',
+                    help="""
+                    Space delimited list of MySQL \
+                    specifications.
+                    
+                    NOTE:
+                      1. Each specification must be a string in itself. \
+                      The parser will read spaces as delimiters, so if one of \
+                      your specifications contains a space within it (e.g. \
+                      ‘country=United Kingdom’), it is important that you \
+                      enclose it with quotation marks to notify the parser \
+                      that the space is part of one argument string rather \
+                      than a delimiter between two. Similarly, if your \
+                      argument string has any single quotation marks in it \
+                      (e.g. “country IN (‘United Kingdom’, ‘Honduras’)”) , it \
+                      is important to enclose it with double quotation marks \
+                      to notify the parser that the single quotes are part of \
+                      the string rather than delimiters.
+                      
+                    EXAMPLE:
+                    'subregion=Sabah' 'length>25000' 'order=Coleoptera'
+                    
+                    """,
+                    dest='mysql_specs',
+                    default=[], nargs='+')
+parser.add_argument('-x', help="""Taxonomic searchterm to run \
+                    through database""", dest='taxonomy_spec')
 
 subparsers = parser.add_subparsers(dest="output_format",
                                    description='Desired output format:')
@@ -92,16 +128,6 @@ subparsers = parser.add_subparsers(dest="output_format",
 parser_count = subparsers.add_parser('COUNT', help="""Prints an integer on the \
                                     command line —— For help file see \
                                     'data_output.py COUNT -h'.""")
-parser_count.add_argument('-s', '--specs', help="""Comma-separated list of \
-                            mysql specifications.\n(e.g. 'subregion=Sabah' \
-                            'length>25000' 'order=Coleoptera') REMEMBER: Each \
-                            individual spec must be enclosed by quotations and \
-                            separated from the next by a space as above.""",
-                          dest='mysql_specs', default=[],
-                          metavar='{Specification(s)}', nargs='+')
-parser_count.add_argument('-x', '--taxonomy', help="""Taxonomic searchterm to 
-                            run through database""", dest='taxonomy_spec',
-                          metavar='{taxonomy}')
 
 #Create the parser for the 'CSV' command
 parser_csv = subparsers.add_parser('CSV', help="""Ouputs a .csv file —— For \
@@ -125,15 +151,6 @@ parser_csv.add_argument('-c', '--columns', help="""Name of table columns you
                         wish to extract data from. (e.g. name length 
                         description)""", dest='table_columns', default=['*'],
                         metavar='{Column name(s)}', nargs='+')
-parser_csv.add_argument('-s', '--specs', help="""Comma-separated list of mysql 
-                        specifications.\n(e.g. 'subregion=Sabah' 'length>25000' 
-                        'order=Coleoptera') NOTE: Each individual specification 
-                        must be enclosed by quotations and separated from the 
-                        next by a space as above.""", dest='mysql_specs',
-                        default=[], metavar='{Specification(s)}', nargs='+')
-parser_csv.add_argument('-x', '--taxonomy', help="""Taxonomic searchterm to run 
-                        through database""", dest='taxonomy_spec',
-                        metavar='{taxonomy}')
 
 #Create the parser for the 'FASTA' command
 parser_fasta = subparsers.add_parser('FASTA', help="""Ouputs a .fasta file —— \
@@ -144,16 +161,6 @@ parser_fasta.add_argument('-o', '--out', help="""Preferred filename for the
                             according to your output format choice).""",
                           dest='output_name', metavar='{Output filename}',
                           required=True)
-parser_fasta.add_argument('-s', '--specs', help="""Comma-separated list of mysql
-                            specifications.\n(e.g. 'subregion=Sabah' 
-                            'length>25000' 'order=Coleoptera') NOTE: Each 
-                            individual specification must be enclosed by 
-                            quotations and separated from the next by a space as 
-                            above.""", dest='mysql_specs', default=[],
-                          metavar='{Specification(s)}', nargs='+')
-parser_fasta.add_argument('-x', '--taxonomy', help="""Taxonomic searchterm to 
-                            run through database""", dest='taxonomy_spec',
-                          metavar='{taxonomy}')
 parser_fasta.add_argument('-g', '--genes',  help="""Name of mitochondrial genes 
                             you wish to extract.', dest='genes""",
                           metavar='{gene_names}', nargs='+',
@@ -168,15 +175,6 @@ parser_gb.add_argument('-o', '--out', help="""Preferred filename for the output
                         (extension will be added automatically according to your 
                         output format choice).""", dest='output_name',
                        metavar='{Output filename}', required=True)
-parser_gb.add_argument('-s', '--specs', help="""Comma-separated list of mysql 
-                        specifications.\n(e.g. 'subregion=Sabah' 'length>25000' 
-                        'order=Coleoptera') NOTE: Each individual specification 
-                        must be enclosed by quotations and separated from the 
-                        next by a space as above.""", dest='mysql_specs',
-                       default=[], metavar='{Specification(s)}', nargs='+')
-parser_gb.add_argument('-x', '--taxonomy', help="""Taxonomic searchterm to run 
-                        through database""", dest='taxonomy_spec',
-                       metavar='{taxonomy}')
 parser_gb.add_argument('-g', '--genes', help="""Name of mitochondrial genes you 
                         wish to extract.""", dest='genes',
                        metavar='{gene_names}', nargs='+',
@@ -279,11 +277,25 @@ elif args.output_format == 'COUNT':
 
     if args.mysql_query:
 
-        #One would have to do a normal SELECT command here
-        mysql_command = re.sub('SELECT.*?FROM', 'SELECT COUNT(*) FROM',
-                               args.mysql_query, 1)
+        if args.all:
 
-        gcm.return_count(mysql_command)
+            #TODO: Test this! Add distinct to stateent below? Check for dups
+
+            #One would have to do a normal SELECT command here
+            mysql_command = re.sub('SELECT.*?FROM', 'SELECT COUNT(*) FROM',
+                                   args.mysql_query, 1)
+
+            gcm.return_count(mysql_command)
+
+        else:
+
+            mysql_command = re.sub('SELECT.*?FROM',
+                                   'SELECT metadata.name, metadata.db_id FROM',
+                                   args.mysql_query, 1)
+
+            names = gcm.fetch_names(mysql_command)
+
+            print(len(names))
 
     else:
 
@@ -306,9 +318,9 @@ elif args.output_format == 'COUNT':
                                                          ['name', 'db_id'],
                                                          args.mysql_specs)
 
-            names_dict = gcm.fetch_names(query_names)
+            names = gcm.fetch_names(query_names)
 
-            print(len(names_dict))
+            print(len(names))
 
 else:
 
