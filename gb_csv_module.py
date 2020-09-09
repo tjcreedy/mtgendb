@@ -164,7 +164,7 @@ def correct_header(csv_dataframe, action):
     if action == 'ingest':
         expected_header = ['contigname', 'institution_code', 'collection_code',
                            'specimen_id', 'morphospecies', 'species', 'genus',
-                           'subfamily', 'family', 'order', 'traptype',
+                           'subfamily', 'family', 'order', 'taxid', 'traptype',
                            'dev_stage', 'site', 'locality', 'subregion',
                            'country', 'latitude', 'longitude', 'size',
                            'feeding_behaviour', 'habitat', 'habitat_stratum',
