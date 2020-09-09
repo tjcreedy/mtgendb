@@ -755,7 +755,7 @@ def return_ncbi_taxid(entry, searchterm, email_address):
         else:
             tax_id = ""
             print(f" - '{searchterm}' saved to custom lineage information for "
-                  f"'{entry}'.\n...")
+                  f"entry '{entry}'.\n...")
 
     elif len(id_list) > 1:
         print(f" - Multiple hits found for search term '{searchterm}' in NCBI "

@@ -8,6 +8,8 @@ import argparse
 import pandas as pd
 import gb_csv_module as gcm
 
+#TODO: Test with all new header names
+
 ## Arguments ##
 parser = argparse.ArgumentParser(
     description="Adding a GenBank and a metadata CSV file to the database.")
@@ -27,7 +29,7 @@ parser.add_argument('-r', '--reject', help="""Set to 'false' if entries with
                     choices=['True', 'False'])
 parser.add_argument('-s', '--searchterm', help="""Provide a taxonomic searchterm
                     to search for tax ids on NCBI for any entries without 
-                    taxonomic data (e.g. Coleoptera).""", dest='searchterm')
+                    taxonomic data.""", dest='searchterm')
 parser.add_argument('-e', '--email', help="""Enter your email address in order 
                     to access NCBI.""", dest='users_email', required=True)
 parser.add_argument('-p', '--prefix', help="""The prefix for the database id 

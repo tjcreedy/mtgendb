@@ -38,6 +38,8 @@ parser.add_argument('-k', '--key', help="""Field of the genbank-file where the
                     default='LOCUS', choices=['LOCUS', 'ACCESSION',
                                               'DEFINITION'])
 
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-gb", "./testdata/test_genbank.gb", "-csv", "./testdata/test_metadata.csv", "-r", "False", "-s", "Coleoptera", "-e", "luke.swaby@nhm.ac.uk",  "-k", "LOCUS"])
+
 args = parser.parse_args()
 
 ## Functions ##
@@ -57,8 +59,8 @@ gcm.correct_header(csv_df, 'ingest')
 new_csv_df, new_gb_dict = gcm.matching_inputids(csv_df, gb_dict, 'ingest')
 
 # Check IDs don't already exist in database
-db_ids = [rec.name for rec in gb_dict.values()]
-gcm.check_ids(db_ids, 'ingest')
+db_ids = {rec.name: rec.name for rec in gb_dict.values()}
+gcm.check_ids(list(db_ids.values()), 'ingest')
 
 # In dataframe insert column with new database ids
 new_csv_df['db_id'] = new_csv_df['contigname']
@@ -72,6 +74,9 @@ dict_accepted, df_accepted = gcm.rejecting_entries(
 
 #Create a new dictionary with the added taxonomy information
 new_dict = gcm.insert_taxid(lineages, dict_accepted)
+
+#Replace old input ID with new database ID in genbank file
+gcm.change_ids_genbank(new_dict, db_ids, args.key)
 
 #Change the features for CDS
 gcm.alter_features(new_dict)
