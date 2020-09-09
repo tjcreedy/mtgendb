@@ -39,7 +39,6 @@
 -- may be changed to best suit your requirements. Search for the tag
 -- CONFIG and read the documentation you find there.
 --
--- TODO: check what happnens if I try to push a string into the latitude/longitude cols. Is the error intelligible?
 -- database have bioentries. That is about it.
 -- we do not store different versions of a database as different dbids
 -- (there is no concept of versions of database). There is a concept of
@@ -324,14 +323,16 @@ CREATE TABLE biosequence (
 
 CREATE TABLE metadata (
 	metadata_id	    INT(10) UNSIGNED NOT NULL auto_increment,
-	name	CHAR(40) BINARY NOT NULL,
+	contigname	CHAR(40) BINARY NOT NULL,
     db_id	CHAR(16),
+    institution_code	VARCHAR(120),
+    collection_code		VARCHAR(120),
+    specimen_id		VARCHAR(20),
 	morphospecies	VARCHAR(120),
-	taxon_id	VARCHAR(15),
+	ncbi_taxon_id	VARCHAR(15),
 	custom_lineage	VARCHAR(120),
-	specimen	VARCHAR(20),
-	collectionmethod	VARCHAR(100),
-	lifestage	VARCHAR(25),
+	traptype	VARCHAR(100),
+	dev_stage	VARCHAR(25),
 	site	VARCHAR(30),
 	locality	VARCHAR(30),
 	subregion	VARCHAR(120),
@@ -339,15 +340,14 @@ CREATE TABLE metadata (
 	latitude	FLOAT(15),
 	longitude	FLOAT(15),
 	size 	VARCHAR(30),
-	habitat		VARCHAR(30),
 	feeding_behaviour	VARCHAR(30),
-	locomotion	VARCHAR(30),
+	habitat		VARCHAR(30),
+	habitat_stratum		VARCHAR(30),
 	authors	VARCHAR(30),
 	library	VARCHAR(10),
 	datasubmitter	VARCHAR(50),
 	projectname	VARCHAR(35),
-	accession	VARCHAR(23),
-	uin VARCHAR(50),
+	genbank_accession	VARCHAR(23),
 	notes	VARCHAR(30),
 	version		SMALLINT UNSIGNED NOT NULL,
     PRIMARY KEY (metadata_id)
