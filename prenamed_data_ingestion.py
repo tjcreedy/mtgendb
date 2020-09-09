@@ -61,7 +61,7 @@ db_ids = [rec.name for rec in gb_dict.values()]
 gcm.check_ids(db_ids, 'ingest')
 
 # In dataframe insert column with new database ids
-new_csv_df['db_id'] = new_csv_df['name']
+new_csv_df['db_id'] = new_csv_df['contigname']
 
 ##Search for ncbi lineage with tax id, save custom lineages if not found on ncbi
 lineages = gcm.get_ncbi_lineage(new_csv_df, args.users_email, args.searchterm)
