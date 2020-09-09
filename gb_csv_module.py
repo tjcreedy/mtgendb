@@ -319,7 +319,9 @@ def check_ids(ids_list, action):
                          f"database:\n{str(result)}")
 
         else:
-            sys.exit(f"ERROR: Unrecognized action: '{action}'")
+            sys.exit(f"ERROR: Unrecognized action: '{action}'. Please choose"
+                     f" from the following: 'ingest', 'replace', 'remove', "
+                     f"'rollback'.")
 
     return
 
@@ -676,8 +678,8 @@ def extract_metadata(records):
     # (None/NaN objects)
     for label in ['institution_code', 'collection_code', 'specimen_id',
                   'morphospecies', 'custom_lineage', 'dev_stage', 'site',
-                  'locality', 'authors', 'size', 'habitat', 'feeding_behaviour',
-                  'locomotion', 'library', 'datasubmitter',
+                  'locality', 'authors', 'size', 'habitat', 'habitat_stratum',
+                  'feeding_behaviour', 'library', 'datasubmitter',
                   'projectname', 'notes']:
         gb_met_df[label] = None
 
