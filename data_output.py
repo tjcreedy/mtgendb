@@ -20,16 +20,14 @@ parser = argparse.ArgumentParser(
         see these, simply add the ‘-h’ flag immediately after the parser you \
         want information on — e.g. ‘python3 data_output.py CSV -h’.)
         
-        Data is selected according to specifications provided by the user on \
-        the command line. Each specification should consist of a field, followed \
-        by a comparison operator, followed by the value/parameters the user \
-        wishes the output records to satisfy in that field. (e.g. \
-        ‘country=Honduras’, ‘length<14000’, 'bioentry IN (1,2,3)'.) 
+        Data is selected from the database according to specifications \
+        provided by the user on the command line. Once parsed, your \
+        specifications will be converted into a MySQL 'SELECT' query to be \
+        executed in the database, returning the result set in your chosen \
+        format.
         
-        In order to do this, some knowledge of the fields in \
-        the database tables is obviously required. The following fields are \
-        recognised by this script, and can therefore be used in your \
-        specifications:
+        The following fields are recognised by this script, and can therefore \
+        be used in your specifications:
         
           metadata:\t'metadata_id', 'contigname', 'db_id', 'institution_code', 
                     'collection_code', 'specimen_id', 'morphospecies', \
@@ -78,109 +76,128 @@ parser.add_argument('--all', help="""Use this flag if you wish to pull all \
                     versions of each record satisfying your query. By default \
                     this script will only pull current versions if this flag \
                     is omitted.""", action='store_true')
-#TODO: Does the custom query simply execute whatever is put in? What happens if it is not a SELECT statement here? Furnish notes here
 parser.add_argument('-q',
                     help="""
-                    Custom MySQL 'SELECT' query to extract data from database. 
+                    Custom MySQL 'SELECT' query to extract data from \
+                    database. 
                     
                     NOTE:
-                      1. This must be a correctly-syntaxed MySQL 'SELECT' \
-                         statement.
-                      2. Your custom specification must be enclosed by double \
-                      quotations.
+                    1. This must be a correctly-syntaxed MySQL 'SELECT' \
+                    statement.
+                    2. Your custom specification must be enclosed by double \
+                    quotations if it contains any single quotations.
                     
                     EXAMPLE:
-                      \"SELECT * FROM metadata WHERE country='United Kingdom';\"
+                    \"SELECT * FROM metadata WHERE country='United Kingdom';\"
                     """,
                     dest='mysql_query')
-parser.add_argument('-s',
-                    help="""
-                    Space delimited list of MySQL \
-                    specifications.
-                    
-                    NOTE:
-                      1. Each specification must be a string in itself. \
-                      The parser will read spaces as delimiters, so if one of \
-                      your specifications contains a space within it (e.g. \
-                      ‘country=United Kingdom’), it is important that you \
-                      enclose it with quotation marks to notify the parser \
-                      that the space is part of one argument string rather \
-                      than a delimiter between two. Similarly, if your \
-                      argument string has any single quotation marks in it \
-                      (e.g. “country IN (‘United Kingdom’, ‘Honduras’)”) , it \
-                      is important to enclose it with double quotation marks \
-                      to notify the parser that the single quotes are part of \
-                      the string rather than delimiters.
-                      
-                    EXAMPLE:
-                    'subregion=Sabah' 'length>25000' 'order=Coleoptera'
-                    
-                    """,
-                    dest='mysql_specs',
-                    default=[], nargs='+')
-parser.add_argument('-x', help="""Taxonomic searchterm to run \
-                    through database""", dest='taxonomy_spec')
+
+base_subparser = argparse.ArgumentParser(add_help=False,
+                                         formatter_class=FlexiFormatter)
+#TODO: Does the custom query simply execute whatever is put in? What happens if it is not a SELECT statement here? Furnish notes here
+base_subparser.add_argument('-s',
+                            help="""
+                            Space-delimited list of MySQL \
+                            specifications for output records to satisfy.
+                            
+                            Each specification should consist of a field, \
+                            followed by a comparison operator, followed by \
+                            the value/parameters the user wishes the output \
+                            records to satisfy in that field. 
+                            
+                            For this to be viable, some knowledge of the \
+                            fields in the database tables is obviously \
+                            required. A list of fields and operators that \
+                            are recognised by this script — and can therefore \
+                            be used in your specifications — can be found on \
+                            the main help page for this script.
+                            
+                            NOTE: 
+                            1. Each specification must be a string in itself. \
+                            The parser will read spaces as delimiters, so if \
+                            one of your specifications contains a space within \
+                            it (e.g. ‘country=United Kingdom’), it is \
+                            important that you enclose it with quotation marks \
+                            to notify the parser that the space is part of \
+                            one argument string rather than a delimiter \
+                            between two. Similarly, if your argument string \
+                            has any single quotation marks in it (e.g. \
+                            “country IN (‘United Kingdom’, ‘Honduras’)”) , \
+                            it is important to enclose it with double \
+                            quotation marks to notify the parser that the \
+                            single quotes are part of the string rather \
+                            than delimiters. 
+                            
+                            EXAMPLES:
+                              1. 'subregion=Sabah' 
+                              2. 'length>25000' 
+                              3. 'order=Coleoptera'
+                            """,
+                            dest='mysql_specs', default=[], nargs='+')
+base_subparser.add_argument('-x',
+                            help="""Taxonomic searchterm to run through \
+                            database""", dest='taxonomy_spec')
 
 subparsers = parser.add_subparsers(dest="output_format",
                                    description='Desired output format:')
 
 #Create the parser for the 'COUNT' command
-parser_count = subparsers.add_parser('--COUNT', help="""Prints an integer on the \
+parser_count = subparsers.add_parser('COUNT', help="""Prints an integer on the \
                                     command line —— For help file see \
-                                    'data_output.py COUNT -h'.""")
+                                    'data_output.py COUNT -h'.""",
+                                     parents=[base_subparser])
 
 #Create the parser for the 'CSV' command
-parser_csv = subparsers.add_parser('--CSV', help="""Ouputs a .csv file —— For \
-                                    help file see 'data_output.py CSV -h'.""")
-parser_csv.add_argument('-o', '--out', help="""Preferred filename for the output
-                        (extension will be added automatically according to 
-                        your output format choice).""", dest='output_name',
-                        metavar='{Output filename}', required=True)
-parser_csv.add_argument('-t', '--table', help="""Name of database table you wish
+parser_csv = subparsers.add_parser('CSV', help="""Ouputs a .csv file —— For \
+                                    help file see 'data_output.py CSV -h'.""",
+                                   parents=[base_subparser])
+parser_csv.add_argument('-t', help="""Name of database table you wish
                         to extract data from. (e.g. metadata.) If provided, 
                         the script will assume you require data from every 
                         column in the specified table. If this is not the case 
                         then stating only the required columns under the -c flag
                          will suffice.""", dest='database_table',
-                        metavar='{Table name}',
-                        choices=["metadata", "bioentry", "bioentry_dbxref",
-                                 "bioentry_qualifier_value",
-                                 "bioentry_reference", "biosequence",
-                                 "seqfeature", "comment", "taxon", "taxon_name"])
-parser_csv.add_argument('-c', '--columns', help="""Name of table columns you 
+                        choices=["metadata", "bioentry", "biosequence",
+                                 "taxon", "taxon_name", "rejected", "master"])
+parser_csv.add_argument('-c', help="""Name of table columns you 
                         wish to extract data from. (e.g. name length 
                         description)""", dest='table_columns', default=['*'],
-                        metavar='{Column name(s)}', nargs='+')
+                        nargs='+')
+parser_csv.add_argument('-o', help="""Preferred filename for the output
+                        (extension will be added automatically according to 
+                        your output format choice).""", dest='output_name',
+                        required=True)
 
 #Create the parser for the 'FASTA' command
-parser_fasta = subparsers.add_parser('--FASTA', help="""Ouputs a .fasta file —— \
+parser_fasta = subparsers.add_parser('FASTA', help="""Ouputs a .fasta file —— \
                                     For help file see 'data_output.py FASTA \
-                                    -h'.""")
-parser_fasta.add_argument('-o', '--out', help="""Preferred filename for the
-                            output (extension will be added automatically 
-                            according to your output format choice).""",
-                          dest='output_name', metavar='{Output filename}',
-                          required=True)
+                                    -h'.""", parents=[base_subparser])
 parser_fasta.add_argument('-g', '--genes',  help="""Name of mitochondrial genes 
                             you wish to extract.', dest='genes""",
                           metavar='{gene_names}', nargs='+',
                           choices=['*', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3',
                                    'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L',
                                    'ND5', 'ND6'])
+parser_fasta.add_argument('-o', '--out', help="""Preferred filename for the
+                            output (extension will be added automatically 
+                            according to your output format choice).""",
+                          dest='output_name', metavar='{Output filename}',
+                          required=True)
 
 #Create the parser for the 'GB' command
-parser_gb = subparsers.add_parser('--GB', help="""Outputs an annotated .gb file \
-                                —— For help file see 'data_output.py GB -h'.""")
-parser_gb.add_argument('-o', '--out', help="""Preferred filename for the output 
-                        (extension will be added automatically according to your 
-                        output format choice).""", dest='output_name',
-                       metavar='{Output filename}', required=True)
+parser_gb = subparsers.add_parser('GB', help="""Outputs an annotated .gb file \
+                                —— For help file see 'data_output.py GB -h'.""",
+                                  parents=[base_subparser])
 parser_gb.add_argument('-g', '--genes', help="""Name of mitochondrial genes you 
                         wish to extract.""", dest='genes',
                        metavar='{gene_names}', nargs='+',
                        choices=['*', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3',
                                 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L',
                                 'ND5', 'ND6'])
+parser_gb.add_argument('-o', '--out', help="""Preferred filename for the output 
+                        (extension will be added automatically according to your 
+                        output format choice).""", dest='output_name',
+                       metavar='{Output filename}', required=True)
 
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', '--all', 'CSV', '-o', 'dkasj', '-t', 'metadata', '-s', 'length<=2140'])
 
@@ -216,7 +233,7 @@ if args.mysql_query and (args.taxonomy_spec or args.mysql_specs
 #Check login details
 gcm.check_login_details(args.db_user, args.db_pass)
 
-if args.output_format == '-CSV':
+if args.output_format == 'CSV':
 
     if args.mysql_query:
 
@@ -276,7 +293,7 @@ if args.output_format == '-CSV':
     #gcm.csv_from_sql(mysql_command, args.output_name)
     print(mysql_command)
 
-elif args.output_format == '-COUNT':
+elif args.output_format == 'COUNT':
 
     if args.mysql_query:
 
@@ -340,6 +357,8 @@ else:
         mysql_command = gcm.construct_sql_output_query(None, ['name', 'db_id'],
                                                        args.mysql_specs)
 
+    print(mysql_command)
+    """
     names_dict = gcm.fetch_names(mysql_command)
 
     records = gcm.fetch_recs(names_dict, args.all)
@@ -349,7 +368,7 @@ else:
         records = gcm.extract_genes(records, args.genes)
 
     gcm.seqfile_from_sql(records, args.output_name, args.output_format.lower())
-
+    """
 print('Done.')
 """
 TO-DO
