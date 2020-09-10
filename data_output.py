@@ -197,6 +197,12 @@ parser_gb.add_argument('-o', '--out', help="""Preferred path/filename for the
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', '--all', '-s', 'length<=2140', '--CSV', '-o', 'dkasj', '-t', 'metadata'])
 
 
+
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'GB', '-o', 'output/FINAL', '-s', "subregion IN ('Tengchong', 'Qinling')"])
+
+
+
+
 # args = parser.parse_args(["--db_user", "root", "--db_pass", "mmgdatabase", '-q', "SELECT * FROM metadata WHERE country='China';", 'CSV', "-t", "metadata", '-c', 'name', "-o", "metadateru", "-s", "subregion='Sabah'"])
 # args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-c", "name", "length", "accession", "seq", "-o", "metadateru", "-s", "country='United Kingdon' description='Lucanus sp. BMNH 1425267 mitochondrion, complete genome'", "-f", "csv"])
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'CSV', '-o', 'Honduras_testrun', '-t', 'metadata', '-s', 'country=Honduras'])
@@ -250,7 +256,8 @@ if args.output_format == 'CSV':
 
             #Fetch names/db_ids
             query_names = gcm.construct_sql_output_query(None,
-                                                         ['name', 'db_id'],
+                                                         ['contigname',
+                                                          'db_id'],
                                                          args.mysql_specs)
 
             names_dict = gcm.fetch_names(query_names)
@@ -303,7 +310,8 @@ elif args.output_format == 'COUNT':
         else:
 
             mysql_command = re.sub('SELECT.*?FROM',
-                                   'SELECT metadata.name, metadata.db_id FROM',
+                                   'SELECT metadata.contigname, '
+                                   'metadata.db_id FROM',
                                    args.mysql_query, 1)
 
             names = gcm.fetch_names(mysql_command)
@@ -328,7 +336,8 @@ elif args.output_format == 'COUNT':
         else:
 
             query_names = gcm.construct_sql_output_query(None,
-                                                         ['name', 'db_id'],
+                                                         ['contigname',
+                                                          'db_id'],
                                                          args.mysql_specs)
 
             names = gcm.fetch_names(query_names)
@@ -347,7 +356,8 @@ else:
 
             args.mysql_specs.append(f'taxon={args.taxonomy_spec}')
 
-        mysql_command = gcm.construct_sql_output_query(None, ['name', 'db_id'],
+        mysql_command = gcm.construct_sql_output_query(None, ['contigname',
+                                                              'db_id'],
                                                        args.mysql_specs)
 
     names_dict = gcm.fetch_names(mysql_command)
