@@ -350,8 +350,6 @@ else:
         mysql_command = gcm.construct_sql_output_query(None, ['name', 'db_id'],
                                                        args.mysql_specs)
 
-    print(mysql_command)
-    """
     names_dict = gcm.fetch_names(mysql_command)
 
     records = gcm.fetch_recs(names_dict, args.all)
@@ -361,7 +359,7 @@ else:
         records = gcm.extract_genes(records, args.genes)
 
     gcm.seqfile_from_sql(records, args.output_name, args.output_format.lower())
-    """
+
 print('Done.')
 """
 TO-DO
