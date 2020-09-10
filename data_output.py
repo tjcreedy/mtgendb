@@ -184,6 +184,9 @@ parser_gb.add_argument('-g', '--genes', help="""Name of mitochondrial genes you
 
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', '--all', 'CSV', '-o', 'dkasj', '-t', 'metadata', '-s', 'length<=2140'])
 
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', '--all', '-s', 'length<=2140', '--CSV', '-o', 'dkasj', '-t', 'metadata'])
+
+
 # args = parser.parse_args(["--db_user", "root", "--db_pass", "mmgdatabase", '-q', "SELECT * FROM metadata WHERE country='China';", 'CSV', "-t", "metadata", '-c', 'name', "-o", "metadateru", "-s", "subregion='Sabah'"])
 # args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-c", "name", "length", "accession", "seq", "-o", "metadateru", "-s", "country='United Kingdon' description='Lucanus sp. BMNH 1425267 mitochondrion, complete genome'", "-f", "csv"])
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'CSV', '-o', 'Honduras_testrun', '-t', 'metadata', '-s', 'country=Honduras'])
@@ -213,7 +216,7 @@ if args.mysql_query and (args.taxonomy_spec or args.mysql_specs
 #Check login details
 gcm.check_login_details(args.db_user, args.db_pass)
 
-if args.output_format == 'CSV':
+if args.output_format == '-CSV':
 
     if args.mysql_query:
 
@@ -273,7 +276,7 @@ if args.output_format == 'CSV':
     #gcm.csv_from_sql(mysql_command, args.output_name)
     print(mysql_command)
 
-elif args.output_format == 'COUNT':
+elif args.output_format == '-COUNT':
 
     if args.mysql_query:
 
