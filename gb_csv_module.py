@@ -348,10 +348,11 @@ def check_accs_in_db(accs_list):
         x = input(f"WARNING: There are accessions in your input file that have"
                   f" previously been rejected or already exist in the database:"
                   f" {', '.join(list(duplicates))}\nWould you like to drop"
-                  f" these and proceed or cancel the operation? 'P'/'C'").upper()
+                  f" these and proceed or cancel the operation? 'P'/'C'\n"
+                  f"?>").upper()
         while not (x == 'P' or x == 'C'):
             x = input(f"Type 'P' to drop duplicate accessions and"
-                      f" proceed or 'C' to cancel the operation.").upper()
+                      f" proceed or 'C' to cancel the operation.\n?>").upper()
         if x == 'C':
             sys.exit('Operation cancelled.')
         else:
@@ -415,8 +416,8 @@ def check_recs_for_dups(records):
 
     if reject:
         print(f"WARNING: The following records were found to be duplicates of "
-              f"other records have been dropped from your"
-              f" GenBank records:\n{', '.join(reject)}")
+              f"others in your result set and have been dropped:"
+              f"\n{', '.join(reject)}")
 
     use_recs = {acc: rec for acc, rec in records.items() if acc in use}
 
