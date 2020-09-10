@@ -78,7 +78,7 @@ parser.add_argument('--all', help="""Use this flag if you wish to pull all \
                     versions of each record satisfying your query. By default \
                     this script will only pull current versions if this flag \
                     is omitted.""", action='store_true')
-#TODO: Does the custom query simply execute whatever is put in? What happens here? Furnish notes here
+#TODO: Does the custom query simply execute whatever is put in? What happens if it is not a SELECT statement here? Furnish notes here
 parser.add_argument('-q',
                     help="""
                     Custom MySQL 'SELECT' query to extract data from database. 
@@ -125,12 +125,12 @@ subparsers = parser.add_subparsers(dest="output_format",
                                    description='Desired output format:')
 
 #Create the parser for the 'COUNT' command
-parser_count = subparsers.add_parser('COUNT', help="""Prints an integer on the \
+parser_count = subparsers.add_parser('--COUNT', help="""Prints an integer on the \
                                     command line —— For help file see \
                                     'data_output.py COUNT -h'.""")
 
 #Create the parser for the 'CSV' command
-parser_csv = subparsers.add_parser('CSV', help="""Ouputs a .csv file —— For \
+parser_csv = subparsers.add_parser('--CSV', help="""Ouputs a .csv file —— For \
                                     help file see 'data_output.py CSV -h'.""")
 parser_csv.add_argument('-o', '--out', help="""Preferred filename for the output
                         (extension will be added automatically according to 
@@ -153,7 +153,7 @@ parser_csv.add_argument('-c', '--columns', help="""Name of table columns you
                         metavar='{Column name(s)}', nargs='+')
 
 #Create the parser for the 'FASTA' command
-parser_fasta = subparsers.add_parser('FASTA', help="""Ouputs a .fasta file —— \
+parser_fasta = subparsers.add_parser('--FASTA', help="""Ouputs a .fasta file —— \
                                     For help file see 'data_output.py FASTA \
                                     -h'.""")
 parser_fasta.add_argument('-o', '--out', help="""Preferred filename for the
@@ -169,7 +169,7 @@ parser_fasta.add_argument('-g', '--genes',  help="""Name of mitochondrial genes
                                    'ND5', 'ND6'])
 
 #Create the parser for the 'GB' command
-parser_gb = subparsers.add_parser('GB', help="""Outputs an annotated .gb file \
+parser_gb = subparsers.add_parser('--GB', help="""Outputs an annotated .gb file \
                                 —— For help file see 'data_output.py GB -h'.""")
 parser_gb.add_argument('-o', '--out', help="""Preferred filename for the output 
                         (extension will be added automatically according to your 
