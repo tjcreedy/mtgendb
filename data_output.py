@@ -21,13 +21,18 @@ parser = argparse.ArgumentParser(
         want information on — e.g. ‘python3 data_output.py CSV -h’.)
         
         Data is selected from the database according to specifications \
-        provided by the user on the command line. Once parsed, your \
-        specifications will be converted into a MySQL 'SELECT' query to be \
-        executed in the database, returning the result set in your chosen \
-        format.
+        provided by the user on the command line. Each specification should \
+        consist of a field, followed by a comparison operator, followed by \
+        the value/parameters the user wishes the output records to satisfy in \
+        that field. (e.g. 'subregion=Sabah', 'length>25000', \
+        'order=Coleoptera').
         
-        The following fields are recognised by this script, and can therefore \
-        be used in your specifications:
+        For this to be viable, some knowledge of the fields in the database \
+        tables is obviously required. The following fields and operators \
+        are recognised by this script and can therefore be used in your \
+        specifications: 
+        
+        --FIELDS--
         
           metadata:\t'metadata_id', 'contigname', 'db_id', 'institution_code', 
                     'collection_code', 'specimen_id', 'morphospecies', \
@@ -52,7 +57,8 @@ parser = argparse.ArgumentParser(
                
           taxon_name: 'taxon_name.taxon_id', 'taxon_name.name', 'name_class'
         
-        The operators currently recognised by this script are the following: 
+        
+        --OPERATORS-- 
         
           =  : Equal to
           != : Not equal to
@@ -65,6 +71,19 @@ parser = argparse.ArgumentParser(
         Once parsed, your specifications will be converted into a MySQL \
         'SELECT' query to be executed in the database, returning the result \
         set in your chosen format.
+        
+        --NOTES-- 
+        
+          1. For flags accepting multiple arguments (e.g. -s), each argument \
+        must be a string in itself. The parser will read spaces as delimiters, \
+        so if one of your args contains a space within it (e.g. \
+        ‘country=United Kingdom’), it is important that you enclose it with \
+        quotation marks to notify the parser that the space is part of one \
+        argument string rather than a delimiter between two. Similarly, if \
+        your argument string has any single quotation marks in it (e.g. \
+        “country IN (‘United Kingdom’, ‘Honduras’)”) , it is important to \
+        enclose it with double quotation marks to notify the parser that the \
+        single quotes are part of the string rather than delimiters. 
         """,
     formatter_class=FlexiFormatter)
 req_group = parser.add_argument_group('required arguments')
@@ -92,41 +111,15 @@ parser.add_argument('-q',
                     """,
                     dest='mysql_query')
 
-base_subparser = argparse.ArgumentParser(add_help=False,
-                                         formatter_class=FlexiFormatter)
+base_subparser = argparse.ArgumentParser(add_help=False)
 #TODO: Does the custom query simply execute whatever is put in? What happens if it is not a SELECT statement here? Furnish notes here
 base_subparser.add_argument('-s',
                             help="""
                             Space-delimited list of MySQL \
-                            specifications for output records to satisfy.
-                            
-                            Each specification should consist of a field, \
-                            followed by a comparison operator, followed by \
-                            the value/parameters the user wishes the output \
-                            records to satisfy in that field. 
-                            
-                            For this to be viable, some knowledge of the \
-                            fields in the database tables is obviously \
-                            required. A list of fields and operators that \
-                            are recognised by this script — and can therefore \
-                            be used in your specifications — can be found on \
-                            the main help page for this script.
-                            
-                            NOTE: 
-                            1. Each specification must be a string in itself. \
-                            The parser will read spaces as delimiters, so if \
-                            one of your specifications contains a space within \
-                            it (e.g. ‘country=United Kingdom’), it is \
-                            important that you enclose it with quotation marks \
-                            to notify the parser that the space is part of \
-                            one argument string rather than a delimiter \
-                            between two. Similarly, if your argument string \
-                            has any single quotation marks in it (e.g. \
-                            “country IN (‘United Kingdom’, ‘Honduras’)”) , \
-                            it is important to enclose it with double \
-                            quotation marks to notify the parser that the \
-                            single quotes are part of the string rather \
-                            than delimiters. 
+                            specifications for output records to satisfy — 
+                            '<FIELD><OPERATOR><VALUE(S)>'. For more \
+                            information on hwo to construct these, refer to \
+                            the main help page.
                             
                             EXAMPLES:
                               1. 'subregion=Sabah' 
@@ -135,7 +128,7 @@ base_subparser.add_argument('-s',
                             """,
                             dest='mysql_specs', default=[], nargs='+')
 base_subparser.add_argument('-x',
-                            help="""Taxonomic searchterm to run through \
+                            help="""Taxonomic searchterm to search in \
                             database""", dest='taxonomy_spec')
 
 subparsers = parser.add_subparsers(dest="output_format",
@@ -163,7 +156,7 @@ parser_csv.add_argument('-c', help="""Name of table columns you
                         wish to extract data from. (e.g. name length 
                         description)""", dest='table_columns', default=['*'],
                         nargs='+')
-parser_csv.add_argument('-o', help="""Preferred filename for the output
+parser_csv.add_argument('-o', help="""Preferred path/filename for the output
                         (extension will be added automatically according to 
                         your output format choice).""", dest='output_name',
                         required=True)
@@ -178,7 +171,7 @@ parser_fasta.add_argument('-g', '--genes',  help="""Name of mitochondrial genes
                           choices=['*', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3',
                                    'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L',
                                    'ND5', 'ND6'])
-parser_fasta.add_argument('-o', '--out', help="""Preferred filename for the
+parser_fasta.add_argument('-o', '--out', help="""Preferred path/filename for the
                             output (extension will be added automatically 
                             according to your output format choice).""",
                           dest='output_name', metavar='{Output filename}',
@@ -194,9 +187,9 @@ parser_gb.add_argument('-g', '--genes', help="""Name of mitochondrial genes you
                        choices=['*', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3',
                                 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L',
                                 'ND5', 'ND6'])
-parser_gb.add_argument('-o', '--out', help="""Preferred filename for the output 
-                        (extension will be added automatically according to your 
-                        output format choice).""", dest='output_name',
+parser_gb.add_argument('-o', '--out', help="""Preferred path/filename for the 
+                        output (extension will be added automatically according 
+                        to your output format choice).""", dest='output_name',
                        metavar='{Output filename}', required=True)
 
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', '--all', 'CSV', '-o', 'dkasj', '-t', 'metadata', '-s', 'length<=2140'])
