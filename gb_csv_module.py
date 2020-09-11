@@ -16,13 +16,6 @@ import MySQLdb as mdb
 from BioSQL import BioSeqDatabase
 from sqlalchemy import create_engine, update
 
-# TODO: TEST FOLLOWING COMMANDS:
-# 1. Create database, load schema
-# 2. gb/csv ingest
-# 3. gb ingest
-# 4. output chinas. Output chinas and honduras'. output chinas with length > 17000
-#    ouptput using own command
-
 ## Variables ##
 # TODO: Should these begin with a trailing underscore to denote they are for internal use?
 db_driver = "MySQLdb"

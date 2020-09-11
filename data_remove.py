@@ -10,10 +10,10 @@ import gb_csv_module as gcm
 ## Arguments ##
 parser = argparse.ArgumentParser(description='Removing records in the database')
 req_group = parser.add_argument_group('required arguments')
-req_group.add_argument('--db_user', help="Database username", dest='db_user',
-                       metavar='{db_username}', required=True)
-req_group.add_argument('--db_pass', help="Database password", dest='db_pass',
-                       metavar='{db_password}', required=True)
+req_group.add_argument('--db_user', dest='db_user', help="Database username",
+                       metavar='', required=True)
+req_group.add_argument('--db_pass', dest='db_pass', help="Database password",
+                       metavar='', required=True)
 
 subparsers = parser.add_subparsers(dest='del_versions', description="""Choose 
                                     whether to delete all versions of a record 
@@ -22,29 +22,30 @@ subparsers = parser.add_subparsers(dest='del_versions', description="""Choose
 # Parser for removal of all versions of target record(s)
 remove_all = subparsers.add_parser('ALL', help="""Remove all versions of target 
                                     record(s) from all tables in database.""")
-remove_all.add_argument('-t', '--txtfile', help="""Path to 1-column text file 
+remove_all.add_argument('-t', help="""Path to 1-column text file 
                         containing IDS of records to be deleted from 
-                        database.""", dest='txtfile', metavar='{txtfile_path}')
-remove_all.add_argument('-id', help="""Database ID(s) of record(s) to be 
-                        deleted.""", dest='rec_id', metavar='{db_id}',
-                        nargs='+')
+                        database.""", dest='txtfile', metavar='')
+remove_all.add_argument('-id', help="""Space-delimited list of database ID(s) 
+                        of record(s) to be deleted.""", dest='rec_id',
+                        metavar='', nargs='+')
 
 # Parser for removal of single version of target record(s)
 remove_version = subparsers.add_parser('VER', help="""Remove single version of 
                                         target record(s).""")
-remove_version.add_argument('-t', '--txtfile', help="""Path to 3-column text 
+remove_version.add_argument('-t', help="""Path to 3-column text 
                             file containing IDS and the versions of the records 
-                            to be deleted from database - db_id <TAB> bio_ver 
-                            <TAB> meta_ver.""", dest='txtfile',
-                            metavar='{txtfile_path}')
+                            to be deleted from database. Each row should 
+                            consist of a tab-delimited list of the database ID 
+                            of the target record, the bioentry version number 
+                            to be removed, and the metadata version number to 
+                            be removed: db_id <TAB> bio_ver <TAB> meta_ver""",
+                            dest='txtfile', metavar='')
 remove_version.add_argument('-id', help="""Database ID of record to be 
-                            deleted.""", dest='rec_id', metavar='{db_id}')
-remove_version.add_argument('-m', '--met_ver', help="""Metadata version you wish 
-                            to rollback to""", dest='meta_version',
-                            metavar='{meta_version}', type=int)
-remove_version.add_argument('-b', '--bio_ver', help="""Bioentry version to be 
-                            rolled back to""", dest='bio_version',
-                            metavar='{bio_version}', type=int)
+                            deleted.""", dest='rec_id', metavar='')
+remove_version.add_argument('-m', help="""Metadata version to be deleted.""",
+                            dest='meta_version', metavar='', type=int)
+remove_version.add_argument('-b', help="""Bioentry version to be deleted.""",
+                            dest='bio_version', metavar='', type=int)
 
 #args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'VER', '-t', 'testdata/removes.txt'])
 

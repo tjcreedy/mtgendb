@@ -11,22 +11,23 @@ import gb_csv_module as gcm
 ## Arguments ##
 parser = argparse.ArgumentParser(description='Modifying data in the database')
 req_group = parser.add_argument_group('required arguments')
-req_group.add_argument('--db_user', help="Database username", dest='db_user',
-                       metavar='{db_username}', required=True)
-req_group.add_argument('--db_pass', help="Database password", dest='db_pass',
-                       metavar='{db_password}', required=True)
-parser.add_argument('-gb', '--genbankfile', help="""Name of genbank-file to 
-                    ingest into the database.""", dest='input_genbank')
-parser.add_argument('-csv', '--csvfile', help="""Name of genbank-file to 
-                    ingest into the databse.""", dest='input_csv')
-parser.add_argument('-k', '--key', help="""Field of the genbank-file where the 
+req_group.add_argument('--db_user', dest='db_user', help="Database username",
+                       metavar='', required=True)
+req_group.add_argument('--db_pass', dest='db_pass', help="Database password",
+                       metavar='', required=True)
+parser.add_argument('-gb', help="""Name of genbank-file to 
+                    ingest into the database.""", dest='input_genbank',
+                    metavar='INPUT_GENBANK')
+parser.add_argument('-csv', help="""Name of genbank-file to 
+                    ingest into the databse.""", dest='input_csv',
+                    metavar='INPUT_CSV')
+parser.add_argument('-k', help="""Field of the genbank-file where the 
                     name of the entry can be found.""", dest='key',
-                    default='LOCUS', choices=['LOCUS', 'ACCESSION',
-                                              'DEFINITION'])
+                    default='LOCUS', metavar='KEY',
+                    choices=['LOCUS', 'ACCESSION', 'DEFINITION'])
 
 
 #Subparser for optional manual update
-# TODO: Keep this? If so, would we need to duplicate the row before the update then increment version of new row.
 #subparsers = parser.add_subparsers(dest="manual_update",
 #                                   description="""Manually update records in
 #                                   database.""")

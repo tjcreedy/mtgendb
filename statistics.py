@@ -349,6 +349,7 @@ def isexactsubset(query, subject):
     if set(query).issubset(set(subject)):
         issubset = [subject[i:i + len(query)] == query or subject[i:i - len(
             query):-1] == query for i, x in enumerate(subject) if x == query[0]]
+
         return any(issubset)
 
     else:
@@ -367,8 +368,8 @@ def extract_order(genbank_dict):
 
         for (index, feature) in enumerate(record.features):
 
-            if feature.type == "CDS" or feature.type == "cds":
-                gene = feature.qualifiers["gene"]
+            if feature.type.upper() == "CDS":
+                gene = feature.qualifiers["gene"][0]
                 genes.append(gene)
 
         gene_order[name] = tuple(genes)
@@ -403,7 +404,6 @@ def analyze_order(order):
 def family_distribution(metadata_df):
     """Extract families from metadata table.
     """
-    # metadata_df=csv_df
     families = metadata_df.family
     strip = families.str.strip()
     family_count = strip.value_counts()
@@ -416,13 +416,12 @@ def family_distribution(metadata_df):
 def country_distribution(metadata_df):
     """Extract countries from metadata table.
     """
-    # metadata_df = csv_df
     countries = metadata_df.country
     country_count = countries.value_counts(dropna=False)
     country_count.to_csv('country_count.csv', index_label='Country',
                          header=['Count'])
 
-    return ()
+    return
 
 ##Save gene sequences in one fasta file
 
@@ -456,10 +455,3 @@ def gene_sequence(genbank_dict):
     f.close()
 
     return
-
-"""
-BUGS
-
-BUG1: gb_topology() - 'data_file_division' and 'topology' mixup - Line 39
-      Also affects Line 137-138 in summary.txt
- """

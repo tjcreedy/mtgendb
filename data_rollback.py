@@ -8,35 +8,38 @@ import argparse
 import gb_csv_module as gcm
 
 ## Arguments ##
-parser = argparse.ArgumentParser(description="""Rolling back records in the 
-                                database""")
+parser = argparse.ArgumentParser(description="""Rolling back record versions in 
+                                the database""")
 req_group = parser.add_argument_group('required arguments')
-req_group.add_argument('--db_user', help="Database username", dest='db_user',
-                       metavar='{db_username}', required=True)
-req_group.add_argument('--db_pass', help="Database password", dest='db_pass',
-                       metavar='{db_password}', required=True)
+req_group.add_argument('--db_user', dest='db_user', help="Database username",
+                       metavar='', required=True)
+req_group.add_argument('--db_pass', dest='db_pass', help="Database password",
+                       metavar='', required=True)
 
-subparsers = parser.add_subparsers(dest='action', description="""Choose either 
-                                    data rollback or removal""")
+subparsers = parser.add_subparsers(dest='action', description="""Data rollback 
+                                    for a single record on the command line or 
+                                    multiple records in a text-file.""")
 
 # Parser for rollback of single record on command line
 single = subparsers.add_parser('SINGLE', help="""Rollback data for single 
-                                record specified on command line""")
-single.add_argument('-id', '--db_id', help="""Database ID of record you wish to 
-                    rollback.""", dest='db_id', metavar='{db_id')
-single.add_argument('-m', '--met_ver', help="""Metadata version you wish to 
-                    rollback to""", dest='meta_version',
-                    metavar='{meta_version}', type=int)
-single.add_argument('-b', '--bio_ver', help="""Bioentry version to be rolled 
-                    back to""", dest='bio_version', metavar='{bio_version}',
-                    type=int)
+                                record specified on command line.""")
+single.add_argument('-id', help="""Database ID of record you wish to 
+                    rollback.""", dest='db_id', metavar='')
+single.add_argument('-m', help="""Metadata version number to be rolled back 
+                    to""", dest='meta_version', metavar='', type=int)
+single.add_argument('-b', help="""Bioentry version number to be rolled 
+                    back to""", dest='bio_version', metavar='', type=int)
 
 # Parser for rollback of multiple records by text file
-multiple = subparsers.add_parser('MULTIPLE', help="""Rollback data for multiple 
+multiple = subparsers.add_parser('MULTI', help="""Rollback data for multiple 
                                 records specified in 3-column text file.""")
-multiple.add_argument('-t', '--txt', help="""Path to 3-column text file: db_id 
-                        <TAB> bio_ver <TAB> meta_ver""", dest='text_file',
-                      metavar='{txtfile_path}')
+multiple.add_argument('-t', help="""Path to 3-column text file. Each row should 
+                        consist of a tab-delimited list of the database ID of 
+                        the target record, the bioentry version number to be 
+                        rolled back to, and the metadata version number to be 
+                        rolled back to:  db_id <TAB> bio_ver <TAB> meta_ver""",
+                      dest='text_file',
+                      metavar='')
 
 args = parser.parse_args()
 

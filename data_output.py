@@ -88,9 +88,9 @@ parser = argparse.ArgumentParser(
     formatter_class=FlexiFormatter)
 req_group = parser.add_argument_group('required arguments')
 req_group.add_argument('--db_user', dest='db_user', help="Database username",
-                       required=True)
+                       metavar='', required=True)
 req_group.add_argument('--db_pass', dest='db_pass', help="Database password",
-                       required=True)
+                       metavar='', required=True)
 parser.add_argument('--all', help="""Use this flag if you wish to pull all \
                     versions of each record satisfying your query. By default \
                     this script will only pull current versions if this flag \
@@ -247,8 +247,8 @@ if args.output_format == 'CSV':
         if args.all:
 
             sql = gcm.construct_sql_output_query(args.database_table,
-                                                           args.table_columns,
-                                                           args.mysql_specs)
+                                                 args.table_columns,
+                                                 args.mysql_specs)
 
             mysql_command = re.sub('SELECT', 'SELECT DISTINCT', sql, 1)
 

@@ -34,7 +34,7 @@ ggplot(df, aes(x = reorder(ind, ftr),y = ftr)) +
 dev.off()
 
 
-##Sequence lenght as histogram and features as bar plots
+##Sequence length as histogram and features as bar plots
 
 ftr = read.csv("features.csv", header = TRUE)
 pdf("contig_lengths_hist.pdf")
