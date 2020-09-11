@@ -198,7 +198,9 @@ parser_gb.add_argument('-o', help="""Preferred path/filename for the
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', '--all', 'CSV', '-o', 'dkasj', '-t', 'metadata', '-s', 'length<=2140'])
 
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', '--all', '-s', 'length<=2140', '--CSV', '-o', 'dkasj', '-t', 'metadata'])
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'GB', '-o', 'output/FINAL', '-s', "subregion IN ('Tengchong', 'Qinling')"])
+
+
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'GB', '-o', 'output/FINAL', '-s', "country IN ('Honduras', 'China')", 'length<17000', '-x', 'Chrysomeloidea'])
 
 # args = parser.parse_args(["--db_user", "root", "--db_pass", "mmgdatabase", '-q', "SELECT * FROM metadata WHERE country='China';", 'CSV', "-t", "metadata", '-c', 'name', "-o", "metadateru", "-s", "subregion='Sabah'"])
 # args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-c", "name", "length", "accession", "seq", "-o", "metadateru", "-s", "country='United Kingdon' description='Lucanus sp. BMNH 1425267 mitochondrion, complete genome'", "-f", "csv"])
@@ -287,8 +289,7 @@ if args.output_format == 'CSV':
                                                            args.table_columns,
                                                            new_spec)
 
-    #gcm.csv_from_sql(mysql_command, args.output_name)
-    print(mysql_command)
+    gcm.csv_from_sql(mysql_command, args.output_name)
 
 elif args.output_format == 'COUNT':
 
