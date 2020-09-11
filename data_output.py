@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.7
+#!/usr/bin/env python
 
 """Data retreival from MySQL database. Outputs data in specified format
     according to SQL specifications."""
