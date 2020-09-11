@@ -169,7 +169,7 @@ parser_fasta = subparsers.add_parser('FASTA', help="""Ouputs a .fasta file â€”â€
                                     For help file see 'data_output.py FASTA \
                                     -h'.""", parents=[base_subparser])
 parser_fasta.add_argument('-g', help="""Name of mitochondrial genes 
-                            you wish to extract.', dest='genes""",
+                            you wish to extract.""", dest='genes',
                           metavar='genes', nargs='+',
                           choices=['*', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3',
                                    'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L',
