@@ -88,9 +88,9 @@ parser = argparse.ArgumentParser(
     formatter_class=FlexiFormatter)
 req_group = parser.add_argument_group('required arguments')
 req_group.add_argument('--db_user', dest='db_user', help="Database username",
-                       metavar='', required=True)
+                       required=True, metavar='username')
 req_group.add_argument('--db_pass', dest='db_pass', help="Database password",
-                       metavar='', required=True)
+                       required=True, metavar='password')
 parser.add_argument('--all', help="""Use this flag if you wish to pull all \
                     versions of each record satisfying your query. By default \
                     this script will only pull current versions if this flag \
@@ -122,14 +122,16 @@ base_subparser.add_argument('-s',
                             the main help page.
                             
                             EXAMPLES:
-                              1. 'subregion=Sabah' 
-                              2. 'length>25000' 
-                              3. 'order=Coleoptera'
+                              'subregion=Sabah', 
+                              'length>25000', 
+                              'order=Coleoptera'
                             """,
-                            dest='mysql_specs', default=[], nargs='+')
+                            dest='mysql_specs', default=[], nargs='+',
+                            metavar='specs')
 base_subparser.add_argument('-x',
                             help="""Taxonomic searchterm to search in \
-                            database""", dest='taxonomy_spec')
+                            database""", dest='taxonomy_spec',
+                            metavar='taxon')
 
 subparsers = parser.add_subparsers(dest="output_format",
                                    description='Desired output format:')
@@ -150,58 +152,53 @@ parser_csv.add_argument('-t', help="""Name of database table you wish
                         column in the specified table. If this is not the case 
                         then stating only the required columns under the -c flag
                          will suffice.""", dest='database_table',
+                        metavar='table',
                         choices=["metadata", "bioentry", "biosequence",
                                  "taxon", "taxon_name", "rejected", "master"])
 parser_csv.add_argument('-c', help="""Name of table columns you 
                         wish to extract data from. (e.g. name length 
                         description)""", dest='table_columns', default=['*'],
-                        nargs='+')
+                        nargs='+', metavar='columns')
 parser_csv.add_argument('-o', help="""Preferred path/filename for the output
                         (extension will be added automatically according to 
                         your output format choice).""", dest='output_name',
-                        required=True)
+                        required=True, metavar='output')
 
 #Create the parser for the 'FASTA' command
 parser_fasta = subparsers.add_parser('FASTA', help="""Ouputs a .fasta file —— \
                                     For help file see 'data_output.py FASTA \
                                     -h'.""", parents=[base_subparser])
-parser_fasta.add_argument('-g', '--genes',  help="""Name of mitochondrial genes 
+parser_fasta.add_argument('-g', help="""Name of mitochondrial genes 
                             you wish to extract.', dest='genes""",
-                          metavar='{gene_names}', nargs='+',
+                          metavar='genes', nargs='+',
                           choices=['*', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3',
                                    'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L',
                                    'ND5', 'ND6'])
-parser_fasta.add_argument('-o', '--out', help="""Preferred path/filename for the
+parser_fasta.add_argument('-o', help="""Preferred path/filename for the
                             output (extension will be added automatically 
                             according to your output format choice).""",
-                          dest='output_name', metavar='{Output filename}',
+                          dest='output_name', metavar='output',
                           required=True)
 
 #Create the parser for the 'GB' command
 parser_gb = subparsers.add_parser('GB', help="""Outputs an annotated .gb file \
                                 —— For help file see 'data_output.py GB -h'.""",
                                   parents=[base_subparser])
-parser_gb.add_argument('-g', '--genes', help="""Name of mitochondrial genes you 
+parser_gb.add_argument('-g', help="""Name of mitochondrial genes you 
                         wish to extract.""", dest='genes',
-                       metavar='{gene_names}', nargs='+',
+                       metavar='genes', nargs='+',
                        choices=['*', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3',
                                 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L',
                                 'ND5', 'ND6'])
-parser_gb.add_argument('-o', '--out', help="""Preferred path/filename for the 
+parser_gb.add_argument('-o', help="""Preferred path/filename for the 
                         output (extension will be added automatically according 
                         to your output format choice).""", dest='output_name',
-                       metavar='{Output filename}', required=True)
+                       metavar='output', required=True)
 
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', '--all', 'CSV', '-o', 'dkasj', '-t', 'metadata', '-s', 'length<=2140'])
 
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', '--all', '-s', 'length<=2140', '--CSV', '-o', 'dkasj', '-t', 'metadata'])
-
-
-
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'GB', '-o', 'output/FINAL', '-s', "subregion IN ('Tengchong', 'Qinling')"])
-
-
-
 
 # args = parser.parse_args(["--db_user", "root", "--db_pass", "mmgdatabase", '-q', "SELECT * FROM metadata WHERE country='China';", 'CSV', "-t", "metadata", '-c', 'name', "-o", "metadateru", "-s", "subregion='Sabah'"])
 # args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-c", "name", "length", "accession", "seq", "-o", "metadateru", "-s", "country='United Kingdon' description='Lucanus sp. BMNH 1425267 mitochondrion, complete genome'", "-f", "csv"])
