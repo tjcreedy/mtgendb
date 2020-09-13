@@ -195,6 +195,9 @@ parser_gb.add_argument('-o', help="""Preferred path/filename for the
                         to your output format choice).""", dest='output_name',
                        metavar='output', required=True)
 
+
+# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'CSV', '-o', 'output/__sidetest', '-t', 'metadata', '-s', 'name=TEST064'])
+
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', '--all', 'CSV', '-o', 'dkasj', '-t', 'metadata', '-s', 'length<=2140'])
 
 # args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', '--all', '-s', 'length<=2140', '--CSV', '-o', 'dkasj', '-t', 'metadata'])
@@ -278,11 +281,21 @@ if args.output_format == 'CSV':
 
             #Construct new specification
             if bios:
-                new_spec = [f"(bioentry_id, metadata_id) IN "
-                            f"{tuple(current_ids.values())}"]
+                if len(current_ids) == 1:
+                    # As single-element tuples contain a trailing comma which
+                    # breaks sql query.
+                    new_spec = [f"(bioentry_id, metadata_id)="
+                                f"{list(current_ids.values())[0]}"]
+                else:
+                    new_spec = [f"(bioentry_id, metadata_id) IN " 
+                                f"{tuple(current_ids.values())}"]
             else:
-                new_spec = [f"metadata_id IN "
-                            f"{tuple([ids[1] for ids in current_ids.values()])}"]
+                if len(current_ids) == 1:
+                    new_spec = [f"metadata_id = "
+                                f"{list(current_ids.values())[0][1]}"]
+                else:
+                    meta_ids = tuple([ids[1] for ids in current_ids.values()])
+                    new_spec = [f"metadata_id IN {meta_ids}"]
 
             #Construct new SQL query
             mysql_command = gcm.construct_sql_output_query(args.database_table,

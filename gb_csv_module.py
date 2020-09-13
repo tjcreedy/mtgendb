@@ -1468,7 +1468,8 @@ def csv_from_sql(mysql_command, csv_name):
         rows = [list(row) for row in cur]
 
         # Delete surrogate keys
-        if 'version' in headers or 'metadata_id' in headers:
+        if 'version' in headers or 'metadata_id' in headers or \
+                'bioentry_id' in headers:
             indicies = []
             if 'version' in headers:
                 version_index = headers.index('version')
@@ -1476,6 +1477,9 @@ def csv_from_sql(mysql_command, csv_name):
             if 'metadata_id' in headers:
                 metadata_id_index = headers.index('metadata_id')
                 indicies.append(metadata_id_index)
+            if 'bioentry_id' in headers:
+                bio_id_index = headers.index('bioentry_id')
+                indicies.append(bio_id_index)
             for index in indicies:
                 del headers[index]
                 for row in rows:
@@ -1492,7 +1496,9 @@ def seqfile_from_sql(recs_dict, file_name, frmat):
     """Writes list of SeqRecords to a file of chosen format.
     """
     # Specific genes
-    if any(isinstance(x, list) for x in recs_dict.values()):
+    if any(key in recs_dict for
+           key in ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1',
+                   'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']):
         for gene in recs_dict.keys():
             SeqIO.write(recs_dict[gene], f"{file_name}_{gene}.{frmat}", frmat)
 
