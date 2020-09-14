@@ -33,7 +33,6 @@ parser = argparse.ArgumentParser(
         specifications: 
         
         --FIELDS--
-        
           metadata:\t'metadata_id', 'contigname', 'db_id', 'institution_code', 
                     'collection_code', 'specimen_id', 'morphospecies', \
         'ncbi_taxon_id', 'custom_lineage', 'traptype', 'dev_stage', 'site', \
@@ -59,7 +58,6 @@ parser = argparse.ArgumentParser(
         
         
         --OPERATORS-- 
-        
           =  : Equal to
           != : Not equal to
           <  : Less than
@@ -73,8 +71,7 @@ parser = argparse.ArgumentParser(
         set in your chosen format.
         
         --NOTES-- 
-        
-          1. For flags accepting multiple arguments (e.g. -s), each argument \
+        * For flags accepting multiple arguments (e.g. -s), each argument \
         must be a string in itself. The parser will read spaces as delimiters, \
         so if one of your args contains a space within it (e.g. \
         ‘country=United Kingdom’), it is important that you enclose it with \
@@ -282,8 +279,8 @@ if args.output_format == 'CSV':
             #Construct new specification
             if bios:
                 if len(current_ids) == 1:
-                    # As single-element tuples contain a trailing comma which
-                    # breaks sql query.
+                    # Spec must be built without tuple as single-element
+                    # tuples contain a trailing comma which breaks sql query.
                     new_spec = [f"(bioentry_id, metadata_id)="
                                 f"{list(current_ids.values())[0]}"]
                 else:

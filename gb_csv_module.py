@@ -2,7 +2,6 @@
 
 """Functions to interact with data files and MySQL database."""
 
-
 ## Imports ##
 import sys, time, urllib.request, csv, re
 from collections import defaultdict
@@ -26,6 +25,7 @@ db_name = "mmg_test"
 mysql_engine = "mysql+mysqldb://root:mmgdatabase@localhost/mmg_test"
 namespace = "mmg"
 
+
 ## Functions ##
 
 def check_login_details(db_un, db_pw):
@@ -35,6 +35,7 @@ def check_login_details(db_un, db_pw):
         sys.exit("ERROR: Incorrect login details.")
 
     return
+
 
 def gb_into_dictionary(gb_filename, key):
     """Take a file in genbank-format and load it into a dictionary, define
@@ -68,6 +69,7 @@ def gb_into_dictionary(gb_filename, key):
 
     return gb_dictionary
 
+
 def text_to_list(txtfile):
     """Converts text-file of IDs (one per line) into a list, exiting if
     duplicates are present.
@@ -89,6 +91,7 @@ def text_to_list(txtfile):
         ids_list = list(set(ids_list))
 
     return ids_list
+
 
 def versions_to_dict(txtfile):
     """Converts 3-column text-file of IDs and target versions for rollback
@@ -128,6 +131,7 @@ def versions_to_dict(txtfile):
 
     return target_versions
 
+
 def check_acc_format(acc_list):
     """Checks each accession in list satisfies genbank format, dropping any
     that don't.
@@ -143,6 +147,7 @@ def check_acc_format(acc_list):
                   f"GenBank format.")
 
     return accs_out
+
 
 def correct_header(csv_dataframe, action):
     """Check metadata file has correct columns by creating a list of its column
@@ -180,6 +185,7 @@ def correct_header(csv_dataframe, action):
 
     return
 
+
 def lat_long(df):
     """Checks the latitude and longitude columns of the DataFrame are correctly
     formatted.
@@ -195,6 +201,7 @@ def lat_long(df):
                      f" '{long}'")
 
     return
+
 
 def matching_inputids(csv_df, gb_dict, action):
     """Check if the GenBank and CSV metadata files have matching entries, and
@@ -215,7 +222,8 @@ def matching_inputids(csv_df, gb_dict, action):
 
     if len(csv_duplicates):
         sys.exit("ERROR: There are multiple rows sharing the same name in your "
-                 "CSV file: " + ', '.join(csv_duplicates) + ". IDs must be unique.")
+                 "CSV file: " + ', '.join(
+            csv_duplicates) + ". IDs must be unique.")
 
     if len(intersect) != len(union):
         # If the IDS in the CSV and GenBank files are not identical...
@@ -251,6 +259,7 @@ def matching_inputids(csv_df, gb_dict, action):
 
     return new_csv_df, new_gb_dict
 
+
 def new_ids(genbank_dict, prefix, startvalue, padding):
     """Check if the new ids are looking fine given the user input (prefix,
     startvalue, padding).
@@ -272,7 +281,7 @@ def new_ids(genbank_dict, prefix, startvalue, padding):
         # given the padding.
         sys.exit("ERROR: A 0-padding by " + str(padding) +
                  " digits is not sufficient for the ingestion of " + str(
-                len(genbank_dict)) + " new entries.")
+            len(genbank_dict)) + " new entries.")
 
     if len(str(startvalue)) > int(padding):
         sys.exit("ERROR: The starting number " + str(
@@ -288,6 +297,7 @@ def new_ids(genbank_dict, prefix, startvalue, padding):
         startvalue = int(startvalue) + 1
 
     return dict_new_ids
+
 
 def check_ids(ids_list, action):
     """Check if the database ids already exist in the database.
@@ -317,6 +327,7 @@ def check_ids(ids_list, action):
                      f"'rollback'.")
 
     return
+
 
 def check_accs_in_db(accs_list):
     """Checks accessions haven't already been pulled from GenBank by checking
@@ -352,6 +363,7 @@ def check_accs_in_db(accs_list):
             accs_list = [a for a in accs_list if a not in duplicates]
 
     return accs_list
+
 
 def check_recs_for_dups(records):
     """Checks a list of records for duplicates by referring to the comment
@@ -416,6 +428,7 @@ def check_recs_for_dups(records):
 
     return use_recs, reject
 
+
 def check_seqs_in_db(records):
     """Checks whether sequences already exist in the database.
     """
@@ -434,9 +447,11 @@ def check_seqs_in_db(records):
               f"already exist in the database:"
               f"\n{', '.join(reject)}")
 
-    new_recs = {name: rec for name, rec in records.items() if name not in reject}
+    new_recs = {name: rec for name, rec in records.items() if
+                name not in reject}
 
     return new_recs, reject
+
 
 def load_reject_table(rejected):
     """Loads a list of rejected accession numbers into the 'rejected' SQL
@@ -447,6 +462,7 @@ def load_reject_table(rejected):
     rej_df.to_sql(name='rejected', if_exists='append', index=False, con=engine)
 
     return
+
 
 def check_latest_version(db_id):
     """Return most recent bioentry and metaentry version numbers of
@@ -464,6 +480,7 @@ def check_latest_version(db_id):
             bioentry_version, metadata_version = row
 
     return bioentry_version, metadata_version
+
 
 def check_current_version(db_id):
     """Return current bioentry and metaentry version numbers of record
@@ -488,6 +505,7 @@ def check_current_version(db_id):
 
     return bio_version, meta_version
 
+
 def fetch_current_ids(names_dict):
     """Fetch primary keys of current versions from master table.
 
@@ -510,6 +528,7 @@ def fetch_current_ids(names_dict):
 
     return current_ids
 
+
 def fetch_names(sql, db_un, db_pw):
     """Fetch names and corresponding db_id's from database using MySQL command
 
@@ -527,6 +546,7 @@ def fetch_names(sql, db_un, db_pw):
 
     return names_dict
 
+
 def change_ids_genbank(genbank_dict, dict_new_ids, key):
     """Change the ids in the genbank file to the new database ids (LLLLNNNNN).
     """
@@ -543,6 +563,7 @@ def change_ids_genbank(genbank_dict, dict_new_ids, key):
 
     return
 
+
 def change_names_csv(csv_df, dict_new_ids):
     """Adds column containing new db_ids to df.
     """
@@ -551,6 +572,7 @@ def change_names_csv(csv_df, dict_new_ids):
     new_csv_df = pd.merge(dict_df, csv_df, on='contigname')
 
     return new_csv_df
+
 
 def taxonomy_metadata(csv_df):
     """Function returning a dictionary with all the taxonomic information for
@@ -581,6 +603,7 @@ def taxonomy_metadata(csv_df):
 
     return csv_taxa
 
+
 def chunker(seq, size):
     """Splits input list/set into subsets of specified size
     """
@@ -588,6 +611,7 @@ def chunker(seq, size):
         seq = list(seq)
 
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
+
 
 def return_gb_data(acc_list, email):
     """Takes list of of IDs/accessions and returns dict of corresponding
@@ -611,6 +635,7 @@ def return_gb_data(acc_list, email):
 
     return records
 
+
 def extract_metadata(records):
     """Extracts metadata from gb_dict and writes to DataFrame.
     """
@@ -632,8 +657,10 @@ def extract_metadata(records):
                     # Extract country
                     country = feature.qualifiers['country'][0]
                     if ': ' in country:
-                        country = feature.qualifiers['country'][0].split(": ")[0]
-                        subregion = feature.qualifiers['country'][0].split(": ")[1]
+                        country = feature.qualifiers['country'][0].split(": ")[
+                            0]
+                        subregion = \
+                        feature.qualifiers['country'][0].split(": ")[1]
                     else:
                         subregion = None
                 else:
@@ -672,15 +699,17 @@ def extract_metadata(records):
     # (None/NaN objects)
     for label in ['institution_code', 'collection_code', 'specimen_id',
                   'morphospecies', 'custom_lineage', 'dev_stage', 'site',
-                  'locality', 'authors', 'size', 'habitat', 'habitat_stratum',
+                  'locality', 'authors', 'habitat', 'habitat_stratum',
                   'feeding_behaviour', 'library', 'datasubmitter',
                   'projectname', 'notes']:
         gb_met_df[label] = None
 
-    for header in ['latitude', 'longitude']:
+    #TODO: Check how size is measured and edit this/schema field accordingly
+    for header in ['latitude', 'longitude', 'size']:
         gb_met_df[header] = np.nan
 
     return gb_met_df
+
 
 def taxonomy_from_gb(genbank_dict):
     """Function returning dictionary of taxids from genbank file if it has it
@@ -705,6 +734,7 @@ def taxonomy_from_gb(genbank_dict):
 
     return gb_taxa
 
+
 def taxid_metadata(csv_dataframe):
     """Return dictionary with taxids provided in metadata table
     ("" if not given).
@@ -723,6 +753,7 @@ def taxid_metadata(csv_dataframe):
             csv_taxids[id_] = ""
 
     return csv_taxids
+
 
 def return_ncbi_taxid(entry, searchterm, email_address):
     """For each entry get tax_id from NCBI taxonomy based on taxonomic
@@ -765,6 +796,7 @@ def return_ncbi_taxid(entry, searchterm, email_address):
 
     return tax_id
 
+
 def return_ncbi_lineage(searchterm, email_address):
     """Search NCBI for lineage information given a tax id.
     """
@@ -777,7 +809,8 @@ def return_ncbi_lineage(searchterm, email_address):
         print(f"No hits found for tax id '{searchterm}' in NCBI taxonomy.")
 
     elif len(record) > 1:
-        print(f"Multiple hits found for tax id '{searchterm}' in NCBI taxonomy.")
+        print(
+            f"Multiple hits found for tax id '{searchterm}' in NCBI taxonomy.")
 
     elif len(record) == 1:
         taxonomy = record[0]["Lineage"]
@@ -855,6 +888,7 @@ def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
 
     return combined_lineage
 
+
 def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
     """Print rejected entries to CSV and GenBank files.
     Return df and gb_dict with accepted entries only.
@@ -910,6 +944,7 @@ def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
 
     return genbank_dict, csv_df
 
+
 def insert_taxid(ncbi_lineage, genbank_dict):
     """Insert tax id into gb data (returned from "ncbi_taxid").
     """
@@ -952,6 +987,7 @@ def insert_taxid(ncbi_lineage, genbank_dict):
 
     return genbank_dict
 
+
 def loadnamevariants(source=None):
     """Generates dict of name variants for each gene.
     """
@@ -984,6 +1020,7 @@ def loadnamevariants(source=None):
     source.close()
 
     return variants, types, products
+
 
 def alter_features(genbank_dict):
     """Edit the features in the genbank entries.
@@ -1043,6 +1080,7 @@ def alter_features(genbank_dict):
 
     return genbank_dict
 
+
 def add_lineage_df(csv_dataframe, combined_lineage):
     """Add columns with tax_id, custom_ and ncbi_lineage to metadata dataframe.
     """
@@ -1055,6 +1093,7 @@ def add_lineage_df(csv_dataframe, combined_lineage):
     df.rename(columns={"index": "contigname"}, inplace=True)
 
     return df
+
 
 def reformat_df_cols(df):
     """Reorder DataFrame columns for ingestion into MySQL database.
@@ -1069,6 +1108,7 @@ def reformat_df_cols(df):
 
     return df
 
+
 def load_ids_to_master(new_ids):
     """Loads new db_ids as primary keys into the master table
     """
@@ -1081,6 +1121,7 @@ def load_ids_to_master(new_ids):
         cur.execute(sql)
 
     return
+
 
 def load_gb_dict_into_db(genbank_data):
     """Load genbank_data as a dictionary into the mysql database.
@@ -1098,6 +1139,7 @@ def load_gb_dict_into_db(genbank_data):
 
     return
 
+
 def load_df_into_db(csv_dataframe):
     """Loading pandas dataframe with metadata into the database.
     """
@@ -1110,6 +1152,7 @@ def load_df_into_db(csv_dataframe):
     print(" - %i entries loaded." % len(csv_dataframe.index))
 
     return
+
 
 def sql_cols(table, cols, spec):
     """Determine required tables and columns for MySQL query. Construct columns
@@ -1216,6 +1259,7 @@ def sql_cols(table, cols, spec):
 
     return tables, cols_string, cols_dict, spec
 
+
 def table_join(start, table_list, main_table, shared_col):
     """Consructs string for MySQL table joins
 
@@ -1236,6 +1280,7 @@ def table_join(start, table_list, main_table, shared_col):
         n += 1
 
     return table_string
+
 
 def sql_table(tables):
     """Construct table string for MySQL query
@@ -1280,6 +1325,7 @@ def sql_table(tables):
         sys.exit("ERROR: Cannot construct table. Invalid information provided.")
 
     return table_string
+
 
 def sql_spec(cols_dict, spec, spec_type):
     """Construct specification string for MySQL query
@@ -1336,6 +1382,7 @@ def sql_spec(cols_dict, spec, spec_type):
 
     return spec_string
 
+
 def construct_sql_output_query(table, cols, spec):
     """Builds MySQL SELECT statement from table, column, and specification
     strings.
@@ -1349,6 +1396,7 @@ def construct_sql_output_query(table, cols, spec):
     mysql_command = f"SELECT {cols_string} FROM {table_string}{spec_string};"
 
     return mysql_command
+
 
 def construct_sql_update_query(table, update, spec):
     """Builds MySQL UPDATE statement from table, column, and specification
@@ -1366,6 +1414,7 @@ def construct_sql_update_query(table, update, spec):
 
     return mysql_command
 
+
 def construct_sql_delete_query(spec):
     """Builds MySQL DELETE statement from table, column, and specification
     strings.
@@ -1380,6 +1429,7 @@ def construct_sql_delete_query(spec):
 
     return mysql_command
 
+
 def fetch_names(mysql_command):
     """Fetch names and corresponding db_id's from database using MySQL query.
     """
@@ -1393,6 +1443,7 @@ def fetch_names(mysql_command):
     names_dict = {row[0]: row[1] for row in set(records)}
 
     return names_dict
+
 
 def fetch_recs(names_dict, _all):
     """Fetches a list of SeqRecords from an input dict of record names/db ids
@@ -1413,6 +1464,7 @@ def fetch_recs(names_dict, _all):
 
     return recs
 
+
 def execute_query(mysql_query):
     """Connect to db and execute mysql query
     """
@@ -1423,6 +1475,7 @@ def execute_query(mysql_query):
         cur.execute(mysql_query)
 
     return
+
 
 def extract_genes(recs, genes):
     """Extracts genes from SeqRecord objects and writes to dict:
@@ -1442,7 +1495,8 @@ def extract_genes(recs, genes):
             for feature in record.features:
                 if feature.type.upper() == "CDS" \
                         and 'gene' in feature.qualifiers \
-                        and feature.qualifiers['gene'][0].upper() == gene.upper():
+                        and feature.qualifiers['gene'][
+                    0].upper() == gene.upper():
                     subrec = feature.location.extract(record)
                     subrec.description = re.sub(', [a-z]+ genome$', '',
                                                 record.description)
@@ -1453,6 +1507,7 @@ def extract_genes(recs, genes):
         subrecs[gene] = extracted_genes
 
     return subrecs
+
 
 def csv_from_sql(mysql_command, csv_name):
     """Extract csv file from SQL database.
@@ -1492,6 +1547,7 @@ def csv_from_sql(mysql_command, csv_name):
 
     return
 
+
 def seqfile_from_sql(recs_dict, file_name, frmat):
     """Writes list of SeqRecords to a file of chosen format.
     """
@@ -1508,6 +1564,7 @@ def seqfile_from_sql(recs_dict, file_name, frmat):
 
     return
 
+
 def return_count(mysql_command):
     """Return number of records in the database satisfying a user-supplied
     specification.
@@ -1520,6 +1577,7 @@ def return_count(mysql_command):
             print(row[0])
 
     return
+
 
 def update_data(metadata, gb_dict):
     """Load updated records into the database.
@@ -1554,6 +1612,7 @@ def update_data(metadata, gb_dict):
         load_df_into_db(metadata)
 
     return
+
 
 def update_master_table(gb_ids, meta_ids, action):
     """Load primary keys (bioentry_id, metadata_id) of most up-to-date versions
@@ -1617,6 +1676,7 @@ def update_master_table(gb_ids, meta_ids, action):
 
     return
 
+
 def rollback_versions(versions_dict):
     """Rollback current version of selected records highlighted in master
     table to a previous version of the users choice.
@@ -1656,6 +1716,7 @@ def rollback_versions(versions_dict):
 
     return
 
+
 def remove_recs(db_ids):
     """Removes all data corresponding to each id in provided ids list from
     database.
@@ -1670,6 +1731,7 @@ def remove_recs(db_ids):
         cur.execute(sql)
 
     return
+
 
 def remove_versions(versions_dict):
     """Removes selected versions of records corresponding to user-supplied ids
@@ -1700,11 +1762,11 @@ def remove_versions(versions_dict):
                 x = input(f"Version {target_bio_ver} is the current version of "
                           f"bioentry '{db_id}'. If removed, the current "
                           f"version will be assumed to be the latest in the "
-                          f"database. Do you wish to continue? 'Y'/'N'").upper()
+                          f"database. Do you wish to continue? 'Y'/'N'\n>?").upper()
                 while not (x == 'Y' or x == 'N'):
                     x = input(f"Would you like to delete the current version "
                               f"of bioentry '{db_id}' ('Y') or cancel the "
-                              f"operation ('N')?").upper()
+                              f"operation ('N')?\n>?").upper()
                 if x == 'N':
                     sys.exit('Operation cancelled.')
                 else:
@@ -1735,13 +1797,13 @@ def remove_versions(versions_dict):
                 # automatically rollback current version to the *latest*
                 # ingested.
                 x = input(f"Version {target_meta_ver} is the current version "
-                          f"of meta-entry '{db_id}'. If removed, the current "
+                          f"of meta-entry '{db_id}'. If removed, the new current "
                           f"version will be assumed to be the latest in the "
-                          f"database. Do you wish to continue? 'Y'/'N'").upper()
+                          f"database. Do you wish to continue? 'Y'/'N'\n>?").upper()
                 while not (x == 'Y' or x == 'N'):
                     x = input(f"Would you like to delete the current version "
                               f"of meta-entry '{db_id}' ('Y') or cancel the "
-                              f"operation ('N')?").upper()
+                              f"operation ('N')?\n>?").upper()
                 if x == 'N':
                     sys.exit('Operation cancelled.')
                 else:
@@ -1757,5 +1819,110 @@ def remove_versions(versions_dict):
                 with con:
                     cur = con.cursor()
                     cur.execute(sql_del)
+
+    return
+
+def remove_versions(versions_dict):
+    # TODO: TEST THIS
+    """Removes selected versions of records corresponding to user-supplied ids
+    from database.
+    """
+    con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
+    server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
+                                          passwd=db_passwd, host=db_host,
+                                          db=db_name)
+    db = server[namespace]
+    adaptor = db.adaptor
+
+    vers = {}
+
+    for db_id in versions_dict.keys():
+        current_bio_ver, current_meta_ver = check_current_version(db_id)
+        target_bio_ver = versions_dict[db_id]['b']
+        target_meta_ver = versions_dict[db_id]['m']
+
+        vers[db_id] = {'current_bio_ver': current_bio_ver,
+                       'current_meta_ver': current_meta_ver,
+                       'target_bio_ver': target_bio_ver,
+                       'target_meta_ver': target_meta_ver
+                       }
+
+    bio_clashes = [db_id for db_id in vers if vers[db_id]['target_bio_ver']
+                   == vers[db_id]['current_bio_ver']]
+    meta_clashes = [db_id for db_id in vers if vers[db_id]['target_meta_ver']
+                    == vers[db_id]['current_meta_ver']]
+
+    if bio_clashes:
+        x = input(f"WARNING: you are about to remove the current versions "
+                  f"of the following bioentries: {', '.join(bio_clashes)}."
+                  f"If removed, the new current versions will be assumed to be "
+                  f"the latest in the database. Do you wish to continue? "
+                  f"'Y'/'N'\n>?").upper()
+        while not (x == 'Y' or x == 'N'):
+            x = input(f"Would you like to delete the current versions "
+                      f"of the listed bioentries ('Y') or cancel the "
+                      f"operation ('N')?\n>?").upper()
+        if x == 'N':
+            sys.exit('Operation cancelled.')
+        else:
+            for db_id in vers.keys():
+                if vers[db_id]['target_bio_ver']:
+                    # If user has specified a bioentry record they wish to delete...
+                    del_bio_id = adaptor.fetch_seqid_by_version(1,
+                                                                f"{db_id}."
+                                                                f"{target_bio_ver}")
+                    sql_del = f"DELETE FROM bioentry WHERE " \
+                              f"bioentry_id={del_bio_id};"
+                    with con:
+                        cur = con.cursor()
+                        cur.execute(sql_del)
+                        update_master_table([db_id], None, 'remove')
+
+    else:
+        for db_id in vers.keys():
+            if vers[db_id]['target_bio_ver']:
+                # If user has specified a bioentry record they wish to delete...
+                del_bio_id = adaptor.fetch_seqid_by_version(1,
+                                                            f"{db_id}."
+                                                            f"{target_bio_ver}")
+                sql_del = f"DELETE FROM bioentry WHERE bioentry_id={del_bio_id};"
+                with con:
+                    cur = con.cursor()
+                    cur.execute(sql_del)
+
+    if meta_clashes:
+        x = input(f"WARNING: you are about to remove the current versions "
+                  f"of the following meta-entries: {', '.join(meta_clashes)}."
+                  f"If removed, the new current versions will be assumed to be "
+                  f"the latest in the database. Do you wish to continue? "
+                  f"'Y'/'N'\n>?").upper()
+        while not (x == 'Y' or x == 'N'):
+            x = input(f"Would you like to delete the current versions "
+                      f"of the listed meta-entries ('Y') or cancel the "
+                      f"operation ('N')?\n>?").upper()
+        if x == 'N':
+            sys.exit('Operation cancelled.')
+        else:
+            sql = f"SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') " \
+                  f"AND (version={target_meta_ver});"
+            with con:
+                cur = con.cursor()
+                cur.execute(sql)
+                del_meta_id = cur.fetchone()[0]
+                sql_del = f"DELETE FROM metadata WHERE " \
+                          f"metadata_id={del_meta_id};"
+                cur.execute(sql_del)
+                update_master_table(None, [db_id], 'remove')
+    else:
+        sql = f"SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') " \
+              f"AND (version={target_meta_ver});"
+        with con:
+            cur = con.cursor()
+            cur.execute(sql)
+            del_meta_id = cur.fetchone()[0]
+            sql_del = f"DELETE FROM metadata WHERE " \
+                      f"metadata_id={del_meta_id};"
+            cur.execute(sql_del)
+            update_master_table(None, [db_id], 'remove')
 
     return

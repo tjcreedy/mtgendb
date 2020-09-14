@@ -7,24 +7,47 @@
 import argparse
 import pandas as pd
 import gb_csv_module as gcm
+from argparse_formatter import FlexiFormatter
 
 ## Arguments ##
-parser = argparse.ArgumentParser(description='Modifying data in the database')
+parser = argparse.ArgumentParser(description='Modifying data in the database',
+                                 epilog="""
+                                 --NOTES--
+                                 * This script adds modified data pertaining to \
+                                 existing records to the database. 
+                                 * Genetic data and metadata can be updated \
+                                 independently (i.e. one may parse a GenBank \
+                                 file without a CSV or vice versa).
+                                 * Version incrementation is automated in \
+                                 this script, so the user should not manually \
+                                 update version numbers when updating records \
+                                 otherwise version numbers will be skipped.
+                                 * Whatever records are ingested through this \
+                                 script will be loaded into the database \
+                                 regardless of whether they are duplicates of \
+                                 pre-existing records (the database will not \
+                                 recognise them as duplicates as all fields \
+                                 with ‘unique’ constraints on them will have \
+                                 been automatically incremented), so for \
+                                 efficiency the user should ensure that any \
+                                 unedited records are removed from the input \
+                                 files before parsing them.""",
+                                 formatter_class=FlexiFormatter)
 req_group = parser.add_argument_group('required arguments')
 req_group.add_argument('--db_user', dest='db_user', help="Database username",
                        metavar='', required=True)
 req_group.add_argument('--db_pass', dest='db_pass', help="Database password",
                        metavar='', required=True)
-parser.add_argument('-gb', help="""Name of genbank-file to 
-                    ingest into the database.""", dest='input_genbank',
-                    metavar='INPUT_GENBANK')
-parser.add_argument('-csv', help="""Name of genbank-file to 
-                    ingest into the databse.""", dest='input_csv',
-                    metavar='INPUT_CSV')
-parser.add_argument('-k', help="""Field of the genbank-file where the 
-                    name of the entry can be found.""", dest='key',
-                    default='LOCUS', metavar='KEY',
-                    choices=['LOCUS', 'ACCESSION', 'DEFINITION'])
+parser.add_argument('-gb',
+                    help="Path to genbank-file to ingest into the database.",
+                    dest='input_genbank', metavar='')
+parser.add_argument('-csv',
+                    help="Path to genbank-file to ingest into the databse.",
+                    dest='input_csv', metavar='')
+parser.add_argument('-k',
+                    help="""Field of the genbank-file where the name of the \
+                    entry can be found.""", dest='key', default='LOCUS',
+                    metavar='', choices=['LOCUS', 'ACCESSION', 'DEFINITION'])
 
 
 #Subparser for optional manual update
@@ -143,7 +166,7 @@ else:
         # Check if the header in the csv is correct
         gcm.correct_header(csv_df, 'replace')
 
-        # Check if latitude and longitude are formatted correctly
+        # Check if latitude and longitude are floats
         gcm.lat_long(csv_df)
 
         # Add version column

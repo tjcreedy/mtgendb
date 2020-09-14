@@ -8,8 +8,6 @@ import argparse
 import pandas as pd
 import gb_csv_module as gcm
 
-#TODO: Test with all new header names
-
 ## Arguments ##
 parser = argparse.ArgumentParser(
     description="Adding a GenBank and a metadata CSV file to the database.")
