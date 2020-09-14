@@ -229,18 +229,7 @@ gcm.check_login_details(args.db_user, args.db_pass)
 # Check any custom queries are 'SELECT' statements
 if args.custom_query:
     if not args.custom_query.startswith('SELECT'):
-        x = input("WARNING: your custom query is not a MySQL 'SELECT' \
-                statement and will not output any data. Any modifications to \
-                the database made by executing this command will be final. \
-                Would you like to execute the command anyway? 'Y'/'N'\n>?").upper()
-        while not (x == 'Y' or x == 'N'):
-            x = input("Type 'Y' to execute the command or 'N' to cancel "
-                      "the operation.\n>?").upper()
-        if x == 'N':
-            sys.exit("Operation cancelled.")
-        else:
-            gcm.execute_query(args.custom_query)
-            sys.exit('Done.')
+        sys.exit("ERROR: your custom query is not a MySQL 'SELECT' statement.")
 
 ## Functions for CSV subparser ##
 
