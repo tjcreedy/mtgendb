@@ -301,6 +301,8 @@ if args.output_format == 'CSV':
 
     gcm.csv_from_sql(mysql_command, args.output_name)
 
+    print('Done.')
+
 elif args.output_format == 'COUNT':
 
     if args.mysql_query:
@@ -388,7 +390,7 @@ else:
 
     gcm.seqfile_from_sql(records, args.output_name, args.output_format.lower())
 
-print('Done.')
+    print('Done.')
 """
 TO-DO
 
