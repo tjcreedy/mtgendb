@@ -225,8 +225,8 @@ args = parser.parse_args()
 #Define restrictions
 if args.mysql_query and (args.taxonomy_spec or args.mysql_specs
                          or args.database_table or args.table_columns):
-    parser.error("""query-building specifications and custom mysql query both 
-    provided. Please proceed with one method.""")
+    parser.error("""query-building specifications and custom mysql query both \
+    provided. Please proceed with one method only.""")
 
 #Check login details
 gcm.check_login_details(args.db_user, args.db_pass)
@@ -235,13 +235,19 @@ if args.output_format == 'CSV':
 
     if args.mysql_query:
 
+        if args.taxonomy_spec or args.mysql_specs or args.database_table or \
+                args.table_columns:
+            # Define restrictions
+            parser.error("""query-building specifications and custom mysql \
+                query both provided. Please proceed with one method only.""")
+
         mysql_command = args.mysql_query
 
     else:
 
         if args.taxonomy_spec:
 
-            args.mysql_specs.append(f'taxon={args.taxonomy_spec}')
+            args.mysql_specs.append(f'taxon_searchterm={args.taxonomy_spec}')
 
         if args.all:
 
@@ -305,9 +311,14 @@ elif args.output_format == 'COUNT':
 
     if args.mysql_query:
 
+        if args.taxonomy_spec or args.mysql_specs:
+            # Define restrictions
+            parser.error("""query-building specifications and custom mysql \
+                query both provided. Please proceed with one method only.""")
+
         if args.all:
 
-            #TODO: Test this! Add distinct to stateent below? Check for dups
+            #TODO: Test this! Add distinct to stateent below? Check for dups. No logic to distinguish for --all
 
             #One would have to do a normal SELECT command here
             mysql_command = re.sub('SELECT.*?FROM', 'SELECT COUNT(*) FROM',
@@ -330,7 +341,7 @@ elif args.output_format == 'COUNT':
 
         if args.taxonomy_spec:
 
-            args.mysql_specs.append(f'taxon={args.taxonomy_spec}')
+            args.mysql_specs.append(f'taxon_searchterm={args.taxonomy_spec}')
 
         if args.all:
 
@@ -356,13 +367,18 @@ else:
 
     if args.mysql_query:
 
+        if args.taxonomy_spec or args.mysql_specs:
+            # Define restrictions
+            parser.error("""query-building specifications and custom mysql \
+                query both provided. Please proceed with one method only.""")
+
         mysql_command = args.mysql_query
 
     else:
 
         if args.taxonomy_spec:
 
-            args.mysql_specs.append(f'taxon={args.taxonomy_spec}')
+            args.mysql_specs.append(f'taxon_searchterm={args.taxonomy_spec}')
 
         mysql_command = gcm.construct_sql_output_query(None, ['contigname',
                                                               'db_id'],

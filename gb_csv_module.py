@@ -700,12 +700,11 @@ def extract_metadata(records):
     for label in ['institution_code', 'collection_code', 'specimen_id',
                   'morphospecies', 'custom_lineage', 'dev_stage', 'site',
                   'locality', 'authors', 'habitat', 'habitat_stratum',
-                  'feeding_behaviour', 'library', 'datasubmitter',
+                  'feeding_behaviour', 'size', 'library', 'datasubmitter',
                   'projectname', 'notes']:
         gb_met_df[label] = None
 
-    #TODO: Check how size is measured and edit this/schema field accordingly
-    for header in ['latitude', 'longitude', 'size']:
+    for header in ['latitude', 'longitude']:
         gb_met_df[header] = np.nan
 
     return gb_met_df
@@ -1190,15 +1189,15 @@ def sql_cols(table, cols, spec):
                      'ncbi_taxon_id', 'custom_lineage', 'traptype', 'dev_stage',
                      'site', 'locality', 'subregion', 'country', 'latitude',
                      'longitude', 'size', 'feeding_behaviour', 'habitat',
-                     'habitat_stratum', 'metadata.authors', 'library',
+                     'habitat_stratum', 'authors', 'library',
                      'datasubmitter', 'projectname', 'genbank_accession',
                      'notes', 'metadata.version']
-    bioentry_cols = ['bioentry_id', 'bioentry.biodatabase_id', 'taxon_id',
+    bioentry_cols = ['bioentry_id', 'biodatabase_id', 'taxon_id',
                      'name', 'accession', 'identifier', 'division',
                      'description', 'version']
     biosequence_cols = ['biosequence.version', 'length', 'alphabet', 'seq']
     comment_cols = ['comment_id', 'comment.bioentry_id', 'comment_text',
-                    'comment.rank']
+                    'rank']
     taxon_cols = ['taxon.taxon_id', 'taxon.ncbi_taxon_id', 'parent_taxon_id',
                   'node_rank', 'genetic_code', 'mito_genetic_code',
                   'left_value', 'right_value']
@@ -1206,7 +1205,8 @@ def sql_cols(table, cols, spec):
 
     # Taxonomic queries
     taxonomy = ['subspecies', 'species', 'genus', 'tribe', 'family', 'order',
-                'class', 'phylum', 'kingdom', 'superkingdom', 'taxon']
+                'class', 'phylum', 'kingdom', 'superkingdom',
+                'taxon_searchterm']
 
     # Construct columns dictionary (adding prefixes for table joins)
     # E.g. country -> metadata.country
@@ -1351,7 +1351,7 @@ def sql_spec(cols_dict, spec, spec_type):
             # containing searchterm.
             if split[0] in ['subspecies', 'species', 'genus', 'tribe', 'family',
                             'order', 'class', 'phylum', 'kingdom',
-                            'superkingdom', 'taxon']:
+                            'superkingdom', 'taxon_searchterm']:
                 specs.append(f"metadata.ncbi_taxon_id IN (SELECT DISTINCT "
                              f"include.ncbi_taxon_id FROM taxon INNER JOIN taxon"
                              f" AS include ON (include.left_value BETWEEN "
@@ -1495,8 +1495,7 @@ def extract_genes(recs, genes):
             for feature in record.features:
                 if feature.type.upper() == "CDS" \
                         and 'gene' in feature.qualifiers \
-                        and feature.qualifiers['gene'][
-                    0].upper() == gene.upper():
+                        and feature.qualifiers['gene'][0].upper() == gene.upper():
                     subrec = feature.location.extract(record)
                     subrec.description = re.sub(', [a-z]+ genome$', '',
                                                 record.description)
