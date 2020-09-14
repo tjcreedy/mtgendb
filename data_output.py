@@ -5,6 +5,7 @@
 
 ## Imports ##
 import argparse
+import sys
 import re
 import gb_csv_module as gcm
 from argparse_formatter import FlexiFormatter
@@ -106,7 +107,7 @@ parser.add_argument('-q',
                     EXAMPLE:
                     \"SELECT * FROM metadata WHERE country='United Kingdom';\"
                     """,
-                    dest='mysql_query')
+                    dest='custom_query')
 
 base_subparser = argparse.ArgumentParser(add_help=False)
 #TODO: Does the custom query simply execute whatever is put in? What happens if it is not a SELECT statement here? Furnish notes here
@@ -222,12 +223,19 @@ args = parser.parse_args()
 
 ## Functions ##
 
-#Check login details
+# Check login details
 gcm.check_login_details(args.db_user, args.db_pass)
+
+# Check any custom queries are 'SELECT' statements
+if args.custom_query:
+    if not args.custom_query.startwith('SELECT'):
+        sys.exit("ERROR: your custom query must be a MySQL 'SELECT' statement.")
+
+## Functions for CSV subparser ##
 
 if args.output_format == 'CSV':
 
-    if args.mysql_query:
+    if args.custom_query:
 
         if args.taxonomy_spec or args.mysql_specs or args.database_table or \
                 args.table_columns:
@@ -235,7 +243,7 @@ if args.output_format == 'CSV':
             parser.error("""query-building specifications and custom mysql \
                 query both provided. Please proceed with one method only.""")
 
-        mysql_command = args.mysql_query
+        mysql_command = args.custom_query
 
     else:
 
@@ -303,9 +311,11 @@ if args.output_format == 'CSV':
 
     print('Done.')
 
+## Functions for COUNT subparser ##
+
 elif args.output_format == 'COUNT':
 
-    if args.mysql_query:
+    if args.custom_query:
 
         if args.taxonomy_spec or args.mysql_specs:
             # Define restrictions
@@ -314,11 +324,10 @@ elif args.output_format == 'COUNT':
 
         if args.all:
 
-            #TODO: Test this! Add distinct to stateent below? Check for dups. No logic to distinguish for --all
-
             #One would have to do a normal SELECT command here
-            mysql_command = re.sub('SELECT.*?FROM', 'SELECT COUNT(*) FROM',
-                                   args.mysql_query, 1)
+            mysql_command = re.sub('SELECT.*?FROM',
+                                   'SELECT DISTINCT COUNT(*) FROM',
+                                   args.custom_query, 1)
 
             gcm.return_count(mysql_command)
 
@@ -327,7 +336,7 @@ elif args.output_format == 'COUNT':
             mysql_command = re.sub('SELECT.*?FROM',
                                    'SELECT metadata.contigname, '
                                    'metadata.db_id FROM',
-                                   args.mysql_query, 1)
+                                   args.custom_query, 1)
 
             names = gcm.fetch_names(mysql_command)
 
@@ -359,16 +368,18 @@ elif args.output_format == 'COUNT':
 
             print(len(names))
 
+## Functions for FASTA and GB subparsers ##
+
 else:
 
-    if args.mysql_query:
+    if args.custom_query:
 
         if args.taxonomy_spec or args.mysql_specs:
             # Define restrictions
             parser.error("""query-building specifications and custom mysql \
                 query both provided. Please proceed with one method only.""")
 
-        mysql_command = args.mysql_query
+        mysql_command = args.custom_query
 
     else:
 
