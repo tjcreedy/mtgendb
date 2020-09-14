@@ -228,7 +228,7 @@ gcm.check_login_details(args.db_user, args.db_pass)
 
 # Check any custom queries are 'SELECT' statements
 if args.custom_query:
-    if not args.custom_query.startwith('SELECT'):
+    if not args.custom_query.startswith('SELECT'):
         sys.exit("ERROR: your custom query must be a MySQL 'SELECT' statement.")
 
 ## Functions for CSV subparser ##
