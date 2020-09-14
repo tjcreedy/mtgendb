@@ -240,7 +240,7 @@ if args.custom_query:
             sys.exit("Operation cancelled.")
         else:
             gcm.execute_query(args.custom_query)
-            print('Done.')
+            sys.exit('Done.')
 
 ## Functions for CSV subparser ##
 
