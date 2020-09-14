@@ -222,12 +222,6 @@ args = parser.parse_args()
 
 ## Functions ##
 
-#Define restrictions
-if args.mysql_query and (args.taxonomy_spec or args.mysql_specs
-                         or args.database_table or args.table_columns):
-    parser.error("""query-building specifications and custom mysql query both \
-    provided. Please proceed with one method only.""")
-
 #Check login details
 gcm.check_login_details(args.db_user, args.db_pass)
 
