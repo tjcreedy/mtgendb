@@ -1854,7 +1854,7 @@ def remove_versions(versions_dict):
 
     if bio_clashes:
         x = input(f"WARNING: you are about to remove the current versions "
-                  f"of the following bioentries: {', '.join(bio_clashes)}."
+                  f"of the following bioentries: {', '.join(bio_clashes)}.\n"
                   f"If removed, the new current versions will be assumed to be "
                   f"the latest in the database. Do you wish to continue? "
                   f"'Y'/'N'\n>?").upper()
@@ -1867,7 +1867,8 @@ def remove_versions(versions_dict):
         else:
             for db_id in vers.keys():
                 if vers[db_id]['target_bio_ver']:
-                    # If user has specified a bioentry record they wish to delete...
+                    # If user has specified a bioentry record they wish to
+                    # delete...
                     del_bio_id = adaptor.fetch_seqid_by_version(1,
                                                                 f"{db_id}."
                                                                 f"{target_bio_ver}")
@@ -1892,7 +1893,7 @@ def remove_versions(versions_dict):
 
     if meta_clashes:
         x = input(f"WARNING: you are about to remove the current versions "
-                  f"of the following meta-entries: {', '.join(meta_clashes)}."
+                  f"of the following meta-entries: {', '.join(meta_clashes)}.\n"
                   f"If removed, the new current versions will be assumed to be "
                   f"the latest in the database. Do you wish to continue? "
                   f"'Y'/'N'\n>?").upper()
@@ -1903,26 +1904,30 @@ def remove_versions(versions_dict):
         if x == 'N':
             sys.exit('Operation cancelled.')
         else:
-            sql = f"SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') " \
-                  f"AND (version={target_meta_ver});"
-            with con:
-                cur = con.cursor()
-                cur.execute(sql)
-                del_meta_id = cur.fetchone()[0]
-                sql_del = f"DELETE FROM metadata WHERE " \
-                          f"metadata_id={del_meta_id};"
-                cur.execute(sql_del)
-                update_master_table(None, [db_id], 'remove')
+            for db_id in vers.keys():
+                if vers[db_id]['target_meta_ver']:
+                    sql = f"SELECT metadata_id FROM metadata WHERE " \
+                          f"(db_id='{db_id}') AND (version={target_meta_ver});"
+                    with con:
+                        cur = con.cursor()
+                        cur.execute(sql)
+                        del_meta_id = cur.fetchone()[0]
+                        sql_del = f"DELETE FROM metadata WHERE " \
+                                  f"metadata_id={del_meta_id};"
+                        cur.execute(sql_del)
+                        update_master_table(None, [db_id], 'remove')
     else:
-        sql = f"SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') " \
-              f"AND (version={target_meta_ver});"
-        with con:
-            cur = con.cursor()
-            cur.execute(sql)
-            del_meta_id = cur.fetchone()[0]
-            sql_del = f"DELETE FROM metadata WHERE " \
-                      f"metadata_id={del_meta_id};"
-            cur.execute(sql_del)
-            update_master_table(None, [db_id], 'remove')
+        for db_id in vers.keys():
+            if vers[db_id]['target_meta_ver']:
+                sql = f"SELECT metadata_id FROM metadata WHERE " \
+                      f"(db_id='{db_id}') AND (version={target_meta_ver});"
+                with con:
+                    cur = con.cursor()
+                    cur.execute(sql)
+                    del_meta_id = cur.fetchone()[0]
+                    sql_del = f"DELETE FROM metadata WHERE " \
+                              f"metadata_id={del_meta_id};"
+                    cur.execute(sql_del)
+                    update_master_table(None, [db_id], 'remove')
 
     return
