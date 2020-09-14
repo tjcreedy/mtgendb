@@ -1732,11 +1732,11 @@ def remove_recs(db_ids):
 
     return
 
-
+"""
 def remove_versions(versions_dict):
-    """Removes selected versions of records corresponding to user-supplied ids
+    #Removes selected versions of records corresponding to user-supplied ids
     from database.
-    """
+    
     con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
     server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
                                           passwd=db_passwd, host=db_host,
@@ -1821,7 +1821,7 @@ def remove_versions(versions_dict):
                     cur.execute(sql_del)
 
     return
-
+"""
 def remove_versions(versions_dict):
     # TODO: TEST THIS
     """Removes selected versions of records corresponding to user-supplied ids
