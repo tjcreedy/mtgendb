@@ -339,7 +339,7 @@ CREATE TABLE metadata (
 	country	VARCHAR(50),
 	latitude	FLOAT(15),
 	longitude	FLOAT(15),
-	size 	INT(10),
+	size 	VARCHAR(10),
 	feeding_behaviour	VARCHAR(30),
 	habitat		VARCHAR(30),
 	habitat_stratum		VARCHAR(30),
