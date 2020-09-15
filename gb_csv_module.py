@@ -1887,8 +1887,6 @@ def remove_versions(versions_dict):
                     cur = con.cursor()
                     cur.execute(sql_del)
 
-                update_master_table([db_id], None, 'remove')
-
     if meta_clashes:
         x = input(f"WARNING: you are about to remove the current versions "
                   f"of the following meta-entries: {', '.join(meta_clashes)}.\n"
@@ -1928,7 +1926,5 @@ def remove_versions(versions_dict):
                     sql_del = f"DELETE FROM metadata WHERE " \
                               f"metadata_id={del_meta_id};"
                     cur.execute(sql_del)
-
-                update_master_table(None, [db_id], 'remove')
 
     return
