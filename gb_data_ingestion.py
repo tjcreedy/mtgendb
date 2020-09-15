@@ -40,7 +40,7 @@ args = parser.parse_args()
 gcm.check_login_details(args.db_user, args.db_pass)
 
 # Convert text-file of accessions to a list.
-acc_list = gcm.text_to_list(args.input_accessions)
+acc_list = gcm.text_to_list(args.accessions)
 
 # Check the provided accessions are formatted correctly.
 new_acc_list = gcm.check_acc_format(acc_list)
