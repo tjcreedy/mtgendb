@@ -16,7 +16,6 @@ from BioSQL import BioSeqDatabase
 from sqlalchemy import create_engine, update
 
 ## Variables ##
-# TODO: Should these begin with a trailing underscore to denote they are for internal use?
 db_driver = "MySQLdb"
 db_passwd = "mmgdatabase"
 db_host = "localhost"
@@ -35,7 +34,6 @@ def check_login_details(db_un, db_pw):
         sys.exit("ERROR: Incorrect login details.")
 
     return
-
 
 def gb_into_dictionary(gb_filename, key):
     """Take a file in genbank-format and load it into a dictionary, define
@@ -379,7 +377,7 @@ def check_recs_for_dups(records):
             continue
         dup = {seqr.name}
         if seqr.name.startswith('NC_'):
-            # Checks annotation section to see if it's copy of anything.
+            # Checks annotation section to see if it's a copy of anything.
             # If it is, then it adds its counterpart to dup
             origreg = 'The reference sequence is identical to ([A-Z]+[0-9]+)\.'
             origsearch = re.search(origreg, seqr.annotations['comment'])

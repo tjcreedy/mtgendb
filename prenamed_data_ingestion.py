@@ -4,8 +4,6 @@
     genetic data and a csv containing metadata. Unlike the 'data_ingestion.py'
     script, this retains the original names of the input records."""
 
-#TODO: TEST THIS!
-
 ## Imports ##
 import argparse
 import pandas as pd

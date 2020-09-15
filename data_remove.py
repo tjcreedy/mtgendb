@@ -47,7 +47,7 @@ remove_version.add_argument('-m', help="""Metadata version to be deleted.""",
 remove_version.add_argument('-b', help="""Bioentry version to be deleted.""",
                             dest='bio_version', metavar='', type=int)
 
-#args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'VER', '-t', 'testdata/removes.txt'])
+#args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'VER', '-t', 'testdata/removes_input.txt'])
 
 args = parser.parse_args()
 

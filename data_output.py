@@ -110,7 +110,6 @@ parser.add_argument('-q',
                     dest='custom_query')
 
 base_subparser = argparse.ArgumentParser(add_help=False)
-#TODO: Does the custom query simply execute whatever is put in? What happens if it is not a SELECT statement here? Furnish notes here
 base_subparser.add_argument('-s',
                             help="""
                             Space-delimited list of MySQL \
