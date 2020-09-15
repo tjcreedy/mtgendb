@@ -1873,7 +1873,8 @@ def remove_versions(versions_dict):
                         cur = con.cursor()
                         cur.execute(sql_del)
 
-                    update_master_table([db_id], None, 'remove')
+            for dbid in bio_clashes:
+                update_master_table([dbid], None, 'remove')
 
     else:
         for db_id in vers.keys():
@@ -1912,7 +1913,8 @@ def remove_versions(versions_dict):
                                   f"metadata_id={del_meta_id};"
                         cur.execute(sql_del)
 
-                    update_master_table(None, [db_id], 'remove')
+            for dbid in meta_clashes:
+                update_master_table(None, [dbid], 'remove')
 
     else:
         for db_id in vers.keys():
