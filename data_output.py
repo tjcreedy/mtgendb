@@ -375,31 +375,3 @@ else:
     gcm.seqfile_from_sql(records, args.output_name, args.output_format.lower())
 
     print('Done.')
-"""
-TO-DO
-
-1. Give option to pull either all or just the latest version of each record satisfying spec
-    -> If latest, it must run through the master table at some point every time
-    -> If latest (i.e. if not --all), consult master table, pull primary keys, load into spec: WHERE 
-2. Include ' IN ' in specs?
-3. Make sure every query goes through master table
-
-
-(metadata.metadata_id IN (SELECT master.metadata_id FROM master join metadata on 
-master.metadata_id=metadata.metadata_id where <spec>))
-
-((bioentry.bioentry_id, metadata.metadata_id) IN (SELECT master.bioentry_id, master.metadata_id FROM master JOIN metadata ON 
-master.metadata_id=metadata.metadata_id JOIN bioentry ON master.bioentry_id=bioentry.bioentry_ID WHERE <spec>))
-
-A) retrieve names satisfying spec       A) Add additional spec
-B) retrieve keys from masdter table     B)
-C) replace spec                         C)
-
-USAGE NOTES:
-1. Assumes taxon name provided is the scientific name
-2. GENES: can it be made such that if flag is not given, full genome assumed, if it is given with no argument, all 13 genes are assumes, and if genes specified, then only those genes assumed?
-3. Any command entered after -q will be parsed. So be cautious.
-4. Outputs most recent by default
-5. Assumes user knows table cols
-"""
-

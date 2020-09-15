@@ -110,9 +110,3 @@ gcm.load_gb_dict_into_db(new_dict)
 db_ids = list(dict_new_ids.values())
 
 gcm.update_master_table(db_ids, db_ids, 'ingest')
-
-"""
-NOTES:
-
-- Requires both csv and gb files together, with matching entries.
-"""
