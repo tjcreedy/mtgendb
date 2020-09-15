@@ -1820,7 +1820,6 @@ def remove_versions(versions_dict):
     return
 """
 def remove_versions(versions_dict):
-    # TODO: TEST THIS
     """Removes selected versions of records corresponding to user-supplied ids
     from database.
     """
@@ -1874,6 +1873,7 @@ def remove_versions(versions_dict):
                     with con:
                         cur = con.cursor()
                         cur.execute(sql_del)
+
                     update_master_table([db_id], None, 'remove')
 
     else:
@@ -1887,6 +1887,7 @@ def remove_versions(versions_dict):
                 with con:
                     cur = con.cursor()
                     cur.execute(sql_del)
+
                 update_master_table([db_id], None, 'remove')
 
     if meta_clashes:
@@ -1913,7 +1914,9 @@ def remove_versions(versions_dict):
                         sql_del = f"DELETE FROM metadata WHERE " \
                                   f"metadata_id={del_meta_id};"
                         cur.execute(sql_del)
+
                     update_master_table(None, [db_id], 'remove')
+
     else:
         for db_id in vers.keys():
             if vers[db_id]['target_meta_ver']:
@@ -1926,6 +1929,7 @@ def remove_versions(versions_dict):
                     sql_del = f"DELETE FROM metadata WHERE " \
                               f"metadata_id={del_meta_id};"
                     cur.execute(sql_del)
+
                 update_master_table(None, [db_id], 'remove')
 
     return
