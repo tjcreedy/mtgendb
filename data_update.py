@@ -75,11 +75,6 @@ parser.add_argument('-k',
 #                             above.""", dest='custom_query',
 #                          metavar='{custom_query}')
 
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-gb", "./testdata/replace.gb", "-csv", "./testdata/replace.csv", '-k', 'LOCUS'])
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-gb", "./testdata/CHINAS.gb", "-csv", "./testdata/CHINAS.csv", '-k', 'LOCUS'])
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-csv", "./testdata/Honduras_testrun.csv", '-gb', './testdata/Honduras_testrun.gb', '-k', 'LOCUS'])
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "MANUP", '-s', 'db_id=TEST099', '-u', 'size=;)'])
-
 args = parser.parse_args()
 
 """

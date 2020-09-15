@@ -10,34 +10,29 @@ import gb_csv_module as gcm
 ## Arguments ##
 parser = argparse.ArgumentParser(
     description="Adding GenBank data to the database.")
+req_group = parser.add_argument_group('required arguments')
+req_group.add_argument('--db_user', dest='db_user', help="Database username",
+                       required=True, metavar='USERNAME')
+req_group.add_argument('--db_pass', dest='db_pass', help="Database password",
+                       required=True, metavar='PASSWORD')
 
-parser.add_argument('--db_user', help="Database username", dest='db_user',
-                    metavar='db_username', required=True)
-parser.add_argument('--db_pass', help="Database password", dest='db_pass',
-                    metavar='db_password', required=True)
-parser.add_argument('-a', '--accessions', help="""Path to single-column text 
+req_group.add_argument('-a', help="""Path to single-column text 
                     file containing accession numbers to search on GenBank.""",
-                    dest='input_accessions', required=True)
-parser.add_argument('-e', '--email', help="""Enter your email address in order 
+                    dest='accessions', required=True)
+req_group.add_argument('-e', help="""Enter your email address in order 
                     to access NCBI.""", dest='users_email', required=True)
-parser.add_argument('-p', '--prefix', help="""The prefix for the database id 
+req_group.add_argument('-p', help="""The prefix for the database id 
                     names.""", dest='prefix', required=True)
-parser.add_argument('-n', '--number', help="""The start number for the database 
+req_group.add_argument('-n', help="""The start number for the database 
                     id names""", dest='number', required=True)
-parser.add_argument('-z', '--zeros', help="""By how many zeros the number 
+req_group.add_argument('-z', help="""By how many zeros the number 
                     should be 0-padded.""", dest='padding', required=True)
-parser.add_argument('-k', '--key', help="""Field of the genbank-file where the 
+parser.add_argument('-k', help="""Field of the genbank-file where the 
                     name of the entry can be found.""", dest='key',
                     default='LOCUS', choices=['LOCUS', 'ACCESSION',
                                               'DEFINITION'])
 
 args = parser.parse_args()
-
-#LOCAL: args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/subset.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "3", "-k", "LOCUS"])
-# Long: args = parser.parse_args(['--db_user', 'root', 'db_pass', 'mmgdatabase', "-a", "/Users/lukeswaby-petts/Desktop/Work/Wildlife Research /Alfried/Mission 2/mtgendb/testdata/500accessions.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "4", "-k", "LOCUS"])
-
-#SERVER: args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-a", "testdata/500accessions.txt", "-e", "luke.swaby@nhm.ac.uk", "-p", "GB", "-n", "1", "-z", "3", "-k", "LOCUS"])
-#COM: python3 gb_data_ingestion.py -a testdata/500accessions.txt -e luke.swaby@ngm.ac.uk -p GB -n 1 -z 3 -k LOCUS
 
 ## Functions ##
 

@@ -192,32 +192,6 @@ parser_gb.add_argument('-o', help="""Preferred path/filename for the
                         to your output format choice).""", dest='output_name',
                        metavar='output', required=True)
 
-
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'CSV', '-o', 'output/__sidetest', '-t', 'metadata', '-s', 'name=TEST064'])
-
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', '--all', 'CSV', '-o', 'dkasj', '-t', 'metadata', '-s', 'length<=2140'])
-
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', '--all', '-s', 'length<=2140', '--CSV', '-o', 'dkasj', '-t', 'metadata'])
-
-
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'GB', '-o', 'output/FINAL', '-s', "country IN ('Honduras', 'China')", 'length<17000', '-x', 'Chrysomeloidea'])
-
-# args = parser.parse_args(["--db_user", "root", "--db_pass", "mmgdatabase", '-q', "SELECT * FROM metadata WHERE country='China';", 'CSV', "-t", "metadata", '-c', 'name', "-o", "metadateru", "-s", "subregion='Sabah'"])
-# args = parser.parse_args(["-sqlu", "root", "-sqlpw", "mmgdatabase", "-db", "mmg_test", "-t", "metadata", "-c", "name", "length", "accession", "seq", "-o", "metadateru", "-s", "country='United Kingdon' description='Lucanus sp. BMNH 1425267 mitochondrion, complete genome'", "-f", "csv"])
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'CSV', '-o', 'Honduras_testrun', '-t', 'metadata', '-s', 'country=Honduras'])
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'CSV', '-o', 'gjhg', '-c', 'name', 'db_id', 'country', 'length', '-s', 'country=Honduras', 'length>4000'])
-
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'CSV', '-o', 'Honduras_testrun', '-t', 'metadata', '-s', "db_id IN ('TEST001','TEST002')"])
-
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'GB', '-o', 'finalesz007', '-x', 'Cucujiformia', '-s', 'country!=United Kingdom', '-g', 'COX1'])
-
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'COUNT', '-x', 'Cucujiformia'])
-
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'FASTA', '-o', 'outksis', '-s', 'country=Honduras', '-g', '*'])
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'FASTA', '-o', 'outksis', '-s',  'country!=Malaysia', '-g' , '*'])
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'FASTA', '-o', 'malays', '-s',  'species=Stenus boops', '-g', 'COX2', 'ND3', 'ATP6'])
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'CSV', '-o', 'Pan', '-t', 'metadata', '-s',  'country=Panama'])
-
 args = parser.parse_args()
 
 ## Functions ##

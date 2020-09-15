@@ -12,32 +12,29 @@ import gb_csv_module as gcm
 ## Arguments ##
 parser = argparse.ArgumentParser(
     description="Adding a GenBank and a metadata CSV file to the database.")
+req_group = parser.add_argument_group('required arguments')
 
-parser.add_argument('--db_user', help="Database username", dest='db_user',
-                    metavar='db_username', required=True)
-parser.add_argument('--db_pass', help="Database password", dest='db_pass',
-                    metavar='db_password', required=True)
-parser.add_argument('-gb', '--genbankfile', help="""Name of genbank-file to 
-                    ingest into the database.""", dest='input_genbank',
-                    required=True)
-parser.add_argument('-csv', '--csvfile', help="""Name of genbank-file to ingest 
+req_group.add_argument('--db_user', dest='db_user', help="Database username",
+                       required=True, metavar='USERNAME')
+req_group.add_argument('--db_pass', dest='db_pass', help="Database password",
+                       required=True, metavar='PASSWORD')
+req_group.add_argument('-gb', help="""Name of genbank-file to ingest into 
+                        the database.""", dest='input_genbank', required=True)
+req_group.add_argument('-csv', help="""Name of genbank-file to ingest 
                     into the databse.""", dest='input_csv', required=True)
-parser.add_argument('-r', '--reject', help="""Set to 'false' if entries with 
+parser.add_argument('-r', help="""Set to 'False' if entries with 
                     custom lineage information should not be rejected.""",
                     dest='reject_custom_lineage', default='True',
-                    choices=['True', 'False'])
-parser.add_argument('-s', '--searchterm', help="""Provide a taxonomic searchterm
+                    choices=['True', 'False'], metavar='REJECT [True/False]')
+parser.add_argument('-s', help="""Provide a taxonomic searchterm
                     to search for tax ids on NCBI for any entries without 
-                    taxonomic data (e.g. Coleoptera).""", dest='searchterm')
-parser.add_argument('-e', '--email', help="""Enter your email address in order 
+                    taxonomic data.""", dest='searchterm')
+req_group.add_argument('-e', help="""Enter your email address in order 
                     to access NCBI.""", dest='users_email', required=True)
-parser.add_argument('-k', '--key', help="""Field of the genbank-file where the 
+parser.add_argument('-k', help="""Field of the genbank-file where the 
                     name of the entry can be found.""", dest='key',
                     default='LOCUS', choices=['LOCUS', 'ACCESSION',
                                               'DEFINITION'])
-
-# args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', "-gb", "./testdata/test_genbank.gb", "-csv", "./testdata/test_metadata.csv", "-r", "False", "-s", "Coleoptera", "-e", "luke.swaby@nhm.ac.uk",  "-k", "LOCUS"])
-
 args = parser.parse_args()
 
 ## Functions ##

@@ -24,7 +24,6 @@ db_name = "mmg_test"
 mysql_engine = "mysql+mysqldb://root:mmgdatabase@localhost/mmg_test"
 namespace = "mmg"
 
-
 ## Functions ##
 
 def check_login_details(db_un, db_pw):
