@@ -321,6 +321,8 @@ CREATE TABLE biosequence (
 -- HERE THE SCRIPT IS ALTERED!
 -- Adding new tables 'metadata', 'master', and 'rejected'.
 
+-- record metadata
+
 CREATE TABLE metadata (
 	metadata_id	    INT(10) UNSIGNED NOT NULL auto_increment,
 	contigname	CHAR(40) BINARY NOT NULL,
@@ -353,6 +355,12 @@ CREATE TABLE metadata (
     PRIMARY KEY (metadata_id)
 ) ENGINE=INNODB;
 
+-- This 'master' table stores the primary keys for the most up-to-date
+-- 'bio-version' and 'meta-version' (i.e. rows in the bioentry and metadata
+-- tables) of each record stored in the database. It is queried whenever data is
+-- requested from the database unless all versions of the target records are
+-- requested using the '--all' flag.
+
 CREATE TABLE master (
   	db_id			CHAR(16) NOT NULL,
   	bioentry_id 	INT(10) DEFAULT NULL,
@@ -360,6 +368,9 @@ CREATE TABLE master (
 	PRIMARY KEY (db_id), 
 	UNIQUE (bioentry_id, metadata_id)
 ) ENGINE=INNODB;
+
+-- This 'rejected' table stores the accessions of any records rejected during
+-- data ingestion from GenBank.
 
 CREATE TABLE rejected (
     accession   VARCHAR(23),
