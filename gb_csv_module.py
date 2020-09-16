@@ -1719,9 +1719,12 @@ def remove_recs(db_ids):
     database.
     """
     con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
-    sql = f"DELETE FROM master WHERE db_id IN {tuple(db_ids)};"
+    if len(db_ids) == 1:
+        sql = f"DELETE FROM master WHERE db_id='{db_ids[0]}';"
+    else:
+        sql = f"DELETE FROM master WHERE db_id IN {tuple(db_ids)};"
     # Deletion from master table automatically cascades to all other tables, as
-    # per constraints written into SQL database schema.
+    # per custom constraints written into SQL database schema.
 
     with con:
         cur = con.cursor()

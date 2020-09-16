@@ -49,7 +49,7 @@ remove_version.add_argument('-b', help="""Bioentry version to be deleted.""",
 
 args = parser.parse_args()
 
-#args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'ALL', '-t', 'testdata/removes_5.txt', '-id', 'GB100', 'GB101'])
+#args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'ALL', '-id', 'GB100'])
 
 ## Functions ##
 
