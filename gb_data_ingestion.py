@@ -18,7 +18,7 @@ req_group.add_argument('--db_pass', dest='db_pass', help="Database password",
 
 req_group.add_argument('-a', help="""Path to single-column text 
                     file containing accession numbers to search on GenBank.""",
-                    dest='accessions', required=True)
+                       dest='accessions', required=True)
 req_group.add_argument('-e', help="""Enter your email address in order 
                     to access NCBI.""", dest='users_email', required=True)
 req_group.add_argument('-p', help="""The prefix for the database id 

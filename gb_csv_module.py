@@ -1552,7 +1552,8 @@ def seqfile_from_sql(recs_dict, file_name, frmat):
            key in ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1',
                    'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']):
         for gene in recs_dict.keys():
-            SeqIO.write(recs_dict[gene], f"{file_name}_{gene}.{frmat}", frmat)
+            SeqIO.write(recs_dict[gene],
+                        f"{file_name}_{gene.lower()}.{frmat}", frmat)
 
     # Full genome
     else:
@@ -1728,96 +1729,6 @@ def remove_recs(db_ids):
 
     return
 
-"""
-def remove_versions(versions_dict):
-    #Removes selected versions of records corresponding to user-supplied ids
-    from database.
-    
-    con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
-    server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
-                                          passwd=db_passwd, host=db_host,
-                                          db=db_name)
-    db = server[namespace]
-    adaptor = db.adaptor
-
-    for db_id in versions_dict.keys():
-        current_bio_ver, current_meta_ver = check_current_version(db_id)
-        target_bio_ver = versions_dict[db_id]['b']
-        target_meta_ver = versions_dict[db_id]['m']
-
-        if target_bio_ver:
-            # If user has specified a bioentry record they wish to delete...
-            del_bio_id = adaptor.fetch_seqid_by_version(1,
-                                                        f"{db_id}.{target_bio_ver}")
-
-            if target_bio_ver == current_bio_ver:
-                # If the target bioentry record is the current for that
-                # particular db_id, notify the user that deletion will
-                # automatically rollback current version to the *latest*
-                # ingested.
-                x = input(f"Version {target_bio_ver} is the current version of "
-                          f"bioentry '{db_id}'. If removed, the current "
-                          f"version will be assumed to be the latest in the "
-                          f"database. Do you wish to continue? 'Y'/'N'\n>?").upper()
-                while not (x == 'Y' or x == 'N'):
-                    x = input(f"Would you like to delete the current version "
-                              f"of bioentry '{db_id}' ('Y') or cancel the "
-                              f"operation ('N')?\n>?").upper()
-                if x == 'N':
-                    sys.exit('Operation cancelled.')
-                else:
-                    sql_del = f"DELETE FROM bioentry WHERE " \
-                              f"bioentry_id={del_bio_id};"
-                    with con:
-                        cur = con.cursor()
-                        cur.execute(sql_del)
-                        update_master_table([db_id], None, 'remove')
-            else:
-                sql_del = f"DELETE FROM bioentry WHERE bioentry_id={del_bio_id};"
-                with con:
-                    cur = con.cursor()
-                    cur.execute(sql_del)
-
-        if target_meta_ver:
-            # If user has specified a metadata record they wish to delete...
-            sql = f"SELECT metadata_id FROM metadata WHERE (db_id='{db_id}') " \
-                  f"AND (version={target_meta_ver});"
-            with con:
-                cur = con.cursor()
-                cur.execute(sql)
-                del_meta_id = cur.fetchone()[0]
-
-            if target_meta_ver == current_meta_ver:
-                # If the target metadata record is the current for that
-                # particular db_id, notify the user that deletion will
-                # automatically rollback current version to the *latest*
-                # ingested.
-                x = input(f"Version {target_meta_ver} is the current version "
-                          f"of meta-entry '{db_id}'. If removed, the new current "
-                          f"version will be assumed to be the latest in the "
-                          f"database. Do you wish to continue? 'Y'/'N'\n>?").upper()
-                while not (x == 'Y' or x == 'N'):
-                    x = input(f"Would you like to delete the current version "
-                              f"of meta-entry '{db_id}' ('Y') or cancel the "
-                              f"operation ('N')?\n>?").upper()
-                if x == 'N':
-                    sys.exit('Operation cancelled.')
-                else:
-                    sql_del = f"DELETE FROM metadata WHERE " \
-                              f"metadata_id={del_meta_id};"
-                    with con:
-                        cur = con.cursor()
-                        cur.execute(sql_del)
-                        update_master_table(None, [db_id], 'remove')
-            else:
-                sql_del = f"DELETE FROM metadata WHERE " \
-                          f"metadata_id={del_meta_id};"
-                with con:
-                    cur = con.cursor()
-                    cur.execute(sql_del)
-
-    return
-"""
 def remove_versions(versions_dict):
     """Removes selected versions of records corresponding to user-supplied ids
     from database.
@@ -1861,12 +1772,13 @@ def remove_versions(versions_dict):
             sys.exit('Operation cancelled.')
         else:
             for db_id in vers.keys():
-                if vers[db_id]['target_bio_ver']:
+                target_bio = vers[db_id]['target_bio_ver']
+                if target_bio:
                     # If user has specified a bioentry record they wish to
                     # delete...
                     del_bio_id = adaptor.fetch_seqid_by_version(1,
                                                                 f"{db_id}."
-                                                                f"{target_bio_ver}")
+                                                                f"{target_bio}")
                     sql_del = f"DELETE FROM bioentry WHERE " \
                               f"bioentry_id={del_bio_id};"
                     with con:
@@ -1878,11 +1790,12 @@ def remove_versions(versions_dict):
 
     else:
         for db_id in vers.keys():
-            if vers[db_id]['target_bio_ver']:
+            target_bio = vers[db_id]['target_bio_ver']
+            if target_bio:
                 # If user has specified a bioentry record they wish to delete...
                 del_bio_id = adaptor.fetch_seqid_by_version(1,
                                                             f"{db_id}."
-                                                            f"{target_bio_ver}")
+                                                            f"{target_bio}")
                 sql_del = f"DELETE FROM bioentry WHERE bioentry_id={del_bio_id};"
                 with con:
                     cur = con.cursor()
@@ -1902,9 +1815,10 @@ def remove_versions(versions_dict):
             sys.exit('Operation cancelled.')
         else:
             for db_id in vers.keys():
-                if vers[db_id]['target_meta_ver']:
+                target_meta = vers[db_id]['target_meta_ver']
+                if target_meta:
                     sql = f"SELECT metadata_id FROM metadata WHERE " \
-                          f"(db_id='{db_id}') AND (version={target_meta_ver});"
+                          f"(db_id='{db_id}') AND (version={target_meta});"
                     with con:
                         cur = con.cursor()
                         cur.execute(sql)
@@ -1918,9 +1832,10 @@ def remove_versions(versions_dict):
 
     else:
         for db_id in vers.keys():
-            if vers[db_id]['target_meta_ver']:
+            target_meta = vers[db_id]['target_meta_ver']
+            if target_meta:
                 sql = f"SELECT metadata_id FROM metadata WHERE " \
-                      f"(db_id='{db_id}') AND (version={target_meta_ver});"
+                      f"(db_id='{db_id}') AND (version={target_meta});"
                 with con:
                     cur = con.cursor()
                     cur.execute(sql)

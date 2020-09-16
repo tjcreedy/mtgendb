@@ -54,12 +54,9 @@ gcm.check_login_details(args.db_user, args.db_pass)
 
 #Create target versions dict
 if args.action == 'SINGLE':
-
     versions_dict = {args.db_id: {'b': args.bio_version,
                                   'm': args.meta_version}}
-
 else:
-
     versions_dict = gcm.versions_to_dict(args.text_file)
 
 #Check ids
