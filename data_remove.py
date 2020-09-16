@@ -49,6 +49,8 @@ remove_version.add_argument('-b', help="""Bioentry version to be deleted.""",
 
 args = parser.parse_args()
 
+#args = parser.parse_args(['--db_user', 'root', '--db_pass', 'mmgdatabase', 'ALL', '-t', 'testdata/removes_5.txt', '-id', 'GB100', 'GB101'])
+
 ## Functions ##
 
 #Check login details
@@ -67,7 +69,7 @@ if args.del_versions == 'ALL':
 
     if args.rec_id:
 
-        db_ids.append(args.rec_id)
+        db_ids.extend(args.rec_id)
 
     gcm.check_ids(list(set(db_ids)), 'remove')
 
