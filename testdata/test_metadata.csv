@@ -1,4 +1,4 @@
-contigname,institution_code,collection_code,specimen_id,morphospecies,species,genus,subfamily,family,order,taxid,traptype,dev_stage,site,locality,subregion,country,latitude,longitude,size,feeding_behaviour,habitat,habitat_stratum,authors,library,datasubmitter,projectname,genbank_accession,notes
+contigname,institution_code,collection_code,specimen_id,morphospecies,species,genus,subfamily,family,order,ncbi_taxid,traptype,dev_stage,site,locality,subregion,country,latitude,longitude,size,feeding_behaviour,habitat,habitat_stratum,authors,library,datasubmitter,projectname,genbank_accession,notes
 BIOD00197,,,1426729,Mord33,,,,Mordellidae,Coleoptera,,YPT,Adult,Santa Fe,PNA,,Panama,NA,NA,,,,,D Yeo,HE2,,Biodiversity Initiative NHM,,753
 BIOD01516,,,1275410,,,,,Platypodidae,Coleoptera,,FIT1,Adult,Noragues,P7,,French Guiana,NA,NA,,,,,D Yeo,HE7,,Biodiversity Initiative NHM,,779
 BIOD00087,,,1733413,MS2576,,,,Unknown,Coleoptera,,FIT2,Adult,Poring,PD,Sabah,Malaysia,NA,NA,,,,,D Yeo,HE1,,Biodiversity Initiative NHM,,BIP27

@@ -33,7 +33,7 @@ req_group.add_argument('-e', help="""Enter your email address in order
 req_group.add_argument('-p', help="""The prefix for the database id 
                     names.""", dest='prefix', required=True)
 req_group.add_argument('-c', help="Path to ncbitaxid cache json file",
-                       required = True, dest = 'taxidcache')
+                       required=True, dest='taxidcache')
 req_group.add_argument('-n', help="""The start number for the database 
                     id names""", dest='number', required=True)
 req_group.add_argument('-z', help="""By how many zeros the number 
