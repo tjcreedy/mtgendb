@@ -159,12 +159,24 @@ def correct_header(csv_dataframe, action):
     if action == 'ingest':
         expected_header = ['contigname', 'institution_code', 'collection_code',
                            'specimen_id', 'morphospecies', 'species', 'genus',
-                           'subfamily', 'family', 'order', 'taxid', 'traptype',
-                           'dev_stage', 'site', 'locality', 'subregion',
-                           'country', 'latitude', 'longitude', 'size',
-                           'feeding_behaviour', 'habitat', 'habitat_stratum',
-                           'authors', 'library', 'datasubmitter', 'projectname',
-                           'genbank_accession', 'notes']
+                           'subfamily', 'family', 'order', 'ncbi_taxid',
+                           'traptype', 'dev_stage', 'site', 'locality',
+                           'subregion', 'country', 'latitude', 'longitude',
+                           'size', 'feeding_behaviour', 'habitat',
+                           'habitat_stratum', 'authors', 'library',
+                           'datasubmitter', 'projectname', 'genbank_accession',
+                           'notes']
+
+    elif action == 'ghost_ingest':
+        expected_header = ['contigname', 'db_id', 'institution_code',
+                           'collection_code', 'specimen_id', 'morphospecies',
+                           'species', 'genus', 'subfamily', 'family', 'order',
+                           'ncbi_taxid', 'traptype', 'dev_stage', 'site',
+                           'locality', 'subregion', 'country', 'latitude',
+                           'longitude', 'size', 'feeding_behaviour', 'habitat',
+                           'habitat_stratum', 'authors', 'library',
+                           'datasubmitter', 'projectname', 'genbank_accession',
+                           'notes']
     else:
         expected_header = ['contigname', 'db_id', 'institution_code',
                            'collection_code', 'specimen_id', 'morphospecies',
@@ -219,8 +231,8 @@ def matching_inputids(csv_df, gb_dict, action):
 
     if len(csv_duplicates):
         sys.exit("ERROR: There are multiple rows sharing the same name in your "
-                 "CSV file: " + ', '.join(
-            csv_duplicates) + ". IDs must be unique.")
+                 "CSV file:\n" + ', '.join(csv_duplicates) +
+                 "\nIDs must be unique.")
 
     if len(intersect) != len(union):
         # If the IDS in the CSV and GenBank files are not identical...
@@ -741,7 +753,7 @@ def taxid_metadata(csv_dataframe):
 
     for id_ in ids_csv:  # for each id in ids_csv...
 
-        taxid = df.loc[id_, 'taxid']
+        taxid = df.loc[id_, 'ncbi_taxid']
 
         if not pd.isnull(taxid):
             csv_taxids[id_] = taxid
@@ -1083,7 +1095,7 @@ def add_lineage_df(csv_dataframe, combined_lineage):
     df_add = pd.DataFrame.from_dict(combined_lineage, orient='index')
     df_add.columns = ["ncbi_taxon_id", "custom_lineage"]
     csv_dataframe.drop(['species', 'genus', 'subfamily', 'family', 'order',
-                        'taxid'], axis=1, inplace=True)
+                        'ncbi_taxid'], axis=1, inplace=True)
     df = pd.merge(df_add, csv_dataframe, left_index=True, right_index=True)
     df.reset_index(level=0, inplace=True)
     df.rename(columns={"index": "contigname"}, inplace=True)

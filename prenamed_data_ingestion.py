@@ -51,14 +51,11 @@ csv_df = pd.read_csv(args.input_csv, quotechar='"')
 gcm.correct_header(csv_df, 'ingest')
 
 # Check if the genbank and metadata file have matching entries
-new_csv_df, new_gb_dict = gcm.matching_inputids(csv_df, gb_dict, 'ingest')
+new_csv_df, new_gb_dict = gcm.matching_inputids(csv_df, gb_dict, 'ghost_ingest')
 
 # Check IDs don't already exist in database
 db_ids = {rec.name: rec.name for rec in gb_dict.values()}
 gcm.check_ids(list(db_ids.values()), 'ingest')
-
-# In dataframe insert column with new database ids
-new_csv_df['db_id'] = new_csv_df['contigname']
 
 ##Search for ncbi lineage with tax id, save custom lineages if not found on ncbi
 lineages = gcm.get_ncbi_lineage(new_csv_df, args.users_email, args.searchterm)
