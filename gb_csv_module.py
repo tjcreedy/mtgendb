@@ -3,7 +3,7 @@
 """Functions to interact with data files and MySQL database."""
 
 ## Imports ##
-import sys, time, urllib.request, csv, re, json
+import sys, time, urllib.request, csv, re, json, os
 from collections import defaultdict
 from Bio import SeqIO, Entrez
 from Bio.SeqFeature import SeqFeature, FeatureLocation
@@ -745,25 +745,25 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
         nsearch = 0
         for taxon in tax_list:
             nsearch += 1
-            sys.stdout.write(f"\rNCBI taxonomy search set {iteration}, "
+            sys.stdout.write(f"NCBI taxonomy search set {iteration}, "
                              f"searching entry {nsearch} of "
-                             f"{len(tax_list)}: \"{taxon}\"")
-            handle = Entrez.esearch(db="taxonomy", retmax=2, term=searchterm)
+                             f"{len(tax_list)}: \"{taxon}\"\n")
+            handle = Entrez.esearch(db="taxonomy", retmax=2, term=taxon)
             record = Entrez.read(handle)
             handle.close()
         
             id_list = record["IdList"]
             
-            if len(id_list == 0):
+            if len(id_list) == 0:
                 no_hits.add(taxon)
-            elif len(id_list > 1):
+            elif len(id_list) > 1:
                 multiple_hits.add(taxon)
             else:
                 taxid_match[taxon] = id_list[0]
             
             time.sleep(0.5)
         
-        print("\rCompleted NCBI taxonomy serach set {iteration}")
+        print(f"Completed NCBI taxonomy search set {iteration}")
         
         return no_hits, multiple_hits, taxid_match
     
@@ -800,7 +800,7 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
     
     # Open local cache
     taxon_taxid = dict()
-    if ncbicachepath is not None:
+    if os.path.exists(ncbicachepath):
         with open(ncbicachepath, 'r') as ch:
             taxon_taxid = json.load(ch)
     
@@ -809,25 +809,23 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
     while len(no_taxid) > 0:
         n += 1
         # Get lowest taxon from each record that does not have a ncbi_taxid yet
-        taxa_to_search = []
         taxon_db_ids = dict()
         for db_id in no_taxid:
             taxon = taxonomy_csv[db_id].pop(0)
-            taxa_to_search.append(taxon)
             # Store a list of db_ids linked to each taxon for later assignment
             if taxon in taxon_db_ids:
                 taxon_db_ids[taxon].append(db_id)
             else:
                 taxon_db_ids[taxon] = [db_id]
-        
-        # Find only the unique
-        taxa_to_search = set(taxa_to_search)
+
         # Search these in the local cache
         found_taxids = dict()
-        for taxon in taxa_to_search:
+        taxa_to_search = set()
+        for taxon in taxon_db_ids.keys():
             if taxon in taxon_taxid:
                 found_taxids[taxon] = taxon_taxid[taxon]
-                taxa_to_search.remove(taxon)
+            else:
+                taxa_to_search.add(taxon)
         # Search remainder (if any) in NCBI
         if len(taxa_to_search) > 0:
             ncbiret = _return_ncbi_taxid(taxa_to_search, n, email_address)
@@ -852,13 +850,13 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
         for taxon in taxon_db_ids:
             for db_id in taxon_db_ids[taxon]:
                 if taxon in found_taxids:
-                    taxids[db_id] = taxid
+                    taxids[db_id] = found_taxids[taxon]
                     no_taxid.remove(db_id)
                 else:
                     if db_id in lineage_custom:
                         lineage_custom[db_id].append(taxon)
                     else:
-                        lineage_custom = [taxon]
+                        lineage_custom[db_id] = [taxon]
         
     # Once all entries have taxonomy, report to user
     if len(no_hits) > 0:
