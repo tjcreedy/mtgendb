@@ -798,8 +798,9 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
     
     # Open local cache
     taxon_taxid = dict()
-    with open(ncbicachepath, 'r') as ch:
-        taxon_taxid = json.load(ch)
+    if ncbicachepath is not None:
+        with open(ncbicachepath, 'r') as ch:
+            taxon_taxid = json.load(ch)
     
     n = 0
     no_hits, multiple_hits = set(), set()
