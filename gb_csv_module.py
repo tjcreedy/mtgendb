@@ -154,7 +154,7 @@ def correct_header(csv_dataframe, action):
          - csv_dataframe - dataframe
          - action - ['ingest', 'update', 'rollback', 'remove']
     """
-    csv_header = csv_dataframe.columns.values.tolist()
+    csv_header = set(csv_dataframe.columns.values.tolist())
 
     if action == 'ingest':
         expected_header = ['contigname', 'institution_code', 'collection_code',
@@ -583,13 +583,13 @@ def change_names_csv(csv_df, dict_new_ids):
     return new_csv_df
 
 
-def taxonomy_metadata(csv_df):
+def taxonomy_metadata(csv_df, col='contigname'):
     """Function returning a dictionary with all the taxonomic information for
     each id from metadata ([] if no info given).
     """
     csv_taxa = {}
-    ids_csv = csv_df['contigname'].values.tolist()
-    df = csv_df.set_index("contigname")
+    ids_csv = csv_df[col].values.tolist()
+    df = csv_df.set_index(col)
 
     for id_ in ids_csv:
 
