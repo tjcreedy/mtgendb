@@ -32,6 +32,8 @@ req_group.add_argument('-e', help="""Enter your email address in order
                     to access NCBI.""", dest='users_email', required=True)
 req_group.add_argument('-p', help="""The prefix for the database id 
                     names.""", dest='prefix', required=True)
+req_group.add_argument('-c', help="Path to ncbitaxid cache json file",
+                       required = True, dest = 'taxidcache')
 req_group.add_argument('-n', help="""The start number for the database 
                     id names""", dest='number', required=True)
 req_group.add_argument('-z', help="""By how many zeros the number 
@@ -73,7 +75,8 @@ gcm.check_ids(list(dict_new_ids.values()), 'ingest')
 df_new_ids = gcm.change_names_csv(new_csv_df, dict_new_ids)
 
 # Search for ncbi lineage with tax id, save custom lineages if not found on ncbi
-lineages = gcm.get_ncbi_lineage(df_new_ids, args.users_email, args.searchterm)
+lineages = gcm.get_ncbi_lineage(df_new_ids, args.taxidcache,
+                                args.users_email, args.searchterm)
 
 # User decides whether to reject entries with custom lineage information or not
 dict_accepted, df_accepted = gcm.rejecting_entries(
