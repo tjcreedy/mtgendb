@@ -885,16 +885,17 @@ def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
     """
     rejected = []
     new_entries = []
-    csv_df.set_index("contigname", inplace=True)
+    csv_df.set_index("db_id", inplace=True)
 
     # Drop rejected rows from DataFrame
-    for record, ncbi_info in ncbi_lineage.items():
+    for db_id, ncbi_info in ncbi_lineage.items():
         if ncbi_info[1] != "" and rejection == "True":
-            rejected.append(record)
-            entry = (csv_df.loc[record]).values.tolist()
-            entry.insert(0, record)
+            cname = csv_df.loc[db_id, 'contigname']
+            rejected.append(cname) 
+            entry = (csv_df.loc[db_id]).values.tolist()
+            entry.insert(0, db_id)
             new_entries.append(entry)
-            csv_df.drop([record], inplace=True)
+            csv_df.drop([db_id], inplace=True)
 
     if len(rejected):
         # Create new DataFrame of rejected entries and drop them from returned
