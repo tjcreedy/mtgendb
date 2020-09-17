@@ -164,19 +164,22 @@ def correct_header(csv_dataframe, action):
                        'genbank_accession', 'notes'}
 
     if action == 'ingest':
-        expected_header.update('species', 'genus', 'subfamily', 'family',
-                               'order', 'ncbi_taxid')
+        new_heads = {'species', 'genus', 'subfamily', 'family', 'order',
+                     'ncbi_taxid'}
+        expected_header.update(new_heads)
 
     elif action == 'ghost_ingest':
-        expected_header.update('db_id', 'species', 'genus', 'subfamily',
-                               'family', 'order', 'ncbi_taxid')
+        new_heads = {'db_id', 'species', 'genus', 'subfamily', 'family',
+                     'order', 'ncbi_taxid'}
+        expected_header.update(new_heads)
     else:
-        expected_header.update('db_id', 'ncbi_taxon_id', 'custom_lineage')
+        new_heads = {'db_id', 'ncbi_taxon_id', 'custom_lineage'}
+        expected_header.update(new_heads)
 
     if expected_header != csv_header:
         print("Incorrect header in CSV file.\n")
-        sys.exit("Current header is: " + str(csv_header) +
-                 "\n\nIt must be as follows: " + str(expected_header))
+        sys.exit("Current header is: " + str(list(csv_header)) +
+                 "\n\nIt must be as follows: " + str(list(expected_header)))
 
     return
 
