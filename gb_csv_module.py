@@ -767,7 +767,7 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
         
         return no_hits, multiple_hits, taxid_match
     
-    csv_dataframe.set_index('db_id', inplace = True)
+    csv_dataframe.set_index('db_id', inplace=True)
     # Extract ascending taxonomy data and generate dict
     taxonomy = csv_dataframe[['species', 'subfamily', 'family', 'order']].values
     taxonomy_csv = dict(zip(csv_dataframe.index, taxonomy))
@@ -780,9 +780,8 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
     # Extract taxids and generate dict
     taxids_csv = dict(zip(csv_dataframe.index, csv_dataframe['ncbi_taxid']))
     # Replace empty taxids with blank string
-    taxids_csv = {k: v if not pd.isnull(v) else '' 
-                      for k, v in taxids_csv.items()}
-    
+    taxids_csv = {k: v if not pd.isnull(v) else ''
+                  for k, v in taxids_csv.items()}
 
     print("\nSearching NCBI for taxonomy...")
     combined_lineage = {}
@@ -790,7 +789,7 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
     taxids = {}
     
     no_taxid = set()
-    for db_id in taxonomy_csv.index:
+    for db_id in taxonomy_csv.keys():
         if taxids_csv[db_id] != '':
             # If taxid is provided in metadata csv, then add empty entry to
             # lineage_custom dict and taxid to taxid dict
