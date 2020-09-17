@@ -155,37 +155,23 @@ def correct_header(csv_dataframe, action):
          - action - ['ingest', 'update', 'rollback', 'remove']
     """
     csv_header = set(csv_dataframe.columns.values.tolist())
+    expected_header = {'contigname', 'institution_code', 'collection_code',
+                       'specimen_id', 'morphospecies', 'traptype',
+                       'dev_stage', 'site', 'locality', 'subregion',
+                       'country', 'latitude', 'longitude', 'size',
+                       'feeding_behaviour', 'habitat', 'habitat_stratum',
+                       'authors', 'library', 'datasubmitter', 'projectname',
+                       'genbank_accession', 'notes'}
 
     if action == 'ingest':
-        expected_header = ['contigname', 'institution_code', 'collection_code',
-                           'specimen_id', 'morphospecies', 'species', 'genus',
-                           'subfamily', 'family', 'order', 'ncbi_taxid',
-                           'traptype', 'dev_stage', 'site', 'locality',
-                           'subregion', 'country', 'latitude', 'longitude',
-                           'size', 'feeding_behaviour', 'habitat',
-                           'habitat_stratum', 'authors', 'library',
-                           'datasubmitter', 'projectname', 'genbank_accession',
-                           'notes']
+        expected_header.update('species', 'genus', 'subfamily', 'family',
+                               'order', 'ncbi_taxid')
 
     elif action == 'ghost_ingest':
-        expected_header = ['contigname', 'db_id', 'institution_code',
-                           'collection_code', 'specimen_id', 'morphospecies',
-                           'species', 'genus', 'subfamily', 'family', 'order',
-                           'ncbi_taxid', 'traptype', 'dev_stage', 'site',
-                           'locality', 'subregion', 'country', 'latitude',
-                           'longitude', 'size', 'feeding_behaviour', 'habitat',
-                           'habitat_stratum', 'authors', 'library',
-                           'datasubmitter', 'projectname', 'genbank_accession',
-                           'notes']
+        expected_header.update('db_id', 'species', 'genus', 'subfamily',
+                               'family', 'order', 'ncbi_taxid')
     else:
-        expected_header = ['contigname', 'db_id', 'institution_code',
-                           'collection_code', 'specimen_id', 'morphospecies',
-                           'ncbi_taxon_id', 'custom_lineage', 'traptype',
-                           'dev_stage', 'site', 'locality', 'subregion',
-                           'country', 'latitude', 'longitude', 'size',
-                           'feeding_behaviour', 'habitat', 'habitat_stratum',
-                           'authors', 'library', 'datasubmitter', 'projectname',
-                           'genbank_accession', 'notes']
+        expected_header.update('db_id', 'ncbi_taxon_id', 'custom_lineage')
 
     if expected_header != csv_header:
         print("Incorrect header in CSV file.\n")
@@ -591,7 +577,6 @@ def chunker(seq, size):
 
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
-
 def return_gb_data(acc_list, email):
     """Takes list of of IDs/accessions and returns dict of corresponding
     GenBank entries.
@@ -797,6 +782,7 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
     
 
     print("\nSearching NCBI for taxonomy...")
+    combined_lineage = {}
     lineage_custom = {}
     taxids = {}
     
