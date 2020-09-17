@@ -3,7 +3,7 @@
 """Functions to interact with data files and MySQL database."""
 
 ## Imports ##
-import sys, time, urllib.request, csv, re
+import sys, time, urllib.request, csv, re, json
 from collections import defaultdict
 from Bio import SeqIO, Entrez
 from Bio.SeqFeature import SeqFeature, FeatureLocation
@@ -583,36 +583,6 @@ def change_names_csv(csv_df, dict_new_ids):
     return new_csv_df
 
 
-def taxonomy_metadata(csv_df, col='contigname'):
-    """Function returning a dictionary with all the taxonomic information for
-    each id from metadata ([] if no info given).
-    """
-    csv_taxa = {}
-    ids_csv = csv_df[col].values.tolist()
-    df = csv_df.set_index(col)
-
-    for id_ in ids_csv:
-
-        tax_list = []
-        species = df.loc[id_, 'species']
-        subfamily = df.loc[id_, 'subfamily']
-        family = df.loc[id_, 'family']
-        order = df.loc[id_, 'order']
-
-        if not pd.isnull(species):
-            tax_list.append(species)
-        if not pd.isnull(subfamily):
-            tax_list.append(subfamily)
-        if not pd.isnull(family):
-            tax_list.append(family)
-        if not pd.isnull(order):
-            tax_list.append(order)
-
-        csv_taxa[id_] = tax_list
-
-    return csv_taxa
-
-
 def chunker(seq, size):
     """Splits input list/set into subsets of specified size
     """
@@ -743,68 +713,6 @@ def taxonomy_from_gb(genbank_dict):
     return gb_taxa
 
 
-def taxid_metadata(csv_dataframe):
-    """Return dictionary with taxids provided in metadata table
-    ("" if not given).
-    """
-    csv_taxids = {}
-    ids_csv = csv_dataframe['contigname'].values.tolist()
-    df = csv_dataframe.set_index("contigname")
-
-    for id_ in ids_csv:  # for each id in ids_csv...
-
-        taxid = df.loc[id_, 'ncbi_taxid']
-
-        if not pd.isnull(taxid):
-            csv_taxids[id_] = taxid
-        else:
-            csv_taxids[id_] = ""
-
-    return csv_taxids
-
-
-def return_ncbi_taxid(entry, searchterm, email_address):
-    """For each entry get tax_id from NCBI taxonomy based on taxonomic
-    information.
-    """
-    Entrez.email = email_address
-    handle = Entrez.esearch(db="taxonomy", retmax=2, term=searchterm)
-    record = Entrez.read(handle)
-    handle.close()
-
-    id_list = record["IdList"]
-
-    if len(id_list) == 0:
-        # Give user option to use unsuccessful searchterm as custom lineage info
-        # or cancel the operation.
-        x = input(f" - No hits found for search term '{searchterm}' in NCBI "
-                  f"taxonomy.\n   Would you like to record this as custom "
-                  f"lineage information for entry '{entry}' and proceed or "
-                  f"cancel the operation? 'P'/'C'\n ?>").capitalize()
-        while not (x == 'P' or x == 'C'):
-            x = input(f"   Type 'P' to record '{searchterm}' as custom lineage "
-                      f"information for entry '{entry}' or 'C' to cancel the "
-                      f"operation.\n ?>").capitalize()
-        if x == 'C':
-            sys.exit("\nOperation cancelled.")
-        else:
-            tax_id = ""
-            print(f" - '{searchterm}' saved to custom lineage information for "
-                  f"entry '{entry}'.\n...")
-
-    elif len(id_list) > 1:
-        print(f" - Multiple hits found for search term '{searchterm}' in NCBI "
-              f"taxonomy.")
-        tax_id = ""
-
-    elif len(id_list) == 1:
-        tax_id = id_list[0]
-
-    time.sleep(0.5)
-
-    return tax_id
-
-
 def return_ncbi_lineage(searchterm, email_address):
     """Search NCBI for lineage information given a tax id.
     """
@@ -830,70 +738,157 @@ def return_ncbi_lineage(searchterm, email_address):
     return lineage
 
 
-def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
+def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
     """Search on NCBI for tax ids if not given and if tax ids given in the first
     place or found search for lineage.
 
-    Incorporates functions "taxonomy_metadata", "taxid_metadata" &
-    "return_ncbi_taxid".
+    Incorporates function   "_return_ncbi_taxid".
     """
-    taxonomy_csv = taxonomy_metadata(csv_dataframe)
-    taxids_csv = taxid_metadata(csv_dataframe)
+
+    def _return_ncbi_taxid(tax_list, iteration, email_address):
+        """For each entry get tax_id from NCBI taxonomy based on taxonomic
+        information.
+        """
+        Entrez.email = email_address
+        
+        taxid_match = dict()
+        no_hits = set()
+        multiple_hits = set()
+        nsearch = 0
+        for taxon in tax_list:
+            nsearch += 1
+            sys.stdout.write(f"\rNCBI taxonomy search set {iteration}, "
+                             f"searching entry {nsearch} of "
+                             f"{len(tax_list)}: \"{taxon}\"")
+            handle = Entrez.esearch(db="taxonomy", retmax=2, term=searchterm)
+            record = Entrez.read(handle)
+            handle.close()
+        
+            id_list = record["IdList"]
+            
+            if len(id_list == 0):
+                no_hits.add(taxon)
+            elif len(id_list > 1):
+                multiple_hits.add(taxon)
+            else:
+                taxid_match[taxon] = id_list[0]
+            
+            time.sleep(0.5)
+        
+        print("\rCompleted NCBI taxonomy serach set {iteration}")
+        
+        return no_hits, multiple_hits, taxid_match
+    
+    csv_dataframe.set_index('db_id', inplace = True)
+    # Extract ascending taxonomy data and generate dict
+    taxonomy = csv_dataframe[['species', 'subfamily', 'family', 'order']].values
+    taxonomy_csv = dict(zip(csv_dataframe.index, taxonomy))
+    # Remove null taxonomy values
+    for db_id, taxa in taxonomy_csv.items():
+        taxa = [t for t in taxa if not pd.isnull(t)]
+        if len(taxa) == 0:
+            taxa = [searchterm]
+        taxonomy_csv[db_id] = taxa
+    # Extract taxids and generate dict
+    taxids_csv = dict(zip(csv_dataframe.index, csv_dataframe['ncbi_taxid']))
+    # Replace empty taxids with blank string
+    taxids_csv = {k: v if not pd.isnull(v) else '' 
+                      for k, v in taxids_csv.items()}
+    
 
     print("\nSearching NCBI for taxonomy...")
-    combined_lineage = {}
     lineage_custom = {}
     taxids = {}
-
-    for entry, given_taxid in taxids_csv.items():
-
-        if given_taxid != "":
+    
+    no_taxid = set()
+    for db_id in taxonomy_csv.index:
+        if taxids_csv[db_id] != '':
             # If taxid is provided in metadata csv, then add empty entry to
             # lineage_custom dict and taxid to taxid dict
-            lineage_custom[entry] = ""
-            taxids[entry] = given_taxid
-
+            lineage_custom[db_id] = ""
+            taxids[db_id] = taxids_csv[db_id]
         else:
-            taxonomy = taxonomy_csv[entry]
-            if not taxonomy:
-                # If no tax info is provided in the csv then use provided
-                # searchterm
-                if isinstance(searchterm, str):
-                    tax_id = return_ncbi_taxid(entry, searchterm, email_address)
-                    tax_levels = [searchterm]
+            no_taxid.add(db_id)
+    
+    # Open local cache
+    taxon_taxid = dict()
+    with open(ncbicachepath, 'r') as ch:
+        taxon_taxid = json.load(ch)
+    
+    n = 0
+    no_hits, multiple_hits = set(), set()
+    while len(no_taxid) > 0:
+        n += 1
+        # Get lowest taxon from each record that does not have a ncbi_taxid yet
+        taxa_to_search = []
+        taxon_db_ids = dict()
+        for db_id in no_taxid:
+            taxon = taxonomy_csv[db_id].pop(0)
+            taxa_to_search.append(taxon)
+            # Store a list of db_ids linked to each taxon for later assignment
+            if taxon in taxon_db_ids:
+                taxon_db_ids[taxon].append(db_id)
+            else:
+                taxon_db_ids[taxon] = [db_id]
+        
+        # Find only the unique
+        taxa_to_search = set(taxa_to_search)
+        # Search these in the local cache
+        found_taxids = dict()
+        for taxon in taxa_to_search:
+            if taxon in taxon_taxid:
+                found_taxids[taxon] = taxon_taxid[taxon]
+                taxa_to_search.remove(taxon)
+        # Search remainder (if any) in NCBI
+        if len(taxa_to_search) > 0:
+            ncbiret = _return_ncbi_taxid(taxa_to_search, n, email_address)
+            no_hits.update(ncbiret[0])
+            multiple_hits.update(ncbiret[1])
+            # Add found taxids to both found dict and master cache dict
+            for taxon in ncbiret[2]:
+                taxid = ncbiret[2][taxon]
+                found_taxids[taxon] = taxid
+                taxa_to_search.remove(taxon)
+                taxon_taxid[taxon] = taxid
+        # Report to user
+        if n == 1:
+            if len(taxa_to_search) == 0:
+                print("NCBI taxonomy search to retrieve taxids was successful "
+                      "for all lowest-level taxa")
+            else:
+                print("NCBI taxonomy search to retrieve taxids was "
+                      f"unsuccessful for {len(taxa_to_search)} entries based "
+                      "on lowest-level taxa. Trying again with higher taxa...")
+        # Store taxids and/or custom lineages
+        for taxon in taxon_db_ids:
+            for db_id in taxon_db_ids[taxon]:
+                if taxon in found_taxids:
+                    taxids[db_id] = taxid
+                    no_taxid.remove(db_id)
                 else:
-                    print(f"No taxonomy information is provided for entry "
-                          f"'{entry}' in the csv-file.")
-                    term_to_search = input("What term should be searched in "
-                                           "NCBI taxonomy?\n")
-                    tax_levels = [term_to_search]
-                    tax_id = return_ncbi_taxid(entry, term_to_search,
-                                               email_address)
-            else:
-                tax_levels = taxonomy
-                tax_id = ""
-
-            c_lineage = []
-            n = 0
-            while tax_id == "" and n < len(tax_levels):
-                # Loop through tax_levels fetching tax_id from NCBI for each.
-                # If no hits are returned for a searchterm, give user option to
-                # record it as custom lineage information.
-                tax_name = tax_levels[n]
-                tax_id = return_ncbi_taxid(entry, tax_name, email_address)
-                n += 1
-                c_lineage.append(tax_name)
-
-            taxids[entry] = tax_id
-
-            if tax_id == "":
-                print(f" - For entry '{entry}' no tax id was found.")
-                lineage_custom[entry] = "; ".join(tax_levels)
-            else:
-                lineage_custom[entry] = "; ".join(c_lineage[0:-1])
-
-        combined_lineage[entry] = [taxids[entry], lineage_custom[entry]]
-
+                    if db_id in lineage_custom:
+                        lineage_custom[db_id].append(taxon)
+                    else:
+                        lineage_custom = [taxon]
+        
+    # Once all entries have taxonomy, report to user
+    if len(no_hits) > 0:
+        print("The following taxa had no hits in NCBI and a higher level "
+              "taxon was used to assign NCBI taxid:", ', '.join(no_hits))
+    if len(multiple_hits) > 0:
+        print("The following taxa had more than 1 hit in NCBI and a higher "
+              "level taxon was used to assign NCBI taxid:", ', '.join(no_hits))
+    # Save local cache
+    with open(ncbicachepath, 'w') as ch:
+        json.dump(taxon_taxid, ch)
+    
+    # Generate combined lineage
+    combined_lineage = dict()
+    for db_id, taxid in taxids_csv.items():
+        if db_id not in lineage_custom:
+            lineage_custom[db_id] = ''
+        combined_lineage[db_id] = [taxids[db_id], lineage_custom[db_id]] 
+    
     return combined_lineage
 
 
