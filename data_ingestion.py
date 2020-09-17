@@ -79,11 +79,11 @@ lineages = gcm.get_ncbi_lineage(df_new_ids, args.users_email, args.searchterm)
 dict_accepted, df_accepted = gcm.rejecting_entries(
     lineages, new_gb_dict, df_new_ids, args.reject_custom_lineage)
 
+# Replace old input ID with new database ID in genbank file
+gcm.change_ids_genbank(dict_accepted, dict_new_ids, args.key)
+
 # Create a new dictionary with the added taxonomy information
 new_dict = gcm.insert_taxid(lineages, dict_accepted)
-
-# Replace old input ID with new database ID in genbank file
-gcm.change_ids_genbank(new_dict, dict_new_ids, args.key)
 
 # Change the features for CDS
 gcm.alter_features(new_dict)
