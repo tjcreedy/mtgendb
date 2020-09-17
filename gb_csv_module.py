@@ -66,7 +66,6 @@ def gb_into_dictionary(gb_filename, key):
 
     return gb_dictionary
 
-
 def text_to_list(txtfile):
     """Converts text-file of IDs (one per line) into a list, exiting if
     duplicates are present.
@@ -88,7 +87,6 @@ def text_to_list(txtfile):
         ids_list = list(set(ids_list))
 
     return ids_list
-
 
 def versions_to_dict(txtfile):
     """Converts 3-column text-file of IDs and target versions for rollback
@@ -128,7 +126,6 @@ def versions_to_dict(txtfile):
 
     return target_versions
 
-
 def check_acc_format(acc_list):
     """Checks each accession in list satisfies genbank format, dropping any
     that don't.
@@ -145,7 +142,6 @@ def check_acc_format(acc_list):
 
     return accs_out
 
-
 def correct_header(csv_dataframe, action):
     """Check metadata file has correct columns by creating a list of its column
      headers and checking it against a list of the expected headers.
@@ -155,37 +151,23 @@ def correct_header(csv_dataframe, action):
          - action - ['ingest', 'update', 'rollback', 'remove']
     """
     csv_header = set(csv_dataframe.columns.values.tolist())
+    expected_header = {'contigname', 'institution_code', 'collection_code',
+                       'specimen_id', 'morphospecies', 'traptype',
+                       'dev_stage', 'site', 'locality', 'subregion',
+                       'country', 'latitude', 'longitude', 'size',
+                       'feeding_behaviour', 'habitat', 'habitat_stratum',
+                       'authors', 'library', 'datasubmitter', 'projectname',
+                       'genbank_accession', 'notes'}
 
     if action == 'ingest':
-        expected_header = ['contigname', 'institution_code', 'collection_code',
-                           'specimen_id', 'morphospecies', 'species', 'genus',
-                           'subfamily', 'family', 'order', 'ncbi_taxid',
-                           'traptype', 'dev_stage', 'site', 'locality',
-                           'subregion', 'country', 'latitude', 'longitude',
-                           'size', 'feeding_behaviour', 'habitat',
-                           'habitat_stratum', 'authors', 'library',
-                           'datasubmitter', 'projectname', 'genbank_accession',
-                           'notes']
+        expected_header.update('species', 'genus', 'subfamily', 'family',
+                               'order', 'ncbi_taxid')
 
     elif action == 'ghost_ingest':
-        expected_header = ['contigname', 'db_id', 'institution_code',
-                           'collection_code', 'specimen_id', 'morphospecies',
-                           'species', 'genus', 'subfamily', 'family', 'order',
-                           'ncbi_taxid', 'traptype', 'dev_stage', 'site',
-                           'locality', 'subregion', 'country', 'latitude',
-                           'longitude', 'size', 'feeding_behaviour', 'habitat',
-                           'habitat_stratum', 'authors', 'library',
-                           'datasubmitter', 'projectname', 'genbank_accession',
-                           'notes']
+        expected_header.update('db_id', 'species', 'genus', 'subfamily',
+                               'family', 'order', 'ncbi_taxid')
     else:
-        expected_header = ['contigname', 'db_id', 'institution_code',
-                           'collection_code', 'specimen_id', 'morphospecies',
-                           'ncbi_taxon_id', 'custom_lineage', 'traptype',
-                           'dev_stage', 'site', 'locality', 'subregion',
-                           'country', 'latitude', 'longitude', 'size',
-                           'feeding_behaviour', 'habitat', 'habitat_stratum',
-                           'authors', 'library', 'datasubmitter', 'projectname',
-                           'genbank_accession', 'notes']
+        expected_header.update('db_id', 'ncbi_taxon_id', 'custom_lineage')
 
     if expected_header != csv_header:
         print("Incorrect header in CSV file.\n")
@@ -193,7 +175,6 @@ def correct_header(csv_dataframe, action):
                  "\n\nIt must be as follows: " + str(expected_header))
 
     return
-
 
 def lat_long(df):
     """Checks the latitude and longitude columns of the DataFrame are correctly
@@ -210,7 +191,6 @@ def lat_long(df):
                      f" '{long}'")
 
     return
-
 
 def matching_inputids(csv_df, gb_dict, action):
     """Check if the GenBank and CSV metadata files have matching entries, and
@@ -268,7 +248,6 @@ def matching_inputids(csv_df, gb_dict, action):
 
     return new_csv_df, new_gb_dict
 
-
 def new_ids(genbank_dict, prefix, startvalue, padding):
     """Check if the new ids are looking fine given the user input (prefix,
     startvalue, padding).
@@ -307,7 +286,6 @@ def new_ids(genbank_dict, prefix, startvalue, padding):
 
     return dict_new_ids
 
-
 def check_ids(ids_list, action):
     """Check if the database ids already exist in the database.
     """
@@ -336,7 +314,6 @@ def check_ids(ids_list, action):
                      f"'rollback'.")
 
     return
-
 
 def check_accs_in_db(accs_list):
     """Checks accessions haven't already been pulled from GenBank by checking
@@ -372,7 +349,6 @@ def check_accs_in_db(accs_list):
             accs_list = [a for a in accs_list if a not in duplicates]
 
     return accs_list
-
 
 def check_recs_for_dups(records):
     """Checks a list of records for duplicates by referring to the comment
@@ -437,7 +413,6 @@ def check_recs_for_dups(records):
 
     return use_recs, reject
 
-
 def check_seqs_in_db(records):
     """Checks whether sequences already exist in the database.
     """
@@ -461,7 +436,6 @@ def check_seqs_in_db(records):
 
     return new_recs, reject
 
-
 def load_reject_table(rejected):
     """Loads a list of rejected accession numbers into the 'rejected' SQL
     table.
@@ -471,7 +445,6 @@ def load_reject_table(rejected):
     rej_df.to_sql(name='rejected', if_exists='append', index=False, con=engine)
 
     return
-
 
 def check_latest_version(db_id):
     """Return most recent bioentry and metaentry version numbers of
@@ -489,7 +462,6 @@ def check_latest_version(db_id):
             bioentry_version, metadata_version = row
 
     return bioentry_version, metadata_version
-
 
 def check_current_version(db_id):
     """Return current bioentry and metaentry version numbers of record
@@ -514,7 +486,6 @@ def check_current_version(db_id):
 
     return bio_version, meta_version
 
-
 def fetch_current_ids(names_dict):
     """Fetch primary keys of current versions from master table.
 
@@ -536,7 +507,6 @@ def fetch_current_ids(names_dict):
             current_ids[db_id] = (bioentry_id, metadata_id)
 
     return current_ids
-
 
 def fetch_names(sql, db_un, db_pw):
     """Fetch names and corresponding db_id's from database using MySQL command
@@ -572,7 +542,6 @@ def change_ids_genbank(genbank_dict, dict_new_ids, key):
 
     return
 
-
 def change_names_csv(csv_df, dict_new_ids):
     """Adds column containing new db_ids to df.
     """
@@ -581,7 +550,6 @@ def change_names_csv(csv_df, dict_new_ids):
     new_csv_df = pd.merge(dict_df, csv_df, on='contigname')
 
     return new_csv_df
-
 
 def taxonomy_metadata(csv_df, col='contigname'):
     """Function returning a dictionary with all the taxonomic information for
@@ -612,7 +580,6 @@ def taxonomy_metadata(csv_df, col='contigname'):
 
     return csv_taxa
 
-
 def chunker(seq, size):
     """Splits input list/set into subsets of specified size
     """
@@ -620,7 +587,6 @@ def chunker(seq, size):
         seq = list(seq)
 
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
-
 
 def return_gb_data(acc_list, email):
     """Takes list of of IDs/accessions and returns dict of corresponding
@@ -643,7 +609,6 @@ def return_gb_data(acc_list, email):
             print(f" - Accession '{acc}' returned no hits on NCBI.")
 
     return records
-
 
 def extract_metadata(records):
     """Extracts metadata from gb_dict and writes to DataFrame.
@@ -718,7 +683,6 @@ def extract_metadata(records):
 
     return gb_met_df
 
-
 def taxonomy_from_gb(genbank_dict):
     """Function returning dictionary of taxids from genbank file if it has it
     (or "" if not).
@@ -742,7 +706,6 @@ def taxonomy_from_gb(genbank_dict):
 
     return gb_taxa
 
-
 def taxid_metadata(csv_dataframe):
     """Return dictionary with taxids provided in metadata table
     ("" if not given).
@@ -761,7 +724,6 @@ def taxid_metadata(csv_dataframe):
             csv_taxids[id_] = ""
 
     return csv_taxids
-
 
 def return_ncbi_taxid(entry, searchterm, email_address):
     """For each entry get tax_id from NCBI taxonomy based on taxonomic
@@ -804,7 +766,6 @@ def return_ncbi_taxid(entry, searchterm, email_address):
 
     return tax_id
 
-
 def return_ncbi_lineage(searchterm, email_address):
     """Search NCBI for lineage information given a tax id.
     """
@@ -828,7 +789,6 @@ def return_ncbi_lineage(searchterm, email_address):
     time.sleep(0.5)
 
     return lineage
-
 
 def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
     """Search on NCBI for tax ids if not given and if tax ids given in the first
@@ -896,7 +856,6 @@ def get_ncbi_lineage(csv_dataframe, email_address, searchterm):
 
     return combined_lineage
 
-
 def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
     """Print rejected entries to CSV and GenBank files.
     Return df and gb_dict with accepted entries only.
@@ -952,7 +911,6 @@ def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
 
     return genbank_dict, csv_df
 
-
 def insert_taxid(ncbi_lineage, genbank_dict):
     """Insert tax id into gb data (returned from "ncbi_taxid").
     """
@@ -995,7 +953,6 @@ def insert_taxid(ncbi_lineage, genbank_dict):
 
     return genbank_dict
 
-
 def loadnamevariants(source=None):
     """Generates dict of name variants for each gene.
     """
@@ -1028,7 +985,6 @@ def loadnamevariants(source=None):
     source.close()
 
     return variants, types, products
-
 
 def alter_features(genbank_dict):
     """Edit the features in the genbank entries.
@@ -1088,7 +1044,6 @@ def alter_features(genbank_dict):
 
     return genbank_dict
 
-
 def add_lineage_df(csv_dataframe, combined_lineage):
     """Add columns with tax_id, custom_ and ncbi_lineage to metadata dataframe.
     """
@@ -1101,7 +1056,6 @@ def add_lineage_df(csv_dataframe, combined_lineage):
     df.rename(columns={"index": "contigname"}, inplace=True)
 
     return df
-
 
 def reformat_df_cols(df):
     """Reorder DataFrame columns for ingestion into MySQL database.
@@ -1116,7 +1070,6 @@ def reformat_df_cols(df):
 
     return df
 
-
 def load_ids_to_master(new_ids):
     """Loads new db_ids as primary keys into the master table
     """
@@ -1129,7 +1082,6 @@ def load_ids_to_master(new_ids):
         cur.execute(sql)
 
     return
-
 
 def load_gb_dict_into_db(genbank_data):
     """Load genbank_data as a dictionary into the mysql database.
@@ -1147,7 +1099,6 @@ def load_gb_dict_into_db(genbank_data):
 
     return
 
-
 def load_df_into_db(csv_dataframe):
     """Loading pandas dataframe with metadata into the database.
     """
@@ -1160,7 +1111,6 @@ def load_df_into_db(csv_dataframe):
     print(" - %i entries loaded." % len(csv_dataframe.index))
 
     return
-
 
 def sql_cols(table, cols, spec):
     """Determine required tables and columns for MySQL query. Construct columns
@@ -1268,7 +1218,6 @@ def sql_cols(table, cols, spec):
 
     return tables, cols_string, cols_dict, spec
 
-
 def table_join(start, table_list, main_table, shared_col):
     """Consructs string for MySQL table joins
 
@@ -1289,7 +1238,6 @@ def table_join(start, table_list, main_table, shared_col):
         n += 1
 
     return table_string
-
 
 def sql_table(tables):
     """Construct table string for MySQL query
@@ -1334,7 +1282,6 @@ def sql_table(tables):
         sys.exit("ERROR: Cannot construct table. Invalid information provided.")
 
     return table_string
-
 
 def sql_spec(cols_dict, spec, spec_type):
     """Construct specification string for MySQL query
@@ -1391,7 +1338,6 @@ def sql_spec(cols_dict, spec, spec_type):
 
     return spec_string
 
-
 def construct_sql_output_query(table, cols, spec):
     """Builds MySQL SELECT statement from table, column, and specification
     strings.
@@ -1405,7 +1351,6 @@ def construct_sql_output_query(table, cols, spec):
     mysql_command = f"SELECT {cols_string} FROM {table_string}{spec_string};"
 
     return mysql_command
-
 
 def construct_sql_update_query(table, update, spec):
     """Builds MySQL UPDATE statement from table, column, and specification
@@ -1423,7 +1368,6 @@ def construct_sql_update_query(table, update, spec):
 
     return mysql_command
 
-
 def construct_sql_delete_query(spec):
     """Builds MySQL DELETE statement from table, column, and specification
     strings.
@@ -1438,7 +1382,6 @@ def construct_sql_delete_query(spec):
 
     return mysql_command
 
-
 def fetch_names(mysql_command):
     """Fetch names and corresponding db_id's from database using MySQL query.
     """
@@ -1452,7 +1395,6 @@ def fetch_names(mysql_command):
     names_dict = {row[0]: row[1] for row in set(records)}
 
     return names_dict
-
 
 def fetch_recs(names_dict, _all):
     """Fetches a list of SeqRecords from an input dict of record names/db ids
@@ -1473,7 +1415,6 @@ def fetch_recs(names_dict, _all):
 
     return recs
 
-
 def execute_query(mysql_query):
     """Connect to db and execute mysql query
     """
@@ -1484,7 +1425,6 @@ def execute_query(mysql_query):
         cur.execute(mysql_query)
 
     return
-
 
 def extract_genes(recs, genes):
     """Extracts genes from SeqRecord objects and writes to dict:
@@ -1515,7 +1455,6 @@ def extract_genes(recs, genes):
         subrecs[gene] = extracted_genes
 
     return subrecs
-
 
 def csv_from_sql(mysql_command, csv_name):
     """Extract csv file from SQL database.
@@ -1555,7 +1494,6 @@ def csv_from_sql(mysql_command, csv_name):
 
     return
 
-
 def seqfile_from_sql(recs_dict, file_name, frmat):
     """Writes list of SeqRecords to a file of chosen format.
     """
@@ -1573,7 +1511,6 @@ def seqfile_from_sql(recs_dict, file_name, frmat):
 
     return
 
-
 def return_count(mysql_command):
     """Return number of records in the database satisfying a user-supplied
     specification.
@@ -1586,7 +1523,6 @@ def return_count(mysql_command):
             print(row[0])
 
     return
-
 
 def update_data(metadata, gb_dict):
     """Load updated records into the database.
@@ -1621,7 +1557,6 @@ def update_data(metadata, gb_dict):
         load_df_into_db(metadata)
 
     return
-
 
 def update_master_table(gb_ids, meta_ids, action):
     """Load primary keys (bioentry_id, metadata_id) of most up-to-date versions
@@ -1685,7 +1620,6 @@ def update_master_table(gb_ids, meta_ids, action):
 
     return
 
-
 def rollback_versions(versions_dict):
     """Rollback current version of selected records highlighted in master
     table to a previous version of the users choice.
@@ -1724,7 +1658,6 @@ def rollback_versions(versions_dict):
                 cur.execute(update_master)
 
     return
-
 
 def remove_recs(db_ids):
     """Removes all data corresponding to each id in provided ids list from
