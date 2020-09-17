@@ -48,10 +48,10 @@ gb_dict = gcm.gb_into_dictionary(args.input_genbank, args.key)
 csv_df = pd.read_csv(args.input_csv, quotechar='"')
 
 # Check if the header in the csv is correct
-gcm.correct_header(csv_df, 'ingest')
+gcm.correct_header(csv_df, 'ghost_ingest')
 
 # Check if the genbank and metadata file have matching entries
-new_csv_df, new_gb_dict = gcm.matching_inputids(csv_df, gb_dict, 'ghost_ingest')
+new_csv_df, new_gb_dict = gcm.matching_inputids(csv_df, gb_dict)
 
 # Check IDs don't already exist in database
 db_ids = {rec.name: rec.name for rec in gb_dict.values()}
