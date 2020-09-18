@@ -1062,8 +1062,8 @@ def alter_features(genbank_dict):
                                  f"'{str(name)}'")
                 else:
                     unidentifiable_features.add((feature.type,
-                                                 feature.location.start,
-                                                 feature.location.end))
+                                                 int(feature.location.start),
+                                                 int(feature.location.end)))
 
         if len(unidentifiable_features):
             sys.stderr.write("\nWARNING: The following sequence entries had "
