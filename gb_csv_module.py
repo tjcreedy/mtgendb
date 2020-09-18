@@ -1062,8 +1062,8 @@ def alter_features(genbank_dict):
                                  f"'{str(name)}'")
                 else:
                     unidentifiable_features.add((feature.type,
-                                                 int(feature.location.start),
-                                                 int(feature.location.end)))
+                                                 str(feature.location.start),
+                                                 str(feature.location.end)))
 
         if len(unidentifiable_features):
             sys.stderr.write("\nWARNING: The following sequence entries had "
@@ -1071,7 +1071,7 @@ def alter_features(genbank_dict):
             for unidfeats in unidentifiable_features:
                 #TODO: rename 'hmm'
                 print(f'UNIDFEATS: {unidfeats}')
-                hmm = [f + " " + str(s) + "-" + str(e) for f, s, e in unidfeats]
+                hmm = [f"{f} {s}-{e}" for f, s, e in unidfeats]
                 sys.stderr.write(gb_record + ": " + ', '.join(hmm) + "\n")
 
     return genbank_dict
