@@ -1068,11 +1068,15 @@ def alter_features(genbank_dict):
         if len(unidentifiable_features):
             sys.stderr.write("\nWARNING: The following sequence entries had "
                              "unidentifiable annotations:\n")
+            for (f, s, e) in unidentifiable_features:
+                seg = [f"{f} {s}-{e}"]
+                sys.stderr.write(f"{gb_record}: {', '.join(seg)}\n")
+            """
             for unidfeats in unidentifiable_features:
-                #TODO: rename 'hmm'
-                print(f'UNIDFEATS: {unidfeats}')
-                hmm = [f"{f} {s}-{e}" for f, s, e in unidfeats]
-                sys.stderr.write(gb_record + ": " + ', '.join(hmm) + "\n")
+                sys.stderr.write(gb_record + ": " + ', '.join(
+                    [f + " " + str(s) + "-" + str(e) for f, s, e in
+                     unidfeats]) + "\n")
+            """
 
     return genbank_dict
 
