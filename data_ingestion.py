@@ -45,6 +45,8 @@ parser.add_argument('-k', help="""Field of the genbank-file where the
 
 args = parser.parse_args()
 #args = parser.parse_args('--db_user root --db_pass mmgdatabase -gb testdata/test_genbank.gb -csv testdata/test_metadata.csv -s Coleoptera -e thomas.creedy@gmail.com -p TEST -c testdata/ncbitaxidcache.json -n 1 -z 3'.split(' '))
+#args = parser.parse_args('--db_user root --db_pass mmgdatabase -gb testdata/gbmaster_2020-09-11_current.gb -csv testdata/AllMitogenomesMaster_noCERN_2020-09-17.csv -s Coleoptera -e thomas.creedy@gmail.com -p TEST -c testdata/ncbitaxidcache.json -n 1 -z 3'.split(' '))
+
 ## Functions ##
 
 # Check login details
@@ -101,7 +103,7 @@ df_with_lineages['version'] = 0
 df_with_lineages = gcm.reformat_df_cols(df_with_lineages)
 
 # Load new ids into master table
-gcm.load_ids_to_master(list(dict_new_ids.values()))
+gcm.load_ids_to_master([rec.name for rec in new_dict.values()])
 
 ##Push the metadata into the database
 gcm.load_df_into_db(df_with_lineages)
