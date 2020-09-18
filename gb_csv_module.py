@@ -254,9 +254,11 @@ def matching_inputids(csv_df, gb_dict, action):
                 print(f"WARNING: Skipping entries:\n{', '.join(gb_miss)}\nas "
                       f"they appear in the CSV file but not the GenBank file.")
 
-            df_missing_ids = [b for b in discrepant_ids if b not in gb_dict]
-            new_csv_df.set_index('contigname', inplace=True)
-            new_csv_df.drop(df_missing_ids, inplace=True)
+            if action == 'ingest':
+                new_csv_df.set_index('contigname', inplace=True)
+            else:
+                new_csv_df.set_index('db_id', inplace=True)
+            new_csv_df.drop(list(gb_miss), inplace=True)
             new_csv_df.reset_index(inplace=True)
 
     return new_csv_df, new_gb_dict
