@@ -89,6 +89,7 @@ df_with_lineages['version'] = 0
 df_with_lineages = gcm.reformat_df_cols(df_with_lineages)
 
 #Load new ids into master table
+db_ids = list(df_with_lineages['db_id'])
 gcm.load_ids_to_master(db_ids)
 
 ##Push the metadata into the database
