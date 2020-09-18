@@ -243,7 +243,7 @@ def matching_inputids(csv_df, gb_dict, action):
             # Return new gb_dict with discrepant entries deleted
             if csv_miss:
                 print(f"Skipping entries:\n{', '.join(csv_miss)}\nas they "
-                      f"appear in the GenBank file but not the CSV file.")
+                      f"appear in the GenBank file but not the CSV file.\n")
 
             new_gb_dict = {key: gb_dict[key] for key in gb_dict if
                            key not in discrepant_ids}
@@ -974,7 +974,7 @@ def insert_taxid(ncbi_lineage, genbank_dict):
             for (index, feature) in enumerate(genbank_record.features):
                 if feature.type == "source":
                     if ncbi_id != "":
-                        feature.qualifiers["db_xref"] = ['taxon:' + ncbi_id]
+                        feature.qualifiers["db_xref"] = ['taxon:' + str(ncbi_id)]
                     else:
                         del feature.qualifiers["db_xref"]
 
