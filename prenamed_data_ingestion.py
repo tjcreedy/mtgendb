@@ -30,7 +30,7 @@ parser.add_argument('-s', help="""Provide a taxonomic searchterm
                     to search for tax ids on NCBI for any entries without 
                     taxonomic data.""", dest='searchterm')
 req_group.add_argument('-c', help="Path to ncbitaxid cache json file",
-                       required = True, dest = 'taxidcache')
+                       required=True, dest='taxidcache')
 req_group.add_argument('-e', help="""Enter your email address in order 
                     to access NCBI.""", dest='users_email', required=True)
 parser.add_argument('-k', help="""Field of the genbank-file where the 
@@ -38,6 +38,8 @@ parser.add_argument('-k', help="""Field of the genbank-file where the
                     default='LOCUS', choices=['LOCUS', 'ACCESSION',
                                               'DEFINITION'])
 args = parser.parse_args()
+
+#args = parser.parse_args('--db_user root --db_pass mmgdatabase -gb testdata/gbmaster_2020-09-11_current.gb -csv testdata/AllMitogenomesMaster_noCERN_2020-09-17.csv -s Coleoptera -e thomas.creedy@gmail.com -c testdata/ncbitaxidcache.json'.split(' '))
 
 ## Functions ##
 
@@ -71,6 +73,7 @@ dict_accepted, df_accepted = gcm.rejecting_entries(
 new_dict = gcm.insert_taxid(lineages, dict_accepted)
 
 #Replace old input ID with new database ID in genbank file
+db_ids = {rec.name: rec.name for rec in new_dict.values()}
 gcm.change_ids_genbank(new_dict, db_ids, args.key)
 
 #Change the features for CDS
