@@ -47,6 +47,7 @@ args = parser.parse_args()
 gcm.check_login_details(args.db_user, args.db_pass)
 
 # Create dict from genbank-file and dataframe from csv-file
+#TODO: strip out description field
 gb_dict = gcm.gb_into_dictionary(args.input_genbank, args.key)
 
 csv_df = pd.read_csv(args.input_csv, quotechar='"', dtype={'ncbi_taxid': str})
@@ -119,3 +120,4 @@ for x, y in lineages.items():
     if type(y[0]) is float:
         print(x, y)
 """
+jhs
