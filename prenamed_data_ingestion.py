@@ -75,7 +75,7 @@ new_dict = gcm.insert_taxid(lineages, dict_accepted)
 
 #Replace old input ID with new database ID in genbank file
 db_ids = {rec.name: rec.name for rec in new_dict.values()}
-gcm.change_ids_genbank(new_dict, db_ids, args.key)
+new_dict = gcm.change_ids_genbank(new_dict, db_ids, args.key)
 
 #Change the features for CDS
 gcm.alter_features(new_dict)
