@@ -1065,12 +1065,14 @@ def alter_features(genbank_dict):
                                                  str(feature.location.start),
                                                  str(feature.location.end)))
 
-        if len(unidentifiable_features):
-            sys.stderr.write("\nWARNING: The following sequence entries had "
-                             "unidentifiable annotations:\n")
-            for (f, s, e) in unidentifiable_features:
-                seg = [f"{f} {s}-{e}"]
-                sys.stderr.write(f"{gb_record}: {', '.join(seg)}\n")
+    # gb_record = 'SRAA00104'
+    # unidentifiable_features = {('CDS', '3397', '5038')}
+    if len(unidentifiable_features):
+        sys.stderr.write("\nWARNING: The following sequence entries had "
+                         "unidentifiable annotations:\n")
+        for (f, s, e) in unidentifiable_features:
+            seg = [f"{f} {s}-{e}"]
+            sys.stderr.write(f"{gb_record}: {', '.join(seg)}\n")
             """
             for unidfeats in unidentifiable_features:
                 sys.stderr.write(gb_record + ": " + ', '.join(
