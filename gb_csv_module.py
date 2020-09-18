@@ -548,6 +548,8 @@ def fetch_names(sql, db_un, db_pw):
 def change_ids_genbank(genbank_dict, dict_new_ids, key):
     """Change the ids in the genbank file to the new database ids (LLLLNNNNN).
     """
+    #genbank_dict, dict_new_ids, key = dict_accepted, dict_new_ids, args.key
+    new_dict = {}
     for gb_record, record in genbank_dict.items():
 
         record.name = dict_new_ids[record.name]
@@ -558,8 +560,9 @@ def change_ids_genbank(genbank_dict, dict_new_ids, key):
         if key == "DESCRIPTION":
             # Erase the description as it contained the input id
             record.description = ""
+        new_dict[record.name] = record
 
-    return
+    return new_dict
 
 
 def change_names_csv(csv_df, dict_new_ids):
@@ -732,7 +735,7 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
 
     Incorporates function   "_return_ncbi_taxid".
     """
-
+    #csv_dataframe, ncbicachepath, email_address, searchterm = df_new_ids, args.taxidcache, args.users_email, args.searchterm
     def _return_ncbi_taxid(tax_list, iteration, email_address):
         """For each entry get tax_id from NCBI taxonomy based on taxonomic
         information.
@@ -745,9 +748,9 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
         nsearch = 0
         for taxon in tax_list:
             nsearch += 1
-            sys.stdout.write(f"NCBI taxonomy search set {iteration}, "
+            sys.stdout.write(f"\rNCBI taxonomy search set {iteration}, "
                              f"searching entry {nsearch} of "
-                             f"{len(tax_list)}: \"{taxon}\"\n")
+                             f"{len(tax_list)}: \"{taxon}\"")
             handle = Entrez.esearch(db="taxonomy", retmax=2, term=taxon)
             record = Entrez.read(handle)
             handle.close()
@@ -760,10 +763,10 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
                 multiple_hits.add(taxon)
             else:
                 taxid_match[taxon] = id_list[0]
-            
+
             time.sleep(0.5)
-        
-        print(f"Completed NCBI taxonomy search set {iteration}")
+            sys.stdout.write(f"\r{' ' * 80}")
+        print(f"\rCompleted NCBI taxonomy search set {iteration}")
         
         return no_hits, multiple_hits, taxid_match
     
@@ -773,7 +776,8 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
     taxonomy_csv = dict(zip(csv_dataframe.index, taxonomy))
     # Remove null taxonomy values
     for db_id, taxa in taxonomy_csv.items():
-        taxa = [t for t in taxa if not pd.isnull(t)]
+        taxa = [t.strip() for t in taxa 
+                    if not (pd.isnull(t) or str(t).upper() == 'UNKNOWN')]
         if len(taxa) == 0:
             taxa = [searchterm]
         taxonomy_csv[db_id] = taxa
@@ -832,11 +836,10 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
             no_hits.update(ncbiret[0])
             multiple_hits.update(ncbiret[1])
             # Add found taxids to both found dict and master cache dict
-            for taxon in ncbiret[2]:
-                taxid = ncbiret[2][taxon]
+            for taxon, taxid in ncbiret[2].items():
                 found_taxids[taxon] = taxid
                 taxa_to_search.remove(taxon)
-                taxon_taxid[taxon] = taxid
+            taxon_taxid.update(found_taxids)
         # Report to user
         if n == 1:
             if len(taxa_to_search) == 0:
@@ -847,16 +850,15 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
                       f"unsuccessful for {len(taxa_to_search)} entries based "
                       "on lowest-level taxa. Trying again with higher taxa...")
         # Store taxids and/or custom lineages
-        for taxon in taxon_db_ids:
-            for db_id in taxon_db_ids[taxon]:
+        for taxon, db_ids in taxon_db_ids.items():
+            for db_id in db_ids:
                 if taxon in found_taxids:
                     taxids[db_id] = found_taxids[taxon]
                     no_taxid.remove(db_id)
                 else:
                     if db_id in lineage_custom:
-                        lineage_custom[db_id].append(taxon)
-                    else:
-                        lineage_custom[db_id] = [taxon]
+                        taxon = f"{taxon}; {lineage_custom[db_id]}"
+                    lineage_custom[db_id] = taxon
         
     # Once all entries have taxonomy, report to user
     if len(no_hits) > 0:
@@ -883,9 +885,9 @@ def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
     """Print rejected entries to CSV and GenBank files.
     Return df and gb_dict with accepted entries only.
     """
+    #ncbi_lineage, genbank_dict, csv_df, rejection = lineages, new_gb_dict, df_new_ids, args.reject_custom_lineage
     rejected = []
     new_entries = []
-    csv_df.set_index("db_id", inplace=True)
 
     # Drop rejected rows from DataFrame
     for db_id, ncbi_info in ncbi_lineage.items():
@@ -896,18 +898,14 @@ def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
             entry.insert(0, db_id)
             new_entries.append(entry)
             csv_df.drop([db_id], inplace=True)
-
+            csv_df.columns
+    
     if len(rejected):
         # Create new DataFrame of rejected entries and drop them from returned
         # DataFrame
         print("\nPrinting rejected entries to CSV file...")
-        cols = ['contigname', 'db_id', 'institution_code', 'collection_code',
-                'specimen_id', 'morphospecies', 'species', 'genus', 'subfamily',
-                'order', 'traptype', 'dev_stage', 'site', 'locality',
-                'subregion', 'country', 'latitude', 'longitude', 'size',
-                'feeding_behaviour', 'habitat', 'habitat_stratum', 'authors',
-                'library', 'datasubmitter', 'projectname', 'genbank_accession',
-                'notes']
+        cols = csv_df.columns
+        cols = cols.insert(0, 'db_id')
         new_dataframe = pd.DataFrame(new_entries, columns=cols)
         del new_dataframe['db_id']
         new_dataframe.to_csv('rejected_metadata.csv', index=False)
@@ -919,9 +917,8 @@ def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
         # genbank_dict
         print("\nPrinting rejected entries to GenBank file...")
         rejected_gb_list = [genbank_dict[x] for x in rejected]
-        rejected_gb = open("rejected_entries.gb", 'w')
-        SeqIO.write(rejected_gb_list, rejected_gb, "genbank")
-        rejected_gb.close()
+        with open("rejected_entries.gb", 'w') as rejected_gb:
+            SeqIO.write(rejected_gb_list, rejected_gb, "genbank")
 
         for x in rejected:
             print(f" - Entry '{str(x)}' added to GenBank file.")
@@ -939,9 +936,11 @@ def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
 def insert_taxid(ncbi_lineage, genbank_dict):
     """Insert tax id into gb data (returned from "ncbi_taxid").
     """
+    #ncbi_lineage, genbank_dict = lineages, dict_accepted
     gb_taxonomy = taxonomy_from_gb(genbank_dict)
 
     for record, tax_id in gb_taxonomy.items():
+        #record, tax_id = list(gb_taxonomy.items())[0]
         # If there is a taxid in gb, replace it, otherwise create new field for
         # taxid from ncbi or delete if no tax_id given.
         genbank_record = genbank_dict[record]
@@ -1075,13 +1074,15 @@ def alter_features(genbank_dict):
 def add_lineage_df(csv_dataframe, combined_lineage):
     """Add columns with tax_id, custom_ and ncbi_lineage to metadata dataframe.
     """
+    #csv_dataframe, combined_lineage = df_accepted, lineages
+    
     df_add = pd.DataFrame.from_dict(combined_lineage, orient='index')
     df_add.columns = ["ncbi_taxon_id", "custom_lineage"]
     csv_dataframe.drop(['species', 'genus', 'subfamily', 'family', 'order',
                         'ncbi_taxid'], axis=1, inplace=True)
     df = pd.merge(df_add, csv_dataframe, left_index=True, right_index=True)
     df.reset_index(level=0, inplace=True)
-    df.rename(columns={"index": "contigname"}, inplace=True)
+    df.rename(columns={"index": "db_id"}, inplace=True)
 
     return df
 
@@ -1089,6 +1090,7 @@ def add_lineage_df(csv_dataframe, combined_lineage):
 def reformat_df_cols(df):
     """Reorder DataFrame columns for ingestion into MySQL database.
     """
+    #df = df_with_lineages
     df = df[['contigname', 'db_id', 'institution_code', 'collection_code',
              'specimen_id', 'morphospecies', 'ncbi_taxon_id', 'custom_lineage',
              'traptype', 'dev_stage', 'site', 'locality', 'subregion',

@@ -44,7 +44,7 @@ parser.add_argument('-k', help="""Field of the genbank-file where the
                                               'DEFINITION'])
 
 args = parser.parse_args()
-
+#args = parser.parse_args('--db_user root --db_pass mmgdatabase -gb testdata/test_genbank.gb -csv testdata/test_metadata.csv -s Coleoptera -e thomas.creedy@gmail.com -p TEST -c testdata/ncbitaxidcache.json -n 1 -z 3'.split(' '))
 ## Functions ##
 
 # Check login details
@@ -83,13 +83,13 @@ dict_accepted, df_accepted = gcm.rejecting_entries(
     lineages, new_gb_dict, df_new_ids, args.reject_custom_lineage)
 
 # Replace old input ID with new database ID in genbank file
-gcm.change_ids_genbank(dict_accepted, dict_new_ids, args.key)
+dict_accepted = gcm.change_ids_genbank(dict_accepted, dict_new_ids, args.key)
 
 # Create a new dictionary with the added taxonomy information
 new_dict = gcm.insert_taxid(lineages, dict_accepted)
 
 # Change the features for CDS
-gcm.alter_features(new_dict)
+new_dict = gcm.alter_features(new_dict)
 
 # Add columns with lineages and tax id to dataframe
 df_with_lineages = gcm.add_lineage_df(df_accepted, lineages)
