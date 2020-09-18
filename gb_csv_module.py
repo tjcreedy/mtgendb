@@ -2,6 +2,8 @@
 
 """Functions to interact with data files and MySQL database."""
 
+# TODO get_ncbi_lineage, rejecting_entries, change_ids_genbank, add_lineage_df
+
 ## Imports ##
 import sys, time, urllib.request, csv, re, json, os
 from collections import defaultdict
@@ -213,9 +215,9 @@ def matching_inputids(csv_df, gb_dict, action):
     else:
         ids_csv = csv_df['db_id'].values.tolist()
 
-    union = list(set(ids_csv + list(gb_dict.keys())))
-    intersect = list(set(ids_csv) & set(gb_dict.keys()))
-    discrepant_ids = [a for a in union if a not in intersect]
+    union = set(ids_csv + list(gb_dict.keys()))
+    intersect = set(ids_csv) & set(gb_dict.keys())
+    discrepant_ids = set([a for a in union if a not in intersect])
     csv_duplicates = set([idd for idd in ids_csv if ids_csv.count(idd) > 1])
 
     if len(csv_duplicates):
@@ -235,20 +237,21 @@ def matching_inputids(csv_df, gb_dict, action):
         if x == 'C':
             sys.exit("Operation cancelled.")
         else:
+            csv_miss = gb_dict.keys() & discrepant_ids
+            gb_miss = set(ids_csv) & discrepant_ids
+
             # Return new gb_dict with discrepant entries deleted
-            for gb_record in gb_dict:
-                if gb_record in discrepant_ids:
-                    print(f" - Skipping entry '{gb_record}' as it appears in "
-                          f"the GenBank file but not the CSV file.")
+            if csv_miss:
+                print(f"Skipping entries:\n{', '.join(csv_miss)}\nas they "
+                      f"appear in the GenBank file but not the CSV file.")
 
             new_gb_dict = {key: gb_dict[key] for key in gb_dict if
                            key not in discrepant_ids}
 
             # Return new csv_df with discrepant entries deleted
-            for contigname in ids_csv:
-                if contigname in discrepant_ids:
-                    print(f" - Skipping entry '{contigname}' as it appears in "
-                          f"the CSV file but not the GenBank file.")
+            if gb_miss:
+                print(f"Skipping entries:\n{', '.join(gb_miss)}\nas they "
+                      f"appears in the CSV file but not the GenBank file.")
 
             df_missing_ids = [b for b in discrepant_ids if b not in gb_dict]
             new_csv_df.set_index('contigname', inplace=True)
