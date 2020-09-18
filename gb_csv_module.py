@@ -3,6 +3,7 @@
 """Functions to interact with data files and MySQL database."""
 
 # TODO get_ncbi_lineage, rejecting_entries, change_ids_genbank, add_lineage_df
+# TODO: Talk to Thomas about field changes in metadata that raised errors
 
 ## Imports ##
 import sys, time, urllib.request, csv, re, json, os
@@ -887,26 +888,29 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
     return combined_lineage
 
 
-def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
+def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection, action):
     """Print rejected entries to CSV and GenBank files.
     Return df and gb_dict with accepted entries only.
     """
-    #ncbi_lineage, genbank_dict, csv_df, rejection = lineages, new_gb_dict, df_new_ids, args.reject_custom_lineage
+    #ncbi_lineage, genbank_dict, csv_df, rejection = lineages, new_gb_dict, new_csv_df, args.reject_custom_lineage
     rejected = []
     new_entries = []
 
     # Drop rejected rows from DataFrame
     for db_id, ncbi_info in ncbi_lineage.items():
         if ncbi_info[1] != "" and rejection == "True":
-            cname = csv_df.loc[db_id, 'contigname']
-            rejected.append(cname) 
+            if action == 'ingest':
+                cname = csv_df.loc[db_id, 'contigname']
+                rejected.append(cname)
+            else:
+                rejected.append(db_id)
             entry = (csv_df.loc[db_id]).values.tolist()
             entry.insert(0, db_id)
             new_entries.append(entry)
             csv_df.drop([db_id], inplace=True)
-            csv_df.columns
+            #csv_df.columns
     
-    if len(rejected):
+    if rejected:
         # Create new DataFrame of rejected entries and drop them from returned
         # DataFrame
         print("\nPrinting rejected entries to CSV file...")
@@ -917,18 +921,22 @@ def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
         new_dataframe.to_csv('rejected_metadata.csv', index=False)
 
         #TODO Make print out all in one
-        for x in rejected:
-            print(f" - Entry '{str(x)}' added to CSV file.")
+
+        print(f" - Rejected entries added to CSV file:"
+              f"\n\n{', '.join(rejected)}")
 
         # Create GenBank file of rejected entries and drop them from returned
         # genbank_dict
         print("\nPrinting rejected entries to GenBank file...")
+        # TODO: BUG ON LINE BELOW: KeyError: 'DNA_156'
         rejected_gb_list = [genbank_dict[x] for x in rejected]
         with open("rejected_entries.gb", 'w') as rejected_gb:
             SeqIO.write(rejected_gb_list, rejected_gb, "genbank")
 
+        print(f" - Rejected entries added to GenBankfile:"
+              f"\n\n{', '.join(rejected)}")
+
         for x in rejected:
-            print(f" - Entry '{str(x)}' added to GenBank file.")
             del genbank_dict[x]
 
         print("\nTo keep entries with custom lineage information, run rejected "

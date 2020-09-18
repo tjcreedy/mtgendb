@@ -82,7 +82,7 @@ lineages = gcm.get_ncbi_lineage(df_new_ids, args.taxidcache,
 
 # User decides whether to reject entries with custom lineage information or not
 dict_accepted, df_accepted = gcm.rejecting_entries(
-    lineages, new_gb_dict, df_new_ids, args.reject_custom_lineage)
+    lineages, new_gb_dict, df_new_ids, args.reject_custom_lineage, 'ingest')
 
 # Replace old input ID with new database ID in genbank file
 dict_accepted = gcm.change_ids_genbank(dict_accepted, dict_new_ids, args.key)

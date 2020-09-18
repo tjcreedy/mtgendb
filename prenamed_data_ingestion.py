@@ -58,7 +58,7 @@ gcm.correct_header(csv_df, 'ghost_ingest')
 new_csv_df, new_gb_dict = gcm.matching_inputids(csv_df, gb_dict, 'ghost_ingest')
 
 # Check IDs don't already exist in database
-db_ids = {rec.name: rec.name for rec in gb_dict.values()}
+db_ids = {rec.name: rec.name for rec in new_gb_dict.values()}
 gcm.check_ids(list(db_ids.values()), 'ingest')
 
 ##Search for ncbi lineage with tax id, save custom lineages if not found on ncbi
@@ -67,7 +67,8 @@ lineages = gcm.get_ncbi_lineage(new_csv_df, args.taxidcache,
 
 #User decides whether to reject entries with custom lineage information or not
 dict_accepted, df_accepted = gcm.rejecting_entries(
-    lineages, new_gb_dict, new_csv_df, args.reject_custom_lineage)
+    lineages, new_gb_dict, new_csv_df, args.reject_custom_lineage,
+    'ghost_ingest')
 
 #Create a new dictionary with the added taxonomy information
 new_dict = gcm.insert_taxid(lineages, dict_accepted)
@@ -89,7 +90,7 @@ df_with_lineages['version'] = 0
 df_with_lineages = gcm.reformat_df_cols(df_with_lineages)
 
 #Load new ids into master table
-db_ids = list(df_with_lineages['db_id'])
+db_ids = list(df_with_lineages['db_id']) #TODO: DELETE THIS LINE AND RETEST
 gcm.load_ids_to_master(db_ids)
 
 ##Push the metadata into the database
