@@ -242,16 +242,17 @@ def matching_inputids(csv_df, gb_dict, action):
 
             # Return new gb_dict with discrepant entries deleted
             if csv_miss:
-                print(f"Skipping entries:\n{', '.join(csv_miss)}\nas they "
-                      f"appear in the GenBank file but not the CSV file.\n")
+                print(f"WARNING: Skipping entries:\n{', '.join(csv_miss)}\nas "
+                      f"they appear in the GenBank file but not the CSV "
+                      f"file.\n")
 
             new_gb_dict = {key: gb_dict[key] for key in gb_dict if
                            key not in discrepant_ids}
 
             # Return new csv_df with discrepant entries deleted
             if gb_miss:
-                print(f"Skipping entries:\n{', '.join(gb_miss)}\nas they "
-                      f"appears in the CSV file but not the GenBank file.")
+                print(f"WARNING: Skipping entries:\n{', '.join(gb_miss)}\nas "
+                      f"they appear in the CSV file but not the GenBank file.")
 
             df_missing_ids = [b for b in discrepant_ids if b not in gb_dict]
             new_csv_df.set_index('contigname', inplace=True)
@@ -957,7 +958,7 @@ def insert_taxid(ncbi_lineage, genbank_dict):
                 field_given = 0
                 for (index, feature) in enumerate(genbank_record.features):
                     if feature.type == "source":
-                        feature.qualifiers['db_xref'] = ['taxon:' + ncbi_id]
+                        feature.qualifiers['db_xref'] = ['taxon:' + str(ncbi_id)]
                         field_given = 1
 
                 if field_given == 0:
@@ -966,14 +967,14 @@ def insert_taxid(ncbi_lineage, genbank_dict):
                     len_record = len(genbank_record.seq)
                     feature_location = FeatureLocation(0, len_record)
                     new_feature = SeqFeature(feature_location, type='source')
-                    new_feature.qualifiers['db_xref'] = ['taxon:' + ncbi_id]
+                    new_feature.qualifiers['db_xref'] = ['taxon:' + str(ncbi_id)]
                     genbank_record.features.append(new_feature)
 
         else:
             # If tax_id is given, insert it into gb record qualifiers
             for (index, feature) in enumerate(genbank_record.features):
                 if feature.type == "source":
-                    if ncbi_id != "":
+                    if str(ncbi_id) != "":
                         feature.qualifiers["db_xref"] = ['taxon:' + str(ncbi_id)]
                     else:
                         del feature.qualifiers["db_xref"]
