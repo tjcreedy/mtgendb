@@ -914,6 +914,7 @@ def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection):
         del new_dataframe['db_id']
         new_dataframe.to_csv('rejected_metadata.csv', index=False)
 
+        #TODO Make print out all in one
         for x in rejected:
             print(f" - Entry '{str(x)}' added to CSV file.")
 
@@ -958,7 +959,7 @@ def insert_taxid(ncbi_lineage, genbank_dict):
                 field_given = 0
                 for (index, feature) in enumerate(genbank_record.features):
                     if feature.type == "source":
-                        feature.qualifiers['db_xref'] = ['taxon:' + str(ncbi_id)]
+                        feature.qualifiers['db_xref'] = [f'taxon:{ncbi_id}']
                         field_given = 1
 
                 if field_given == 0:
@@ -967,7 +968,7 @@ def insert_taxid(ncbi_lineage, genbank_dict):
                     len_record = len(genbank_record.seq)
                     feature_location = FeatureLocation(0, len_record)
                     new_feature = SeqFeature(feature_location, type='source')
-                    new_feature.qualifiers['db_xref'] = ['taxon:' + str(ncbi_id)]
+                    new_feature.qualifiers['db_xref'] = [f'taxon:{ncbi_id}']
                     genbank_record.features.append(new_feature)
 
         else:
@@ -975,7 +976,7 @@ def insert_taxid(ncbi_lineage, genbank_dict):
             for (index, feature) in enumerate(genbank_record.features):
                 if feature.type == "source":
                     if str(ncbi_id) != "":
-                        feature.qualifiers["db_xref"] = ['taxon:' + str(ncbi_id)]
+                        feature.qualifiers["db_xref"] = [f'taxon:{ncbi_id}']
                     else:
                         del feature.qualifiers["db_xref"]
 
@@ -1068,9 +1069,9 @@ def alter_features(genbank_dict):
             sys.stderr.write("\nWARNING: The following sequence entries had "
                              "unidentifiable annotations:\n")
             for unidfeats in unidentifiable_features:
-                sys.stderr.write(gb_record + ": " + ', '.join(
-                    [f + " " + str(s) + "-" + str(e) for f, s, e in
-                     unidfeats]) + "\n")
+                #TODO: rename 'hmm'
+                hmm = [f + " " + str(s) + "-" + str(e) for f, s, e in unidfeats]
+                sys.stderr.write(gb_record + ": " + ', '.join(hmm) + "\n")
 
     return genbank_dict
 
