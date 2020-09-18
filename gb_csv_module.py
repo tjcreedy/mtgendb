@@ -1070,6 +1070,7 @@ def alter_features(genbank_dict):
                              "unidentifiable annotations:\n")
             for unidfeats in unidentifiable_features:
                 #TODO: rename 'hmm'
+                print(f'UNIDFEATS: {unidfeats}')
                 hmm = [f + " " + str(s) + "-" + str(e) for f, s, e in unidfeats]
                 sys.stderr.write(gb_record + ": " + ', '.join(hmm) + "\n")
 
