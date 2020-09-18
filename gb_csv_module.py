@@ -742,7 +742,7 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
 
     Incorporates function   "_return_ncbi_taxid".
     """
-    #csv_dataframe, ncbicachepath, email_address, searchterm = df_new_ids, args.taxidcache, args.users_email, args.searchterm
+    #csv_dataframe, ncbicachepath, email_address, searchterm = new_csv_df, args.taxidcache, args.users_email, args.searchterm
     def _return_ncbi_taxid(tax_list, iteration, email_address):
         """For each entry get tax_id from NCBI taxonomy based on taxonomic
         information.
@@ -783,8 +783,8 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
     taxonomy_csv = dict(zip(csv_dataframe.index, taxonomy))
     # Remove null taxonomy values
     for db_id, taxa in taxonomy_csv.items():
-        taxa = [t.strip() for t in taxa 
-                    if not (pd.isnull(t) or str(t).upper() == 'UNKNOWN')]
+        taxa = [t.strip() for t in taxa
+                if not (pd.isnull(t) or str(t).upper() == 'UNKNOWN')]
         if len(taxa) == 0:
             taxa = [searchterm]
         taxonomy_csv[db_id] = taxa
@@ -1075,14 +1075,14 @@ def alter_features(genbank_dict):
                                                  str(feature.location.start),
                                                  str(feature.location.end)))
 
-    # gb_record = 'SRAA00104'
-    # unidentifiable_features = {('CDS', '3397', '5038')}
+        # gb_record = 'SRAA00104'
+        # unidentifiable_features = {('CDS', '3397', '5038')}
         if len(unidentifiable_features):
-            sys.stderr.write("\nWARNING: The following sequence entries had "
-                             "unidentifiable annotations:\n")
+            print("\nWARNING: The following sequence entries had "
+                  "unidentifiable annotations:")
             for (f, s, e) in unidentifiable_features:
                 seg = [f"{f} {s}-{e}"]
-                sys.stderr.write(f"{gb_record}: {', '.join(seg)}")
+                print(f"{gb_record}: {', '.join(seg)}")
             """
             for unidfeats in unidentifiable_features:
                 sys.stderr.write(gb_record + ": " + ', '.join(

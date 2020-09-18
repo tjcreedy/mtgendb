@@ -49,7 +49,7 @@ gcm.check_login_details(args.db_user, args.db_pass)
 # Create dict from genbank-file and dataframe from csv-file
 gb_dict = gcm.gb_into_dictionary(args.input_genbank, args.key)
 
-csv_df = pd.read_csv(args.input_csv, quotechar='"')
+csv_df = pd.read_csv(args.input_csv, quotechar='"', dtype={'ncbi_taxid': str})
 
 # Check if the header in the csv is correct
 gcm.correct_header(csv_df, 'ghost_ingest')
@@ -78,7 +78,7 @@ db_ids = {rec.name: rec.name for rec in new_dict.values()}
 new_dict = gcm.change_ids_genbank(new_dict, db_ids, args.key)
 
 #Change the features for CDS
-gcm.alter_features(new_dict)
+new_dict = gcm.alter_features(new_dict)
 
 #Add columns with lineages and tax id to dataframe
 df_with_lineages = gcm.add_lineage_df(df_accepted, lineages)
@@ -90,7 +90,6 @@ df_with_lineages['version'] = 0
 df_with_lineages = gcm.reformat_df_cols(df_with_lineages)
 
 #Load new ids into master table
-db_ids = list(df_with_lineages['db_id']) #TODO: DELETE THIS LINE AND RETEST
 gcm.load_ids_to_master(db_ids)
 
 ##Push the metadata into the database
@@ -101,3 +100,22 @@ gcm.load_gb_dict_into_db(new_dict)
 
 #Update master table
 gcm.update_master_table(db_ids, db_ids, 'ingest')
+
+"""
+with open('dump_onjects', 'wb') as dh:
+    pickle.dump((db_ids, df_with_lineages, new_dict), dh)
+
+with open('dump_onjects', 'rb') as dh:
+    db_ids, df_with_lineages, new_dict = pickle.load(dh)
+
+
+for gb_record, record in new_dict.items():
+    for (index, feature) in enumerate(record.features):
+        if feature.type.upper() == "SOURCE":
+            if 'db_xref' in feature.qualifiers.keys():
+                print(feature.qualifiers['db_xref'])
+
+for x, y in lineages.items():
+    if type(y[0]) is float:
+        print(x, y)
+"""

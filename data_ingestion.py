@@ -55,7 +55,7 @@ gcm.check_login_details(args.db_user, args.db_pass)
 # Create dict from genbank-file and dataframe from csv-file
 gb_dict = gcm.gb_into_dictionary(args.input_genbank, args.key)
 
-csv_df = pd.read_csv(args.input_csv, quotechar='"')
+csv_df = pd.read_csv(args.input_csv, quotechar='"', dtype={'ncbi_taxid': str})
 
 # Check if the header in the csv is correct
 gcm.correct_header(csv_df, 'ingest')

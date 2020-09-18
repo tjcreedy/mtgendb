@@ -121,7 +121,8 @@ if args.input_genbank and args.input_csv:
     gb_dict = gcm.gb_into_dictionary(args.input_genbank, args.key)
 
     # Create dataframe from csv file
-    csv_df = pd.read_csv(args.input_csv, quotechar='"')
+    csv_df = pd.read_csv(args.input_csv, quotechar='"',
+                         dtype={'ncbi_taxon_id': str})
 
     # Check if the header in the csv is correct
     gcm.correct_header(csv_df, 'replace')
