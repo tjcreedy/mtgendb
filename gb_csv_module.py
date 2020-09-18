@@ -866,10 +866,10 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
         
     # Once all entries have taxonomy, report to user
     if len(no_hits) > 0:
-        print("The following taxa had no hits in NCBI and a higher level "
+        print("\nThe following taxa had no hits in NCBI and a higher level "
               "taxon was used to assign NCBI taxid:", ', '.join(no_hits))
     if len(multiple_hits) > 0:
-        print("The following taxa had more than 1 hit in NCBI and a higher "
+        print("\nThe following taxa had more than 1 hit in NCBI and a higher "
               "level taxon was used to assign NCBI taxid:", ', '.join(no_hits))
     # Save local cache
     with open(ncbicachepath, 'w') as ch:
@@ -1067,12 +1067,12 @@ def alter_features(genbank_dict):
 
     # gb_record = 'SRAA00104'
     # unidentifiable_features = {('CDS', '3397', '5038')}
-    if len(unidentifiable_features):
-        sys.stderr.write("\nWARNING: The following sequence entries had "
-                         "unidentifiable annotations:\n")
-        for (f, s, e) in unidentifiable_features:
-            seg = [f"{f} {s}-{e}"]
-            sys.stderr.write(f"{gb_record}: {', '.join(seg)}\n")
+        if len(unidentifiable_features):
+            sys.stderr.write("\nWARNING: The following sequence entries had "
+                             "unidentifiable annotations:\n")
+            for (f, s, e) in unidentifiable_features:
+                seg = [f"{f} {s}-{e}"]
+                sys.stderr.write(f"{gb_record}: {', '.join(seg)}")
             """
             for unidfeats in unidentifiable_features:
                 sys.stderr.write(gb_record + ": " + ', '.join(
