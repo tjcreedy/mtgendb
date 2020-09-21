@@ -1517,6 +1517,42 @@ def extract_genes(recs, genes):
     return subrecs
 
 
+def fetch_taxonomy(primary_id):
+    """Fetch taxonomy string for record """
+    server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
+                                          passwd=db_passwd, host=db_host,
+                                          db=db_name)
+    db = server[namespace]
+    adaptor = db.adaptor
+
+    taxon_id = adaptor.execute_and_fetch_col0(
+        "SELECT taxon_id FROM bioentry WHERE bioentry_id = %s",
+        (primary_id,),
+    )
+
+    taxonomy = []
+    while taxon_id:
+        name, rank, parent_taxon_id = adaptor.execute_one(
+            "SELECT taxon_name.name, taxon.node_rank, taxon.parent_taxon_id"
+            " FROM taxon, taxon_name"
+            " WHERE taxon.taxon_id=taxon_name.taxon_id"
+            " AND taxon_name.name_class='scientific name'"
+            " AND taxon.taxon_id = %s",
+            (taxon_id,),
+        )
+
+        if taxon_id == parent_taxon_id:
+            # If the taxon table has been populated by the BioSQL script
+            # load_ncbi_taxonomy.pl this is how top parent nodes are stored.
+            # Personally, I would have used a NULL parent_taxon_id here.
+            break
+
+        taxonomy.insert(0, name)
+        taxon_id = parent_taxon_id
+
+    return taxonomy
+
+
 def csv_from_sql(sql, csv_name):
     """Extract csv file from SQL database.
     """
