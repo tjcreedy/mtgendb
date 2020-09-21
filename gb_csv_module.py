@@ -2,7 +2,6 @@
 
 """Functions to interact with data files and MySQL database."""
 
-# TODO get_ncbi_lineage, rejecting_entries, change_ids_genbank, add_lineage_df
 # TODO: Talk to Thomas about field changes in metadata that raised errors
 
 ## Imports ##
@@ -28,6 +27,10 @@ mysql_engine = "mysql+mysqldb://root:mmgdatabase@localhost/mmg_test"
 namespace = "mmg"
 
 ## Functions ##
+
+def taxlevels():
+    return ['species', 'genus', 'tribe', 'subfamily', 'family',
+            'superfamily', 'infraorder', 'order', 'class']
 
 def check_login_details(db_un, db_pw):
     """Checks database login details are correct.
@@ -172,13 +175,11 @@ def correct_header(csv_dataframe, action):
                        'genbank_accession', 'notes'}
 
     if action == 'ingest':
-        new_heads = {'species', 'genus', 'subfamily', 'family', 'order',
-                     'ncbi_taxid'}
+        new_heads = set(taxlevels()) | {'ncbi_taxid'}
         expected_header.update(new_heads)
 
     elif action == 'ghost_ingest':
-        new_heads = {'db_id', 'species', 'genus', 'subfamily', 'family',
-                     'order', 'ncbi_taxid'}
+        new_heads = set(taxlevels()) | {'db_id', 'ncbi_taxid'}
         expected_header.update(new_heads)
     else:
         new_heads = {'db_id', 'ncbi_taxon_id', 'custom_lineage'}
@@ -785,7 +786,7 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
     if 'db_id' in csv_dataframe.columns:
         csv_dataframe.set_index('db_id', inplace=True)
     # Extract ascending taxonomy data and generate dict
-    taxonomy = csv_dataframe[['species', 'subfamily', 'family', 'order']].values
+    taxonomy = csv_dataframe[taxlevels()].values
     taxonomy_csv = dict(zip(csv_dataframe.index, taxonomy))
     # Remove null taxonomy values
     for db_id, taxa in taxonomy_csv.items():
@@ -939,15 +940,12 @@ def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection, action):
         del new_dataframe['db_id']
         new_dataframe.to_csv('rejected_metadata.csv', index=False)
 
-        #TODO Make print out all in one
-
         print(f" - Rejected entries added to CSV file:"
               f"\n\n{', '.join(rejected)}")
 
         # Create GenBank file of rejected entries and drop them from returned
         # genbank_dict
         print("\nPrinting rejected entries to GenBank file...")
-        # TODO: BUG ON LINE BELOW: KeyError: 'DNA_156'
         rejected_gb_list = [genbank_dict[x] for x in rejected]
         with open("rejected_entries.gb", 'w') as rejected_gb:
             SeqIO.write(rejected_gb_list, rejected_gb, "genbank")
@@ -1119,8 +1117,7 @@ def add_lineage_df(csv_dataframe, combined_lineage):
     
     df_add = pd.DataFrame.from_dict(combined_lineage, orient='index')
     df_add.columns = ["ncbi_taxon_id", "custom_lineage"]
-    csv_dataframe.drop(['species', 'genus', 'subfamily', 'family', 'order',
-                        'ncbi_taxid'], axis=1, inplace=True)
+    csv_dataframe.drop(taxlevels(), axis=1, inplace=True)
     df = pd.merge(df_add, csv_dataframe, left_index=True, right_index=True)
     df.reset_index(level=0, inplace=True)
     df.rename(columns={"index": "db_id"}, inplace=True)
@@ -1239,9 +1236,7 @@ def sql_cols(table, cols, spec):
     taxon_name_cols = ['taxon_name.taxon_id', 'taxon_name.name', 'name_class']
 
     # Taxonomic queries
-    taxonomy = ['subspecies', 'species', 'genus', 'tribe', 'family', 'order',
-                'class', 'phylum', 'kingdom', 'superkingdom',
-                'taxon_searchterm']
+    taxonomy = taxlevels() + ['taxon_searchterm']
 
     # Construct columns dictionary (adding prefixes for table joins)
     # E.g. country -> metadata.country
@@ -1384,9 +1379,7 @@ def sql_spec(cols_dict, spec, spec_type):
             split = re.split('!=|>=|<=| IN |=|>|<', x)
             # If taxonomy query, then add an additional specification
             # containing searchterm.
-            if split[0] in ['subspecies', 'species', 'genus', 'tribe', 'family',
-                            'order', 'class', 'phylum', 'kingdom',
-                            'superkingdom', 'taxon_searchterm']:
+            if split[0] in taxlevels() + ['taxon_searchterm']:
                 specs.append(f"metadata.ncbi_taxon_id IN (SELECT DISTINCT "
                              f"include.ncbi_taxon_id FROM taxon INNER JOIN taxon"
                              f" AS include ON (include.left_value BETWEEN "
@@ -1543,12 +1536,17 @@ def extract_genes(recs, genes):
     return subrecs
 
 
-def csv_from_sql(mysql_command, csv_name):
+def csv_from_sql(sql, csv_name):
     """Extract csv file from SQL database.
     """
     con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
     cur = con.cursor()
-    cur.execute(mysql_command)
+    cur.execute(sql)
+    #data = pd.read_sql(sql, con)
+
+    #Read table to Dataframe
+    #Manipulate
+    #Write to Csv
 
     # Write data to CSV file
     with open(f"{csv_name}.csv", "w", newline='') as csv_file:
@@ -1557,8 +1555,7 @@ def csv_from_sql(mysql_command, csv_name):
         rows = [list(row) for row in cur]
 
         # Delete surrogate keys
-        if 'version' in headers or 'metadata_id' in headers or \
-                'bioentry_id' in headers:
+        if any(x in headers for x in ['version', 'metadata_id', 'bioentry_id']):
             indicies = []
             if 'version' in headers:
                 version_index = headers.index('version')
