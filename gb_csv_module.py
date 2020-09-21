@@ -1537,7 +1537,8 @@ def extract_genes(recs, genes):
 
 
 def fetch_taxonomy(primary_id):
-    """Fetch taxonomy string for record """
+    """Fetch taxonomy list for db record given bioentry_id
+    """
     server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
                                           passwd=db_passwd, host=db_host,
                                           db=db_name)
