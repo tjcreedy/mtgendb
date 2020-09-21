@@ -1550,7 +1550,8 @@ def fetch_taxonomy(primary_id):
         (primary_id,),
     )
 
-    taxonomy = []
+    #taxonomy = []
+    taxonomy = {}
     while taxon_id:
         name, rank, parent_taxon_id = adaptor.execute_one(
             "SELECT taxon_name.name, taxon.node_rank, taxon.parent_taxon_id"
@@ -1567,7 +1568,8 @@ def fetch_taxonomy(primary_id):
             # Personally, I would have used a NULL parent_taxon_id here.
             break
 
-        taxonomy.insert(0, name)
+        #taxonomy.insert(0, name)
+        taxonomy[rank] = name
         taxon_id = parent_taxon_id
 
     return taxonomy
