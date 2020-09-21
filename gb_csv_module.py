@@ -782,7 +782,8 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
         
         return no_hits, multiple_hits, taxid_match
     
-    csv_dataframe.set_index('db_id', inplace=True)
+    if 'db_id' in csv_dataframe.columns:
+        csv_dataframe.set_index('db_id', inplace=True)
     # Extract ascending taxonomy data and generate dict
     taxonomy = csv_dataframe[['species', 'subfamily', 'family', 'order']].values
     taxonomy_csv = dict(zip(csv_dataframe.index, taxonomy))
