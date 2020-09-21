@@ -777,7 +777,7 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
                 taxid_match[taxon] = id_list[0]
 
             time.sleep(0.5)
-            sys.stdout.write(f"\r{' ' * 80}")
+            sys.stdout.write(f"\r{' ' * 100}")
         print(f"\rCompleted NCBI taxonomy search set {iteration}")
         
         return no_hits, multiple_hits, taxid_match
@@ -871,17 +871,30 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
                     if db_id in lineage_custom:
                         taxon = f"{taxon}; {lineage_custom[db_id]}"
                     lineage_custom[db_id] = taxon
-        
-    # Once all entries have taxonomy, report to user
-    if len(no_hits) > 0:
-        print("\nThe following taxa had no hits in NCBI and a higher level "
-              "taxon was used to assign NCBI taxid:", ', '.join(no_hits))
-    if len(multiple_hits) > 0:
-        print("\nThe following taxa had more than 1 hit in NCBI and a higher "
-              "level taxon was used to assign NCBI taxid:", ', '.join(no_hits))
-    # Save local cache
+    
+    # Once all entries have taxonomy, save local cache
     with open(ncbicachepath, 'w') as ch:
         json.dump(taxon_taxid, ch)
+        
+    
+    # Report to user
+    if len(no_hits) > 0:
+        print("\nWarning: the following taxa had no hits in NCBI and a higher "
+              "level taxon was used to assign NCBI taxid:", ', '.join(no_hits))
+    if len(multiple_hits) > 0:
+        print("\nWarning: the following taxa had more than 1 hit in NCBI and a"
+              "higher level taxon was used to assign NCBI taxid:", 
+              ', '.join(no_hits))
+    if len(no_hits) > 0 or len(multiple_hits) > 0:
+        x = input("Do you want to (P)roceed using higher-level taxid "
+                  "assignments or (Q) to manually assign taxids or correct "
+                  "the taxonomy?\n").upper()
+        while not (x == 'P' or x == 'Q'):
+            x = input("Type 'P' to proceed with higher-level taxids or 'Q' "
+                      "to quit\n").upper()
+        if x == 'Q':
+            exit("Quitting...")
+        
     
     # Generate combined lineage
     combined_lineage = dict()
