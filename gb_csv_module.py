@@ -44,32 +44,37 @@ def gb_into_dictionary(gb_filename, key):
     """Take a file in genbank-format and load it into a dictionary, define
     function for keys (default: by name in LOCUS).
     """
-    global gb_dictionary
-
-    if key == "LOCUS":
-
-        def get_seqname(record):
-            # Given a SeqRecord, return the sequence name as a string.
-            seqname = str(record.name)
-            return seqname
-
-        gb_dictionary = SeqIO.to_dict(SeqIO.parse(gb_filename, "genbank"),
-                                      key_function=get_seqname)
-
-    elif key == "ACCESSION":
-
-        gb_dictionary = SeqIO.to_dict(SeqIO.parse(gb_filename, "genbank"))
-
-    elif key == "DEFINITION":
-
-        def get_definition(record):
-            # Given a SeqRecord, return the definition as a string.
-            definition = str(record.description)
-            return definition
-
-        gb_dictionary = SeqIO.to_dict(SeqIO.parse(gb_filename, "genbank"),
-                                      key_function=get_definition)
-
+    #gb_filename, key = args.input_genbank, args.key
+    get_name_funcs = {
+            'LOCUS': lambda rec: rec.name,
+            'ACCESSION': lambda rec: rec.id,
+            'DEFINITION': lambda rec: rec.description
+            }
+    if key not in get_name_funcs:
+        exit("Error: unrecognised key, must be one of "
+             f"{', '.join(get_name_funcs.keys())}")
+    
+    gb_dictionary = SeqIO.to_dict(SeqIO.parse(gb_filename, "genbank"),
+                                  key_function=get_name_funcs[key])
+    
+    for name, rec in gb_dictionary.items():
+        # name, rec = list(gb_dictionary.items())[0]
+        rec.name = rec.id = rec.description = name
+        rec.annotations['accessions'] = ['']
+        if 'topology' in rec.annotations:
+            if rec.annotations['topology'] not in ['linear', 'circular']:
+                exit(f"Error: topology of {name} is "
+                     f"'{rec.annotations['topology']}', not 'linear' or "
+                      "'circular'")
+        else:
+            exit(f"Error: {name} is missing topology")
+        if 'data_file_division' in rec.annotations:
+            if rec.annotations['data_file_division']  != 'INV':
+                exit(f"Error: division for {name} is "
+                     f"'{rec.annotations['data_file_division']}', not 'INV'")
+        else:
+            exit(f"Error: {name} is missing division")    
+    
     return gb_dictionary
 
 
@@ -773,12 +778,13 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
                 taxid_match[taxon] = id_list[0]
 
             time.sleep(0.5)
-            sys.stdout.write(f"\r{' ' * 80}")
+            sys.stdout.write(f"\r{' ' * 100}")
         print(f"\rCompleted NCBI taxonomy search set {iteration}")
         
         return no_hits, multiple_hits, taxid_match
     
-    csv_dataframe.set_index('db_id', inplace=True)
+    if 'db_id' in csv_dataframe.columns:
+        csv_dataframe.set_index('db_id', inplace=True)
     # Extract ascending taxonomy data and generate dict
     taxonomy = csv_dataframe[taxlevels()].values
     taxonomy_csv = dict(zip(csv_dataframe.index, taxonomy))
@@ -867,17 +873,30 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
                     if db_id in lineage_custom:
                         taxon = f"{taxon}; {lineage_custom[db_id]}"
                     lineage_custom[db_id] = taxon
-        
-    # Once all entries have taxonomy, report to user
-    if len(no_hits) > 0:
-        print("\nThe following taxa had no hits in NCBI and a higher level "
-              "taxon was used to assign NCBI taxid:", ', '.join(no_hits))
-    if len(multiple_hits) > 0:
-        print("\nThe following taxa had more than 1 hit in NCBI and a higher "
-              "level taxon was used to assign NCBI taxid:", ', '.join(no_hits))
-    # Save local cache
+    
+    # Once all entries have taxonomy, save local cache
     with open(ncbicachepath, 'w') as ch:
         json.dump(taxon_taxid, ch)
+        
+    
+    # Report to user
+    if len(no_hits) > 0:
+        print("\nWarning: the following taxa had no hits in NCBI and a higher "
+              "level taxon was used to assign NCBI taxid:", ', '.join(no_hits))
+    if len(multiple_hits) > 0:
+        print("\nWarning: the following taxa had more than 1 hit in NCBI and a"
+              "higher level taxon was used to assign NCBI taxid:", 
+              ', '.join(no_hits))
+    if len(no_hits) > 0 or len(multiple_hits) > 0:
+        x = input("Do you want to (P)roceed using higher-level taxid "
+                  "assignments or (Q) to manually assign taxids or correct "
+                  "the taxonomy?\n").upper()
+        while not (x == 'P' or x == 'Q'):
+            x = input("Type 'P' to proceed with higher-level taxids or 'Q' "
+                      "to quit\n").upper()
+        if x == 'Q':
+            exit("Quitting...")
+        
     
     # Generate combined lineage
     combined_lineage = dict()
