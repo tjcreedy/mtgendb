@@ -41,32 +41,37 @@ def gb_into_dictionary(gb_filename, key):
     """Take a file in genbank-format and load it into a dictionary, define
     function for keys (default: by name in LOCUS).
     """
-    global gb_dictionary
-
-    if key == "LOCUS":
-
-        def get_seqname(record):
-            # Given a SeqRecord, return the sequence name as a string.
-            seqname = str(record.name)
-            return seqname
-
-        gb_dictionary = SeqIO.to_dict(SeqIO.parse(gb_filename, "genbank"),
-                                      key_function=get_seqname)
-
-    elif key == "ACCESSION":
-
-        gb_dictionary = SeqIO.to_dict(SeqIO.parse(gb_filename, "genbank"))
-
-    elif key == "DEFINITION":
-
-        def get_definition(record):
-            # Given a SeqRecord, return the definition as a string.
-            definition = str(record.description)
-            return definition
-
-        gb_dictionary = SeqIO.to_dict(SeqIO.parse(gb_filename, "genbank"),
-                                      key_function=get_definition)
-
+    #gb_filename, key = args.input_genbank, args.key
+    get_name_funcs = {
+            'LOCUS': lambda rec: rec.name,
+            'ACCESSION': lambda rec: rec.id,
+            'DEFINITION': lambda rec: rec.description
+            }
+    if key not in get_name_funcs:
+        exit("Error: unrecognised key, must be one of "
+             f"{', '.join(get_name_funcs.keys())}")
+    
+    gb_dictionary = SeqIO.to_dict(SeqIO.parse(gb_filename, "genbank"),
+                                  key_function=get_name_funcs[key])
+    
+    for name, rec in gb_dictionary.items():
+        # name, rec = list(gb_dictionary.items())[0]
+        rec.name = rec.id = rec.description = name
+        rec.annotations['accessions'] = ['']
+        if 'topology' in rec.annotations:
+            if rec.annotations['topology'] not in ['linear', 'circular']:
+                exit(f"Error: topology of {name} is "
+                     f"'{rec.annotations['topology']}', not 'linear' or "
+                      "'circular'")
+        else:
+            exit(f"Error: {name} is missing topology")
+        if 'data_file_division' in rec.annotations:
+            if rec.annotations['data_file_division']  != 'INV':
+                exit(f"Error: division for {name} is "
+                     f"'{rec.annotations['data_file_division']}', not 'INV'")
+        else:
+            exit(f"Error: {name} is missing division")    
+    
     return gb_dictionary
 
 
