@@ -1604,7 +1604,7 @@ def df_from_sql(sql):
 def csv_from_df(df, csv_name):
     """Write dataframe to CSV file
     """
-    df.to_csv(csv_name, index=False)
+    df.to_csv(f'{csv_name}.csv', index=False)
 
     return
 
