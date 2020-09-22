@@ -192,6 +192,8 @@ parser_gb.add_argument('-o', help="""Preferred path/filename for the
                         to your output format choice).""", dest='output_name',
                        metavar='output', required=True)
 
+#args = parser.parse_args("--db_user root --db_pass mmgdatabase --all CSV -c order -s 'order=Coleoptera' -o jhgj".split(' '))
+
 args = parser.parse_args()
 
 ## Functions ##
@@ -220,11 +222,34 @@ if args.output_format == 'CSV':
 
     else:
 
+        taxreqs = set()
+
+        if args.database_table == 'metadata':
+
+            taxreqs.update(gcm.taxlevels())
+
+        for col in args.table_columns:
+
+            if col in gcm.taxlevels():
+
+                taxreqs.add(col)
+
         if args.taxonomy_spec:
 
             args.mysql_specs.append(f'taxon_searchterm={args.taxonomy_spec}')
 
         if args.all:
+
+            if taxreqs:
+
+                query_names = gcm.construct_sql_output_query(None,
+                                                             ['contigname',
+                                                              'db_id'],
+                                                             args.mysql_specs)
+
+                names_dict = gcm.fetch_names(query_names)
+
+                current_ids = gcm.fetch_current_ids(names_dict)
 
             sql = gcm.construct_sql_output_query(args.database_table,
                                                  args.table_columns,
@@ -280,9 +305,36 @@ if args.output_format == 'CSV':
                                                            args.table_columns,
                                                            new_spec)
 
-    gcm.csv_from_sql(mysql_command, args.output_name)
+        if taxreqs:
+            # Create taxonomy dict
+            taxonomy = {dbid: gcm.fetch_taxonomy(current_ids[dbid][0])
+                        for dbid in current_ids.keys()}
+
+            for taxon in taxreqs:
+
+                for tax in taxonomy.values():
+
+                    if taxon not in tax.keys():
+
+                        tax[taxon] = ''
+
+    #gcm.csv_from_sql(mysql_command, args.output_name, taxreqs)
+
+    df_out = gcm.df_from_sql(mysql_command)
+
+    if taxreqs:
+        #Add taxonomy cols to dataframe
+        gcm.add_taxonomy_to_df(df_out, taxonomy, taxreqs)
+
+    # Delete surrogate keys
+    df_out.drop(['version', 'metadata_id', 'bioentry_id'], errors='ignore',
+                inplace=True)
+
+    # Write file
+    gcm.csv_from_df(df_out, args.output_name)
 
     print('Done.')
+    print(mysql_command)
 
 ## Functions for COUNT subparser ##
 

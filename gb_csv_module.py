@@ -110,7 +110,6 @@ def versions_to_dict(txtfile):
 
     Output:
      - Nested dict: {db_id: {'b': bio_vers, 'm': meta_vers}, ... }
-
     """
     with open(txtfile, 'r') as txt:
         # Create a comma-delimited list of accession numbers from text file
@@ -1212,7 +1211,10 @@ def sql_cols(table, cols, spec):
                     split.append(col.strip())
             all_cols.extend(split)
         else:
-            all_cols.append(req_data)
+            if req_data.startswith("'"):
+                all_cols.append(req_data[1:])
+            else:
+                all_cols.append(req_data)
     all_cols = list(set(all_cols + cols))
 
     # Unique cols of each table (shared cols assigned to a prioritised table)
@@ -1274,6 +1276,12 @@ def sql_cols(table, cols, spec):
         set([x.split('.')[0] for x in cols_dict.values()] + [table]))))
 
     # Construct columns string
+    if any(col in cols for col in taxlevels()):
+        # Remove taxonomic columns from SQL query
+        cols = [col for col in cols if col not in taxlevels()]
+        if not cols:
+            cols.append('db_id')
+            cols_dict['db_id'] = 'metadata.db_id'
     if cols == ['*']:
         if len(tables) == 1:
             cols_string = '*'
@@ -1538,20 +1546,27 @@ def extract_genes(recs, genes):
 
 def fetch_taxonomy(primary_id):
     """Fetch taxonomy list for db record given bioentry_id
+
+    1. Pull data to df
+    2. Note which hich taxonomic fields are requested
+    3. Fetch taxonomy by primary ID
+    4. Load thewm into df
+    5. Print to CSV
+
     """
+    taxlevs = taxlevels()
     server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
                                           passwd=db_passwd, host=db_host,
                                           db=db_name)
     db = server[namespace]
     adaptor = db.adaptor
-
     taxon_id = adaptor.execute_and_fetch_col0(
-        "SELECT taxon_id FROM bioentry WHERE bioentry_id = %s",
+        f"SELECT taxon_id FROM bioentry WHERE bioentry_id = %s",
         (primary_id,),
     )
 
-    #taxonomy = []
     taxonomy = {}
+
     while taxon_id:
         name, rank, parent_taxon_id = adaptor.execute_one(
             "SELECT taxon_name.name, taxon.node_rank, taxon.parent_taxon_id"
@@ -1569,19 +1584,47 @@ def fetch_taxonomy(primary_id):
             break
 
         #taxonomy.insert(0, name)
-        taxonomy[rank] = name
+        if rank in taxlevs:
+            taxonomy[rank] = name
+
         taxon_id = parent_taxon_id
 
     return taxonomy
 
 
-def csv_from_sql(sql, csv_name):
+def df_from_sql(sql):
+    """Extract pandas dataframe from SQL database.
+    """
+    con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
+    data = pd.read_sql(sql, con)
+
+    return data
+
+
+def csv_from_df(df, csv_name):
+    """Write dataframe to CSV file
+    """
+    df.to_csv(csv_name, index=False)
+
+    return
+
+
+def add_taxonomy_to_df(df, taxonomy, taxreqs=taxlevels()):
+    """Adds requested taxonomy columns to pandas dataframe
+    """
+    for taxon in taxreqs:
+        vals = [taxlevs[taxon] for taxlevs in taxonomy.values()]
+        df[taxon] = vals
+
+    return
+
+
+def csv_from_sql(sql, csv_name, taxreqs=None):
     """Extract csv file from SQL database.
     """
     con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
     cur = con.cursor()
     cur.execute(sql)
-    #data = pd.read_sql(sql, con)
 
     #Read table to Dataframe
     #Manipulate
