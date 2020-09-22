@@ -239,7 +239,7 @@ if args.output_format == 'CSV':
             # Add taxonomic searchterm to specifications if parsed
             args.mysql_specs.append(f'taxon_searchterm={args.taxonomy_spec}')
 
-        if 'db_id' not in args.table_columns:
+        if args.table_columns != ['*'] and 'db_id' not in args.table_columns:
             # Add db_id as index for all CSV outputs
             args.table_columns.append('db_id')
 
