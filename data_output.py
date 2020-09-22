@@ -193,6 +193,7 @@ parser_gb.add_argument('-o', help="""Preferred path/filename for the
                        metavar='output', required=True)
 
 #args = parser.parse_args("--db_user root --db_pass mmgdatabase --all CSV -c order -s 'order=Coleoptera' -o jhgj".split(' '))
+#args = parser.parse_args("--db_user root --db_pass mmgdatabase CSV -c db_id ncbi_taxon_id order family species -s country=Honduras -o output/Taxonomy_Testing".split(' '))
 
 args = parser.parse_args()
 

@@ -528,7 +528,7 @@ def fetch_current_ids(names_dict):
 
     with con:
         cur = con.cursor()
-        for db_id in names_dict.values():
+        for db_id in names_dict.keys():
             sql_ids = f"""SELECT bioentry_id, metadata_id FROM master WHERE 
                 db_id='{db_id}';"""
             cur.execute(sql_ids)
@@ -540,7 +540,7 @@ def fetch_current_ids(names_dict):
 
 
 def fetch_names(sql, db_un, db_pw):
-    """Fetch names and corresponding db_id's from database using MySQL command
+    """Fetch names and corresponding db_id's from database using MySQL query
 
     Argument:
      - sql - SQL query: "SELECT metadata.contigname, metadata.db_id FROM... ;"
@@ -552,10 +552,11 @@ def fetch_names(sql, db_un, db_pw):
         cur.execute(sql)
         records = cur.fetchall()
 
-    names_dict = {row[0]: row[1] for row in set(records)}
+    names_dict = {row[1]: row[0] for row in set(records)}
 
     return names_dict
 
+'POOOO'
 
 def change_ids_genbank(genbank_dict, dict_new_ids, key):
     """Change the ids in the genbank file to the new database ids (LLLLNNNNN).
@@ -1466,21 +1467,6 @@ def construct_sql_delete_query(spec):
     return mysql_command
 
 
-def fetch_names(mysql_command):
-    """Fetch names and corresponding db_id's from database using MySQL query.
-    """
-    con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
-
-    with con:
-        cur = con.cursor()
-        cur.execute(mysql_command)
-        records = cur.fetchall()
-
-    names_dict = {row[0]: row[1] for row in set(records)}
-
-    return names_dict
-
-
 def fetch_recs(names_dict, _all):
     """Fetches a list of SeqRecords from an input dict of record names/db ids
     """
@@ -1489,7 +1475,7 @@ def fetch_recs(names_dict, _all):
                                           passwd=db_passwd, host=db_host,
                                           db=db_name)
     db = server[namespace]
-    for name, db_id in names_dict.items():
+    for db_id, name in names_dict.items():
         if _all:
             seq_recs = db.get_Seqs_by_acc(db_id)
             for rec in seq_recs:
