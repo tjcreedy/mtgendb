@@ -2,8 +2,6 @@
 
 """Functions to interact with data files and MySQL database."""
 
-# TODO: Talk to Thomas about field changes in metadata that raised errors
-
 ## Imports ##
 import sys, time, urllib.request, csv, re, json, os
 from collections import defaultdict
@@ -1598,7 +1596,6 @@ def add_taxonomy_to_df(df, taxonomy, taxreqs=taxlevels()):
     """
     df.set_index('db_id', inplace=True)
 
-    #TODO: This function currently fills the df cols incorrectly (I think because it assumes the taxonomy dict is in the same order as the dataframe)
     for taxon in taxreqs:
         df[taxon] = ''
         for dbid in taxonomy.keys():

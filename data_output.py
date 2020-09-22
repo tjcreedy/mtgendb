@@ -335,7 +335,6 @@ if args.output_format == 'CSV':
         gcm.csv_from_df(df_out, args.output_name)
 
     print('Done.')
-    print(mysql_command)
 
 ## Functions for COUNT subparser ##
 
