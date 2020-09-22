@@ -225,6 +225,7 @@ if args.output_format == 'CSV':
 
     else:
 
+        # Create list of requested taxonomic fields
         taxreqs = set()
 
         if args.database_table == 'metadata':
@@ -235,8 +236,12 @@ if args.output_format == 'CSV':
                 taxreqs.add(col)
 
         if args.taxonomy_spec:
-
+            # Add taxonomic searchterm to specifications if parsed
             args.mysql_specs.append(f'taxon_searchterm={args.taxonomy_spec}')
+
+        if 'db_id' not in args.table_columns:
+            # Add db_id as index for all CSV outputs
+            args.table_columns.append('db_id')
 
         if args.all:
 
@@ -259,7 +264,7 @@ if args.output_format == 'CSV':
 
         else:
 
-            #Fetch names/db_ids
+            # Fetch names/db_ids
             query_names = gcm.construct_sql_output_query(None,
                                                          ['contigname',
                                                           'db_id'],
@@ -267,10 +272,10 @@ if args.output_format == 'CSV':
 
             names_dict = gcm.fetch_names(query_names)
 
-            #Fetch primary keys for current versions
+            # Fetch primary keys for current versions
             current_ids = gcm.fetch_current_ids(names_dict)
 
-            #Check whether any bioentry tables are being queried, as this
+            # Check whether any bioentry tables are being queried, as this
             # affects our new specification
             tables, _, _, _ = gcm.sql_cols(args.database_table,
                                            args.table_columns, args.mysql_specs)
@@ -282,7 +287,7 @@ if args.output_format == 'CSV':
 
             bios = list(set(tables) & set(BIO_TABLES))
 
-            #Construct new specification
+            # Construct new specification
             if bios:
                 if len(current_ids) == 1:
                     # Spec must be built without tuple as single-element
@@ -300,7 +305,7 @@ if args.output_format == 'CSV':
                     meta_ids = tuple([ids[1] for ids in current_ids.values()])
                     new_spec = [f"metadata_id IN {meta_ids}"]
 
-            #Construct new SQL query
+            # Construct new SQL query
             mysql_command = gcm.construct_sql_output_query(args.database_table,
                                                            args.table_columns,
                                                            new_spec)
@@ -318,7 +323,7 @@ if args.output_format == 'CSV':
         df_out = gcm.df_from_sql(mysql_command)
 
         if taxreqs:
-            #Add taxonomy cols to dataframe
+            # Add taxonomy cols to dataframe
             gcm.add_taxonomy_to_df(df_out, taxonomy, taxreqs)
 
         # Delete surrogate keys

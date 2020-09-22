@@ -1189,6 +1189,8 @@ def sql_cols(table, cols, spec):
     """Determine required tables and columns for MySQL query. Construct columns
     string.
     """
+    taxlevs = taxlevels()
+
     # Reformat inputs
     if spec is None:
         spec = []
@@ -1239,7 +1241,7 @@ def sql_cols(table, cols, spec):
     taxon_name_cols = ['taxon_name.taxon_id', 'taxon_name.name', 'name_class']
 
     # Taxonomic queries
-    taxonomy = taxlevels() + ['taxon_searchterm']
+    taxonomy = taxlevs + ['taxon_searchterm']
 
     # Construct columns dictionary (adding prefixes for table joins)
     # E.g. country -> metadata.country
@@ -1277,12 +1279,15 @@ def sql_cols(table, cols, spec):
         set([x.split('.')[0] for x in cols_dict.values()] + [table]))))
 
     # Construct columns string
-    if any(col in cols for col in taxlevels()):
+    if any(col in cols for col in taxlevs):
         # Remove taxonomic columns from SQL query
-        cols = [col for col in cols if col not in taxlevels()]
-        if not cols:
-            cols.append('db_id')
-            cols_dict['db_id'] = 'metadata.db_id'
+        cols = [col for col in cols if col not in taxlevs]
+        #if 'db_id' not in cols:
+            # TODO: Make sure db_id column present for all output csv - Can delete this whole if statement if you do this
+        #    cols.append('db_id')
+        #    cols_dict['db_id'] = 'metadata.db_id'
+        #    if 'metadata' not in tables:
+        #        tables.append('metadata')
     if cols == ['*']:
         if len(tables) == 1:
             cols_string = '*'
@@ -1532,13 +1537,6 @@ def extract_genes(recs, genes):
 
 def fetch_taxonomy(primary_id):
     """Fetch taxonomy list for db record given bioentry_id
-
-    1. Pull data to df
-    2. Note which hich taxonomic fields are requested
-    3. Fetch taxonomy by primary ID
-    4. Load thewm into df
-    5. Print to CSV
-
     """
     taxlevs = taxlevels()
     server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
@@ -1598,10 +1596,17 @@ def csv_from_df(df, csv_name):
 def add_taxonomy_to_df(df, taxonomy, taxreqs=taxlevels()):
     """Adds requested taxonomy columns to pandas dataframe
     """
+    df.set_index('db_id', inplace=True)
+
     #TODO: This function currently fills the df cols incorrectly (I think because it assumes the taxonomy dict is in the same order as the dataframe)
     for taxon in taxreqs:
-        vals = [taxlevs[taxon] for taxlevs in taxonomy.values()]
-        df[taxon] = vals
+        df[taxon] = ''
+        for dbid in taxonomy.keys():
+            df.at[dbid, taxon] = taxonomy[dbid[taxon]]
+        #vals = [taxlevs[taxon] for taxlevs in taxonomy.values()]
+        #df[taxon] = vals
+
+    df.reset_index(inplace=True)
 
     return
 
