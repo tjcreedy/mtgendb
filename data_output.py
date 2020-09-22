@@ -324,6 +324,7 @@ if args.output_format == 'CSV':
 
         if taxreqs:
             # Add taxonomy cols to dataframe
+            # TODO: Reorder dataframe columns to put them in x order in x part of the header
             gcm.add_taxonomy_to_df(df_out, taxonomy, taxreqs)
 
         # Delete surrogate keys
