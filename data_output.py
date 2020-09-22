@@ -294,7 +294,7 @@ if args.output_format == 'CSV':
                                 f"{tuple(current_ids.values())}"]
             else:
                 if len(current_ids) == 1:
-                    new_spec = [f"metadata_id = "
+                    new_spec = [f"metadata_id="
                                 f"{list(current_ids.values())[0][1]}"]
                 else:
                     meta_ids = tuple([ids[1] for ids in current_ids.values()])
