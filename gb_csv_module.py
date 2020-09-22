@@ -1602,7 +1602,7 @@ def add_taxonomy_to_df(df, taxonomy, taxreqs=taxlevels()):
     for taxon in taxreqs:
         df[taxon] = ''
         for dbid in taxonomy.keys():
-            df.at[dbid, taxon] = taxonomy[dbid[taxon]]
+            df.at[dbid, taxon] = taxonomy[dbid][taxon]
         #vals = [taxlevs[taxon] for taxlevs in taxonomy.values()]
         #df[taxon] = vals
 
