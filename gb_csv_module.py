@@ -539,13 +539,13 @@ def fetch_current_ids(names_dict):
     return current_ids
 
 
-def fetch_names(sql, db_un, db_pw):
+def fetch_names(sql):
     """Fetch names and corresponding db_id's from database using MySQL query
 
     Argument:
      - sql - SQL query: "SELECT metadata.contigname, metadata.db_id FROM... ;"
     """
-    con = mdb.connect(host=db_host, user=db_un, passwd=db_pw, db=db_name)
+    con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
 
     with con:
         cur = con.cursor()
