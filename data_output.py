@@ -193,7 +193,7 @@ parser_gb.add_argument('-o', help="""Preferred path/filename for the
                        metavar='output', required=True)
 
 #args = parser.parse_args("--db_user root --db_pass mmgdatabase --all CSV -c order -s 'order=Coleoptera' -o jhgj".split(' '))
-#args = parser.parse_args("--db_user root --db_pass mmgdatabase CSV -c db_id ncbi_taxon_id order family species -s country=Honduras -o output/Taxonomy_Testing".split(' '))
+#args = parser.parse_args("--db_user root --db_pass mmgdatabase CSV -c db_id ncbi_taxon_id species genus tribe subfamily family superfamily infraorder order class -s country=Honduras -o output/Taxonomy_Testing".split(' '))
 
 args = parser.parse_args()
 
@@ -221,18 +221,17 @@ if args.output_format == 'CSV':
 
         mysql_command = args.custom_query
 
+        gcm.csv_from_sql(mysql_command, args.output_name)
+
     else:
 
         taxreqs = set()
 
         if args.database_table == 'metadata':
-
             taxreqs.update(gcm.taxlevels())
 
         for col in args.table_columns:
-
             if col in gcm.taxlevels():
-
                 taxreqs.add(col)
 
         if args.taxonomy_spec:
@@ -312,27 +311,22 @@ if args.output_format == 'CSV':
                         for dbid in current_ids.keys()}
 
             for taxon in taxreqs:
-
                 for tax in taxonomy.values():
-
                     if taxon not in tax.keys():
-
                         tax[taxon] = ''
 
-    #gcm.csv_from_sql(mysql_command, args.output_name, taxreqs)
+        df_out = gcm.df_from_sql(mysql_command)
 
-    df_out = gcm.df_from_sql(mysql_command)
+        if taxreqs:
+            #Add taxonomy cols to dataframe
+            gcm.add_taxonomy_to_df(df_out, taxonomy, taxreqs)
 
-    if taxreqs:
-        #Add taxonomy cols to dataframe
-        gcm.add_taxonomy_to_df(df_out, taxonomy, taxreqs)
+        # Delete surrogate keys
+        df_out.drop(['version', 'metadata_id', 'bioentry_id'], errors='ignore',
+                    inplace=True)
 
-    # Delete surrogate keys
-    df_out.drop(['version', 'metadata_id', 'bioentry_id'], errors='ignore',
-                inplace=True)
-
-    # Write file
-    gcm.csv_from_df(df_out, args.output_name)
+        # Write file
+        gcm.csv_from_df(df_out, args.output_name)
 
     print('Done.')
     print(mysql_command)

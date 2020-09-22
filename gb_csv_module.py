@@ -1598,6 +1598,7 @@ def csv_from_df(df, csv_name):
 def add_taxonomy_to_df(df, taxonomy, taxreqs=taxlevels()):
     """Adds requested taxonomy columns to pandas dataframe
     """
+    #TODO: This function currently fills the df cols incorrectly (I think because it assumes the taxonomy dict is in the same order as the dataframe)
     for taxon in taxreqs:
         vals = [taxlevs[taxon] for taxlevs in taxonomy.values()]
         df[taxon] = vals
@@ -1605,7 +1606,7 @@ def add_taxonomy_to_df(df, taxonomy, taxreqs=taxlevels()):
     return
 
 
-def csv_from_sql(sql, csv_name, taxreqs=None):
+def csv_from_sql(sql, csv_name):
     """Extract csv file from SQL database.
     """
     con = mdb.connect(host=db_host, user=db_user, passwd=db_passwd, db=db_name)
