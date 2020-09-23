@@ -51,10 +51,10 @@ def gb_into_dictionary(gb_filename, key):
     if key not in get_name_funcs:
         exit("Error: unrecognised key, must be one of "
              f"{', '.join(get_name_funcs.keys())}")
-    
+
     gb_dictionary = SeqIO.to_dict(SeqIO.parse(gb_filename, "genbank"),
                                   key_function=get_name_funcs[key])
-    
+
     for name, rec in gb_dictionary.items():
         # name, rec = list(gb_dictionary.items())[0]
         rec.name = rec.id = rec.description = name
@@ -71,8 +71,8 @@ def gb_into_dictionary(gb_filename, key):
                 exit(f"Error: division for {name} is "
                      f"'{rec.annotations['data_file_division']}', not 'INV'")
         else:
-            exit(f"Error: {name} is missing division")    
-    
+            exit(f"Error: {name} is missing division")
+
     return gb_dictionary
 
 
@@ -752,7 +752,7 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
         information.
         """
         Entrez.email = email_address
-        
+
         taxid_match = dict()
         no_hits = set()
         multiple_hits = set()
@@ -765,9 +765,9 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
             handle = Entrez.esearch(db="taxonomy", retmax=2, term=taxon)
             record = Entrez.read(handle)
             handle.close()
-        
+
             id_list = record["IdList"]
-            
+
             if len(id_list) == 0:
                 no_hits.add(taxon)
             elif len(id_list) > 1:
@@ -778,9 +778,9 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
             time.sleep(0.5)
             sys.stdout.write(f"\r{' ' * 100}")
         print(f"\rCompleted NCBI taxonomy search set {iteration}")
-        
+
         return no_hits, multiple_hits, taxid_match
-    
+
     if 'db_id' in csv_dataframe.columns:
         csv_dataframe.set_index('db_id', inplace=True)
     # Extract ascending taxonomy data and generate dict
@@ -803,7 +803,7 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
     combined_lineage = {}
     lineage_custom = {}
     taxids = {}
-    
+
     no_taxid = set()
     for db_id in taxonomy_csv.keys():
         if taxids_csv[db_id] != '':
@@ -813,13 +813,13 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
             taxids[db_id] = taxids_csv[db_id]
         else:
             no_taxid.add(db_id)
-    
+
     # Open local cache
     taxon_taxid = dict()
     if os.path.exists(ncbicachepath):
         with open(ncbicachepath, 'r') as ch:
             taxon_taxid = json.load(ch)
-    
+
     n = 0
     no_hits, multiple_hits = set(), set()
     while len(no_taxid) > 0:
@@ -871,19 +871,19 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
                     if db_id in lineage_custom:
                         taxon = f"{taxon}; {lineage_custom[db_id]}"
                     lineage_custom[db_id] = taxon
-    
+
     # Once all entries have taxonomy, save local cache
     with open(ncbicachepath, 'w') as ch:
         json.dump(taxon_taxid, ch)
-        
-    
+
+
     # Report to user
     if len(no_hits) > 0:
         print("\nWarning: the following taxa had no hits in NCBI and a higher "
               "level taxon was used to assign NCBI taxid:", ', '.join(no_hits))
     if len(multiple_hits) > 0:
         print("\nWarning: the following taxa had more than 1 hit in NCBI and a"
-              "higher level taxon was used to assign NCBI taxid:", 
+              "higher level taxon was used to assign NCBI taxid:",
               ', '.join(no_hits))
     if len(no_hits) > 0 or len(multiple_hits) > 0:
         x = input("Do you want to (P)roceed using higher-level taxid "
@@ -894,15 +894,15 @@ def get_ncbi_lineage(csv_dataframe, ncbicachepath, email_address, searchterm):
                       "to quit\n").upper()
         if x == 'Q':
             exit("Quitting...")
-        
-    
+
+
     # Generate combined lineage
     combined_lineage = dict()
     for db_id, taxid in taxids_csv.items():
         if db_id not in lineage_custom:
             lineage_custom[db_id] = ''
-        combined_lineage[db_id] = [taxids[db_id], lineage_custom[db_id]] 
-    
+        combined_lineage[db_id] = [taxids[db_id], lineage_custom[db_id]]
+
     return combined_lineage
 
 
@@ -927,7 +927,7 @@ def rejecting_entries(ncbi_lineage, genbank_dict, csv_df, rejection, action):
             new_entries.append(entry)
             csv_df.drop([db_id], inplace=True)
             #csv_df.columns
-    
+
     if rejected:
         # Create new DataFrame of rejected entries and drop them from returned
         # DataFrame
@@ -1112,7 +1112,7 @@ def add_lineage_df(csv_dataframe, combined_lineage):
     """Add columns with tax_id, custom_ and ncbi_lineage to metadata dataframe.
     """
     #csv_dataframe, combined_lineage = df_accepted, lineages
-    
+
     df_add = pd.DataFrame.from_dict(combined_lineage, orient='index')
     df_add.columns = ["ncbi_taxon_id", "custom_lineage"]
     csv_dataframe.drop(taxlevels(), axis=1, inplace=True)
@@ -1624,7 +1624,10 @@ def add_taxonomy_to_df(df, taxonomy, taxreqs=taxlevels()):
     df.reset_index(inplace=True)
 
     # Reorder columns
-    df = df[[col for col in metadata_outputs() if col in headers]]
+    taxon_cols = [tax for tax in taxlevels() if tax in taxreqs]
+    other_cols = [c for c in df if c not in taxon_cols and c != 'db_id']
+
+    df = df[['db_id'] + taxon_cols + other_cols]
 
     return df
 
