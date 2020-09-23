@@ -231,9 +231,10 @@ if args.output_format == 'CSV':
         if args.database_table == 'metadata':
             taxreqs.update(gcm.taxlevels())
 
-        for col in args.table_columns:
-            if col in gcm.taxlevels():
-                taxreqs.add(col)
+        if args.table_columns:
+            for col in args.table_columns:
+                if col in gcm.taxlevels():
+                    taxreqs.add(col)
 
         if args.taxonomy_spec:
             # Add taxonomic searchterm to specifications if parsed
@@ -310,19 +311,13 @@ if args.output_format == 'CSV':
                                                            args.table_columns,
                                                            new_spec)
 
-        if taxreqs:
-            # Create taxonomy dict
-            taxonomy = {dbid: gcm.fetch_taxonomy(current_ids[dbid][0])
-                        for dbid in current_ids.keys()}
-
-            for taxon in taxreqs:
-                for tax in taxonomy.values():
-                    if taxon not in tax.keys():
-                        tax[taxon] = ''
-
         df_out = gcm.df_from_sql(mysql_command)
 
         if taxreqs:
+            # Create taxonomy dict
+            taxonomy = {dbid: gcm.fetch_taxonomy(current_ids[dbid][0], taxreqs)
+                        for dbid in current_ids.keys()}
+
             # Add taxonomy cols to dataframe
             # TODO: Reorder dataframe columns to put them in x order in x part of the header
             gcm.add_taxonomy_to_df(df_out, taxonomy, taxreqs)

@@ -1533,10 +1533,10 @@ def extract_genes(recs, genes):
     return subrecs
 
 
-def fetch_taxonomy(primary_id):
-    """Fetch taxonomy list for db record given bioentry_id
+def fetch_taxonomy(primary_id, taxreqs=taxlevels()):
+    """Fetch taxonomy list for db record given bioentry_id and tax_levels
+    needed
     """
-    taxlevs = taxlevels()
     server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
                                           passwd=db_passwd, host=db_host,
                                           db=db_name)
@@ -1546,7 +1546,6 @@ def fetch_taxonomy(primary_id):
         f"SELECT taxon_id FROM bioentry WHERE bioentry_id = %s",
         (primary_id,),
     )
-
     taxonomy = {}
 
     while taxon_id:
@@ -1565,11 +1564,14 @@ def fetch_taxonomy(primary_id):
             # Personally, I would have used a NULL parent_taxon_id here.
             break
 
-        #taxonomy.insert(0, name)
-        if rank in taxlevs:
+        if rank in taxreqs:
             taxonomy[rank] = name
 
         taxon_id = parent_taxon_id
+
+    for taxon in taxreqs:
+        if taxon not in taxonomy.keys():
+            taxonomy[taxon] = ''
 
     return taxonomy
 
