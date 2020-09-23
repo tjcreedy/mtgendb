@@ -1293,12 +1293,6 @@ def sql_cols(table, cols, spec):
     if any(col in cols for col in taxlevs):
         # Remove taxonomic columns from SQL query
         cols = [col for col in cols if col not in taxlevs]
-        #if 'db_id' not in cols:
-            # TODO: Make sure db_id column present for all output csv - Can delete this whole if statement if you do this
-        #    cols.append('db_id')
-        #    cols_dict['db_id'] = 'metadata.db_id'
-        #    if 'metadata' not in tables:
-        #        tables.append('metadata')
     if cols == ['*']:
         if len(tables) == 1:
             cols_string = '*'
