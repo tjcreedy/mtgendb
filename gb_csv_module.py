@@ -1183,6 +1183,19 @@ def load_df_into_db(csv_dataframe):
     return
 
 
+def metadata_outputs():
+
+    heads = ['contigname', 'db_id', 'institution_code', 'collection_code',
+             'specimen_id', 'morphospecies', 'ncbi_taxon_id'] + taxlevels() + \
+            ['custom_lineage', 'traptype', 'dev_stage', 'site', 'locality',
+             'subregion', 'country', 'latitude', 'longitude', 'size',
+             'feeding_behaviour', 'habitat', 'habitat_stratum', 'authors',
+             'library', 'datasubmitter', 'projectname', 'genbank_accession',
+             'notes']
+
+    return heads
+
+
 def sql_cols(table, cols, spec):
     """Determine required tables and columns for MySQL query. Construct columns
     string.
@@ -1537,6 +1550,7 @@ def fetch_taxonomy(primary_id, taxreqs=taxlevels()):
     """Fetch taxonomy list for db record given bioentry_id and tax_levels
     needed
     """
+    taxlevs = taxlevels()
     server = BioSeqDatabase.open_database(driver=db_driver, user=db_user,
                                           passwd=db_passwd, host=db_host,
                                           db=db_name)
@@ -1573,7 +1587,9 @@ def fetch_taxonomy(primary_id, taxreqs=taxlevels()):
         if taxon not in taxonomy.keys():
             taxonomy[taxon] = ''
 
-    return taxonomy
+    taxonomy_reorder = {k: taxonomy[k] for k in taxlevs if k in taxonomy.keys()}
+
+    return taxonomy_reorder
 
 
 def df_from_sql(sql):
@@ -1596,18 +1612,21 @@ def csv_from_df(df, csv_name):
 def add_taxonomy_to_df(df, taxonomy, taxreqs=taxlevels()):
     """Adds requested taxonomy columns to pandas dataframe
     """
+    headers = df.columns.tolist()
     df.set_index('db_id', inplace=True)
 
     for taxon in taxreqs:
+        headers.append(taxon)
         df[taxon] = ''
         for dbid in taxonomy.keys():
             df.at[dbid, taxon] = taxonomy[dbid][taxon]
-        #vals = [taxlevs[taxon] for taxlevs in taxonomy.values()]
-        #df[taxon] = vals
 
     df.reset_index(inplace=True)
 
-    return
+    # Reorder columns
+    df = df[[col for col in metadata_outputs() if col in headers]]
+
+    return df
 
 
 def csv_from_sql(sql, csv_name):

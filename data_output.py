@@ -319,8 +319,7 @@ if args.output_format == 'CSV':
                         for dbid in current_ids.keys()}
 
             # Add taxonomy cols to dataframe
-            # TODO: Reorder dataframe columns to put them in x order in x part of the header
-            gcm.add_taxonomy_to_df(df_out, taxonomy, taxreqs)
+            df_out = gcm.add_taxonomy_to_df(df_out, taxonomy, taxreqs)
 
         # Delete surrogate keys
         df_out.drop(['version', 'metadata_id', 'bioentry_id'], errors='ignore',
